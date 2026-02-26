@@ -1,7 +1,15 @@
 const app = require("./app");
+const path = require("path");
 
-const PORT = 5000;
+// Load env first
+require("dotenv").config({ path: path.join(__dirname, ".env") });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const connectDB = require("./config/db");
+
+// Debug (temporary)
+console.log(" Loaded MONGO_URI?", !!process.env.MONGO_URI);
+
+connectDB();
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
