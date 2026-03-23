@@ -1,4 +1,3 @@
-// backend/models/User.js
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema(
@@ -30,14 +29,12 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
 
-    // ✅ Student fields (stored only when role === "student")
     studentID: {
       type: String,
       trim: true,
       default: null,
       validate: {
         validator: function (v) {
-          // only required for students
           if (this.role !== "student") return true;
           return v && v.trim().length > 0;
         },
