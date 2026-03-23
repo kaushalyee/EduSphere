@@ -67,10 +67,11 @@ const importQuizResults = async (req, res) => {
     const skippedDetails = [];
 
     for (const row of rows) {
-      const email = row["Email"] || row["email"];
-      const marksValue = row["Marks"] || row["marks"] || row["Score"] || row["Points"];
+      const email = row["Email"] ?? row["email"];
+      const marksValue =
+        row["Marks"] ?? row["marks"] ?? row["Score"] ?? row["Points"];
       const totalValue =
-        row["Total"] || row["total"] || row["Total Marks"] || row["Total Points"];
+        row["Total"] ?? row["total"] ?? row["Total Marks"] ?? row["Total Points"];
 
       if (!email || marksValue === undefined || totalValue === undefined) {
         skippedDetails.push({
@@ -148,7 +149,7 @@ const importQuizResults = async (req, res) => {
         },
         {
           upsert: true,
-          new: true,
+          returnDocument: "after",
           runValidators: true,
           setDefaultsOnInsert: true,
         }
