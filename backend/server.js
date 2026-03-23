@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 5000;
     }
 
     await connectDB(); // wait for DB connection
+    require("./models");
     console.log("✅ DB connected. Starting server...");
 
     app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
