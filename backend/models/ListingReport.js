@@ -1,10 +1,43 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const listingReportSchema = new mongoose.Schema({
-  item_id: { type: mongoose.Schema.Types.ObjectId, ref: 'MarketplaceListing', required: true, index: true },
-  reportedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  reason: { type: String, required: true },
-  status: { type: String, enum: ['pending', 'reviewed', 'resolved'], default: 'pending' }
-}, { timestamps: true });
+const listingReportSchema = new mongoose.Schema(
+  {
+    listingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "MarketplaceListing",
+      required: true,
+    },
+    reporterId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    reason: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    additionalDetails: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    status: {
+      type: String,
+      enum: ["pending", "reviewed", "resolved", "dismissed"],
+      default: "pending",
+    },
+    adminActionTaken: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('ListingReport', listingReportSchema);
+listingReportSchema.index({ listingId: 1 });
+listingReportSchema.index({ reporterId: 1 });
+listingReportSchema.index({ status: 1 });
+
+module.exports = mongoose.model("ListingReport", listingReportSchema);

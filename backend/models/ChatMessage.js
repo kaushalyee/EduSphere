@@ -1,11 +1,37 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const chatMessageSchema = new mongoose.Schema({
-  conv_id: { type: mongoose.Schema.Types.ObjectId, ref: 'ChatConversation', required: true, index: true },
-  role: { type: String, enum: ['user', 'system', 'assistant'], required: true },
-  content: { type: String, required: true },
-  issue_type: { type: String },
-  modelUsed: { type: String }
-}, { timestamps: true });
+const chatMessageSchema = new mongoose.Schema(
+  {
+    conversationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ChatConversation",
+      required: true,
+    },
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    content: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    readBy: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    isEdited: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('ChatMessage', chatMessageSchema);
+chatMessageSchema.index({ conversationId: 1 });
+chatMessageSchema.index({ createdAt: 1 });
+
+module.exports = mongoose.model("ChatMessage", chatMessageSchema);

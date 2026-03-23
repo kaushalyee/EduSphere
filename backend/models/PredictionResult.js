@@ -1,9 +1,40 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const predictionResultSchema = new mongoose.Schema({
-  submissionId: { type: mongoose.Schema.Types.ObjectId, ref: 'AssignmentSubmission', required: true, unique: true },
-  predictScore: { type: Number, required: true },
-  feedback: { type: String }
-}, { timestamps: true });
+const predictionResultSchema = new mongoose.Schema(
+  {
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    subject: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    predictedGrade: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    confidenceScore: {
+      type: Number,
+      required: true,
+      min: 0,
+      max: 100,
+    },
+    factors: {
+      type: [String],
+      default: [],
+    },
+    recommendations: {
+      type: [String],
+      default: [],
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('PredictionResult', predictionResultSchema);
+predictionResultSchema.index({ studentId: 1 });
+
+module.exports = mongoose.model("PredictionResult", predictionResultSchema);

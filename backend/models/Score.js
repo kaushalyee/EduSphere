@@ -1,15 +1,40 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const scoreSchema = new mongoose.Schema({
-  student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  attemptId: { type: mongoose.Schema.Types.ObjectId, ref: 'GameAttempt', required: true, unique: true },
-  levelId: { type: String, required: true },
-  scoreValue: { type: Number, required: true },
-  moves: { type: Number, required: true },
-  timeTaken: { type: Number, required: true }
-}, { timestamps: true });
+const scoreSchema = new mongoose.Schema(
+  {
+    // GameAttempt -> Score relationship
+    attemptId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GameAttempt",
+      required: true,
+    },
+    // Keep userId for leaderboards
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    points: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    levelReached: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+    isHighScore: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
 
-// Optimize purely for leaderboard query speed (scoreValue descending)
-scoreSchema.index({ scoreValue: -1, levelId: 1 });
+// Indexes
+scoreSchema.index({ userId: 1 });
+scoreSchema.index({ attemptId: 1 });
+scoreSchema.index({ points: -1 });
 
-module.exports = mongoose.model('Score', scoreSchema);
+module.exports = mongoose.model("Score", scoreSchema);

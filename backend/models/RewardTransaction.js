@@ -1,10 +1,33 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const rewardTransactionSchema = new mongoose.Schema({
-  student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  sourceType: { type: String, enum: ['session', 'quiz', 'improvement'], required: true },
-  sourceId: { type: mongoose.Schema.Types.Mixed }, // Can reference different collections
-  pointsEarned: { type: Number, required: true }
-}, { timestamps: true });
+const rewardTransactionSchema = new mongoose.Schema(
+  {
+    // Wallet -> RewardTransaction relationship
+    walletId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Wallet",
+      required: true,
+    },
+    amount: {
+      type: Number,
+      required: true,
+    },
+    type: {
+      type: String,
+      enum: ["earned", "spent", "penalty"],
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('RewardTransaction', rewardTransactionSchema);
+// Indexes
+rewardTransactionSchema.index({ walletId: 1 });
+rewardTransactionSchema.index({ createdAt: -1 });
+
+module.exports = mongoose.model("RewardTransaction", rewardTransactionSchema);

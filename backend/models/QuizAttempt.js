@@ -1,12 +1,35 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const quizAttemptSchema = new mongoose.Schema({
-  student_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-  subjectId: { type: String, required: true },
-  score: { type: Number, required: true, min: 0 },
-  percentage: { type: Number, required: true, min: 0, max: 100 },
-  totalMarks: { type: Number, required: true, min: 0 },
-  attemptDate: { type: Date, default: Date.now }
-}, { timestamps: true });
+const quizAttemptSchema = new mongoose.Schema(
+  {
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    sessionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Session",
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ["in-progress", "submitted", "abandoned"],
+      default: "in-progress",
+    },
+    startTime: {
+      type: Date,
+      default: Date.now,
+    },
+    endTime: {
+      type: Date,
+      default: null,
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('QuizAttempt', quizAttemptSchema);
+quizAttemptSchema.index({ studentId: 1 });
+quizAttemptSchema.index({ sessionId: 1 });
+
+module.exports = mongoose.model("QuizAttempt", quizAttemptSchema);

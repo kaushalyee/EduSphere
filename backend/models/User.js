@@ -1,24 +1,68 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const userOptions = { discriminatorKey: 'role', collection: 'users', timestamps: true };
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-const userSchema = new mongoose.Schema({
-  email: { type: String, required: true, unique: true, index: true },
-  password: { type: String, required: true },
-}, userOptions);
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
 
-const User = mongoose.model('User', userSchema);
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+      select: false,
+    },
 
-const Student = User.discriminator('student', new mongoose.Schema({
-  student_id: { type: String, required: true, unique: true, sparse: true, index: true },
-  name: { type: String, required: true },
-  tutor: { type: Boolean, default: false },
-  academic_year: { type: Number },
-  semester: { type: Number }
-}));
+    role: {
+      type: String,
+      enum: ["student", "tutor", "admin"],
+      required: true,
+    },
 
-const Admin = User.discriminator('admin', new mongoose.Schema({
-  // role is handled by discriminatorKey
-}));
+    studentID: {
+      type: String,
+      trim: true,
+      default: null,
+      validate: {
+        validator: function (v) {
+          if (this.role !== "student") return true;
+          return v && v.trim().length > 0;
+        },
+        message: "Student ID is required for students",
+      },
+    },
 
-module.exports = { User, Student, Admin };
+    year: {
+      type: Number,
+      default: null,
+    },
+
+    semester: {
+      type: Number,
+      default: null,
+    },
+
+    weakCategories: {
+      type: [String],
+      default: [],
+    },
+
+    weakTopics: {
+      type: [String],
+      default: [],
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model("User", userSchema);
