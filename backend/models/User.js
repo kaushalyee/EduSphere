@@ -1,71 +1,24 @@
-// backend/models/User.js
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
+const userOptions = { discriminatorKey: 'role', collection: 'users', timestamps: true };
 
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-      lowercase: true,
-      trim: true,
-    },
+const userSchema = new mongoose.Schema({
+  email: { type: String, required: true, unique: true, index: true },
+  password: { type: String, required: true },
+}, userOptions);
 
-    password: {
-      type: String,
-      required: true,
-      minlength: 6,
-      select: false,
-    },
+const User = mongoose.model('User', userSchema);
 
-    role: {
-      type: String,
-      enum: ["student", "tutor", "admin"],
-      required: true,
-    },
+const Student = User.discriminator('student', new mongoose.Schema({
+  student_id: { type: String, required: true, unique: true, sparse: true, index: true },
+  name: { type: String, required: true },
+  tutor: { type: Boolean, default: false },
+  academic_year: { type: Number },
+  semester: { type: Number }
+}));
 
-    // ✅ Student fields (stored only when role === "student")
-    studentID: {
-      type: String,
-      trim: true,
-      default: null,
-      validate: {
-        validator: function (v) {
-          // only required for students
-          if (this.role !== "student") return true;
-          return v && v.trim().length > 0;
-        },
-        message: "Student ID is required for students",
-      },
-    },
+const Admin = User.discriminator('admin', new mongoose.Schema({
+  // role is handled by discriminatorKey
+}));
 
-    year: {
-      type: Number,
-      default: null,
-    },
-
-    semester: {
-      type: Number,
-      default: null,
-    },
-
-    weakCategories: {
-      type: [String],
-      default: [],
-    },
-
-    weakTopics: {
-      type: [String],
-      default: [],
-    },
-  },
-  { timestamps: true }
-);
-
-module.exports = mongoose.model("User", userSchema);
+module.exports = { User, Student, Admin };
