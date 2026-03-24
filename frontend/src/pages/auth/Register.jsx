@@ -30,44 +30,44 @@ const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
 
-const [role, setRole] = useState("student");
-const [name, setName] = useState("");
-const [email, setEmail] = useState("");
-const [studentID, setStudentID] = useState("");
-const [password, setPassword] = useState("");
+  const [role, setRole] = useState("student");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [studentID, setStudentID] = useState("");
+  const [password, setPassword] = useState("");
 
-// ✅ add these
-const [year, setYear] = useState("");
-const [semester, setSemester] = useState("");
-const [weakCategories, setWeakCategories] = useState([]);
+  // ✅ add these
+  const [year, setYear] = useState("");
+  const [semester, setSemester] = useState("");
+  const [weakCategories, setWeakCategories] = useState([]);
 
-// topics
-const [weakTopics, setWeakTopics] = useState([]);
+  // topics
+  const [weakTopics, setWeakTopics] = useState([]);
 
-const [error, setError] = useState("");
+  const [error, setError] = useState("");
 
-const toggleCategory = (cat) => {
-  setWeakCategories((prevCats) => {
-    const willRemove = prevCats.includes(cat);
-    const nextCats = willRemove
-      ? prevCats.filter((c) => c !== cat)
-      : [...prevCats, cat];
+  const toggleCategory = (cat) => {
+    setWeakCategories((prevCats) => {
+      const willRemove = prevCats.includes(cat);
+      const nextCats = willRemove
+        ? prevCats.filter((c) => c !== cat)
+        : [...prevCats, cat];
 
-    // if removing a category, also remove its topics from weakTopics
-    if (willRemove) {
-      const catTopics = TOPICS_BY_CATEGORY[cat] || [];
-      setWeakTopics((prevTopics) => prevTopics.filter((t) => !catTopics.includes(t)));
-    }
+      // if removing a category, also remove its topics from weakTopics
+      if (willRemove) {
+        const catTopics = TOPICS_BY_CATEGORY[cat] || [];
+        setWeakTopics((prevTopics) => prevTopics.filter((t) => !catTopics.includes(t)));
+      }
 
-    return nextCats;
-  });
-};
-const toggleTopic = (topic) => {
-  setWeakTopics((prev) =>
-    prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
-  );
-};
-  
+      return nextCats;
+    });
+  };
+  const toggleTopic = (topic) => {
+    setWeakTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    );
+  };
+
 
   const isStudentValid =
     year !== "" && semester !== "" && weakCategories.length > 0;
@@ -89,21 +89,24 @@ const toggleTopic = (topic) => {
       role,
       ...(role === "student"
         ? {
-            studentID,
-            year: Number(year),
-            semester: Number(semester),
-            weakCategories,
-            weakTopics, 
-          }
+          studentID,
+          year: Number(year),
+          semester: Number(semester),
+          weakCategories,
+          weakTopics,
+        }
         : {}),
     };
 
     const result = await register(payload);
 
-    if (result.success) navigate(result.redirectTo);
+    if (result.success) {
+      localStorage.setItem("isNewUser", "true"); 
+      navigate(result.redirectTo);
+    }
     else setError(result.message);
   };
-  
+
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20">
@@ -258,42 +261,41 @@ const toggleTopic = (topic) => {
               </>
             )}
             {/* Weak Topics (based on selected categories) */}
-{weakCategories.length > 0 && (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-2">
-      Weak Topics (Optional)
-    </label>
+            {weakCategories.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Weak Topics (Optional)
+                </label>
 
-    <div className="space-y-3">
-      {weakCategories.map((cat) => (
-        <div key={cat} className="bg-white rounded-lg border border-gray-200 p-3">
-          <p className="text-sm font-semibold text-gray-700 mb-2">{cat}</p>
+                <div className="space-y-3">
+                  {weakCategories.map((cat) => (
+                    <div key={cat} className="bg-white rounded-lg border border-gray-200 p-3">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">{cat}</p>
 
-          <div className="flex flex-wrap gap-2">
-            {(TOPICS_BY_CATEGORY[cat] || []).map((topic) => (
-              <label
-                key={topic}
-                className={`cursor-pointer select-none px-3 py-1 rounded-full text-sm border ${
-                  weakTopics.includes(topic)
-                    ? "bg-primary-600 text-white border-primary-600"
-                    : "bg-gray-50 text-gray-700 border-gray-200"
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  className="hidden"
-                  checked={weakTopics.includes(topic)}
-                  onChange={() => toggleTopic(topic)}
-                />
-                {topic}
-              </label>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+                      <div className="flex flex-wrap gap-2">
+                        {(TOPICS_BY_CATEGORY[cat] || []).map((topic) => (
+                          <label
+                            key={topic}
+                            className={`cursor-pointer select-none px-3 py-1 rounded-full text-sm border ${weakTopics.includes(topic)
+                              ? "bg-primary-600 text-white border-primary-600"
+                              : "bg-gray-50 text-gray-700 border-gray-200"
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="hidden"
+                              checked={weakTopics.includes(topic)}
+                              onChange={() => toggleTopic(topic)}
+                            />
+                            {topic}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Password */}
             <div>
@@ -313,11 +315,10 @@ const toggleTopic = (topic) => {
             <button
               type="submit"
               disabled={!isFormValid}
-              className={`w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 ${
-                isFormValid
-                  ? "hover:shadow-lg hover:scale-105 cursor-pointer"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
+              className={`w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 ${isFormValid
+                ? "hover:shadow-lg hover:scale-105 cursor-pointer"
+                : "opacity-50 cursor-not-allowed"
+                }`}
             >
               Create Account
             </button>
