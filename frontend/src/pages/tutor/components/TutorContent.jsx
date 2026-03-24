@@ -1,5 +1,7 @@
 import React from "react";
+import DashboardOverview from "../modules/DashboardOverview";
 import CreateSession from "../modules/CreateSession";
+import MySessions from "../modules/MySessions";
 
 function EmptyView({ title }) {
   return (
@@ -12,15 +14,17 @@ function EmptyView({ title }) {
 
 export default function TutorContent({ activeTab }) {
   switch (activeTab) {
+    case "dashboard":
+      return <DashboardOverview />;
     case "create-session":
       return <CreateSession />;
-    case "dashboard":
-      return <EmptyView title="Dashboard Overview" />;
+    case "my-sessions":
+      return <MySessions />;
     case "trending":
       return <EmptyView title="Trending Topics" />;
-    case "my-sessions":
-      return <EmptyView title="My Sessions" />;
+    case "profile":
+      return <EmptyView title="Profile" />;
     default:
-      return <CreateSession />;
+      return <DashboardOverview />;
   }
 }

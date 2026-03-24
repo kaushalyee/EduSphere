@@ -37,7 +37,7 @@ const upload = multer({
   fileFilter,
 });
 
-// ✅ Upload Excel
+// Upload Excel
 router.post(
   "/import/:sessionId",
   protect,
@@ -46,7 +46,7 @@ router.post(
   importQuizResults
 );
 
-// ✅ Tutor leaderboard
+//
 router.get(
   "/session/:sessionId",
   protect,
