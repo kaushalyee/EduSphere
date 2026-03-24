@@ -44,7 +44,7 @@ const sessionSchema = new mongoose.Schema(
     duration: {
       type: Number,
       default: 60,
-      min: 1,
+      min: 30,
     },
 
     mode: {
