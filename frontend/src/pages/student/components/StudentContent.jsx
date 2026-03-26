@@ -3,7 +3,7 @@ import { Users } from "lucide-react";
 
 import DashboardOverview from "../modules/DashboardOverview";
 import PeerLearning from "../modules/PeerLearning";
-import Market from "../modules/Market";
+import StudentMarketplace from "../marketplace/StudentMarketplace";
 import Progress from "../modules/Progress";
 import Rewards from "../modules/Rewards";
 
@@ -25,8 +25,8 @@ export default function StudentContent({ activeTab, options }) {
       return <DashboardOverview />;
     case "PeerLearning":
       return <PeerLearning />;
-case "Market":
-  return <Market />;
+    case "Market":
+      return <StudentMarketplace />;
     case "Progress":
       return <Progress />;
     case "Rewards":
