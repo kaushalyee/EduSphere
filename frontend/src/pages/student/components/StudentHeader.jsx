@@ -20,12 +20,14 @@ export default function StudentHeader({
           <Menu className="w-5 h-5" />
         </button>
 
-        <div>
-          <h2 className="text-lg font-bold text-gray-800">
-            {current?.title || "Student Dashboard"}
-          </h2>
-          <p className="text-sm text-gray-500">Welcome back</p>
-        </div>
+        {activeTab !== "Market" && (
+          <div>
+            <h2 className="text-lg font-bold text-gray-800">
+              {current?.title || "Student Dashboard"}
+            </h2>
+            <p className="text-sm text-gray-500">Welcome back</p>
+          </div>
+        )}
       </div>
 
       <button
