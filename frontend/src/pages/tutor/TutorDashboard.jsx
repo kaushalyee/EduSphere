@@ -4,7 +4,9 @@ import TutorHeader from "./components/TutorHeader";
 import TutorContent from "./components/TutorContent";
 
 export default function TutorDashboard() {
-  const [activeTab, setActiveTab] = useState("dashboard");
+const [activeTab, setActiveTab] = useState(
+  localStorage.getItem("tutorActiveTab") || "dashboard"
+);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
 
@@ -19,6 +21,9 @@ export default function TutorDashboard() {
       localStorage.removeItem("isNewUser");
     }
   }, []);
+  useEffect(() => {
+  localStorage.setItem("tutorActiveTab", activeTab);
+}, [activeTab]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

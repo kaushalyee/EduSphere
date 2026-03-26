@@ -88,6 +88,16 @@ const sessionSchema = new mongoose.Schema(
       default: "",
       trim: true,
     },
+    status: {
+      type: String,
+      enum: ["upcoming", "completed", "cancelled"],
+      default: "upcoming",
+    },
+
+    completedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
