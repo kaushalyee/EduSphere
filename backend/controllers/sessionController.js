@@ -135,7 +135,10 @@ const createSession = async (req, res) => {
 
 const getMySessions = async (req, res) => {
   try {
-    const sessions = await Session.find({ tutorId: req.user._id })
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      status: "upcoming",
+    })
       .populate("tutorId", "name email")
       .sort({ createdAt: -1 });
 
@@ -155,7 +158,7 @@ const getMySessions = async (req, res) => {
 
 const getAllSessions = async (req, res) => {
   try {
-    const sessions = await Session.find()
+    const sessions = await Session.find({ status: "upcoming" })
       .populate("tutorId", "name email")
       .sort({ date: 1, time: 1 });
 
@@ -199,10 +202,129 @@ const getSessionById = async (req, res) => {
     });
   }
 };
+// MARK AS COMPLETE
+const markSessionComplete = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // check ownership
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    // prevent re-completing
+    if (session.status === "completed") {
+      return res.status(400).json({ message: "Session already completed" });
+    }
+
+    // cannot complete cancelled session
+    if (session.status === "cancelled") {
+      return res.status(400).json({ message: "Cancelled session cannot be completed" });
+    }
+
+    session.status = "completed";
+    session.completedAt = new Date();
+
+    await session.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Session marked as complete",
+      session,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// CANCEL SESSION
+const cancelSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // check ownership
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    //check already a cancelled session
+    if (session.status === "cancelled") {
+      return res.status(400).json({ message: "Session already cancelled" });
+    }
+    //  cannot cancel completed session
+    if (session.status === "completed") {
+      return res.status(400).json({ message: "Completed session cannot be cancelled" });
+    }
+
+    session.status = "cancelled";
+
+    await session.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Session cancelled",
+      session,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+const getCompletedSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      status: "completed",
+    }).sort({ updatedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      sessions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Server error while fetching completed sessions",
+    });
+  }
+};
+const getCancelledSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      status: "cancelled",
+    }).sort({ updatedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      sessions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Server error while fetching cancelled sessions",
+    });
+  }
+};
 
 module.exports = {
   createSession,
   getMySessions,
   getAllSessions,
   getSessionById,
+  markSessionComplete,
+  cancelSession,
+  getCompletedSessions,
+  getCancelledSessions,
 };
