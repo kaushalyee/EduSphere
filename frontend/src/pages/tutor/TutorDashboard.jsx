@@ -4,26 +4,27 @@ import TutorHeader from "./components/TutorHeader";
 import TutorContent from "./components/TutorContent";
 
 export default function TutorDashboard() {
-const [activeTab, setActiveTab] = useState(
-  localStorage.getItem("tutorActiveTab") || "dashboard"
-);
+  const [activeTab, setActiveTab] = useState(
+    localStorage.getItem("tutorActiveTab") || "dashboard"
+  );
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
+
+  const [selectedTrendingTopic, setSelectedTrendingTopic] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
 
   useEffect(() => {
-    // Check if this is a fresh registration
     const newUserFlag = localStorage.getItem("isNewUser");
     if (newUserFlag === "true") {
       setIsNewUser(true);
-      // Clear the flag so refreshing won't show it again
       localStorage.removeItem("isNewUser");
     }
   }, []);
+
   useEffect(() => {
-  localStorage.setItem("tutorActiveTab", activeTab);
-}, [activeTab]);
+    localStorage.setItem("tutorActiveTab", activeTab);
+  }, [activeTab]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -51,7 +52,12 @@ const [activeTab, setActiveTab] = useState(
         />
 
         <main className="p-6">
-          <TutorContent activeTab={activeTab} />
+          <TutorContent
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            selectedTrendingTopic={selectedTrendingTopic}
+            setSelectedTrendingTopic={setSelectedTrendingTopic}
+          />
         </main>
       </div>
     </div>
