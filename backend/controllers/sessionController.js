@@ -1,5 +1,6 @@
 const Session = require("../models/Session");
 const { TOPICS_BY_CATEGORY } = require("../constants/topics");
+const QuizResult = require("../models/QuizResult");
 
 const isValidUrl = (value) => {
   return /^https?:\/\/.+/i.test(value);
@@ -288,9 +289,24 @@ const getCompletedSessions = async (req, res) => {
       status: "completed",
     }).sort({ updatedAt: -1 });
 
+    const sessionIds = sessions.map((session) => session._id);
+
+    const uploadedSessionIds = await QuizResult.find({
+      sessionId: { $in: sessionIds },
+    }).distinct("sessionId");
+
+    const uploadedSet = new Set(
+      uploadedSessionIds.map((id) => id.toString())
+    );
+
+    const sessionsWithUploadStatus = sessions.map((session) => ({
+      ...session.toObject(),
+      resultsUploaded: uploadedSet.has(session._id.toString()),
+    }));
+
     res.status(200).json({
       success: true,
-      sessions,
+      sessions: sessionsWithUploadStatus,
     });
   } catch (error) {
     console.error(error);

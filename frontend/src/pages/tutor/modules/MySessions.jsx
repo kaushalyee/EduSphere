@@ -31,34 +31,36 @@ export default function MySessions() {
   const [statusFilter, setStatusFilter] = useState("upcoming");
   const [actionLoading, setActionLoading] = useState(null); // sessionId being acted on
   const [confirmDialog, setConfirmDialog] = useState(null); // { sessionId, action }
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const fileInputRef = React.useRef(null);
 
   const token = localStorage.getItem("token");
 
-const fetchSessions = async (status) => {
-  try {
-    setLoading(true);
-    setError("");
-    setSessions([]);
+  const fetchSessions = async (status) => {
+    try {
+      setLoading(true);
+      setError("");
+      setSessions([]);
 
-    const endpoint =
-      status === "completed"
-        ? "http://localhost:5000/api/sessions/completed"
-        : status === "cancelled"
-        ? "http://localhost:5000/api/sessions/cancelled"
-        : "http://localhost:5000/api/sessions/my-sessions";
+      const endpoint =
+        status === "completed"
+          ? "http://localhost:5000/api/sessions/completed"
+          : status === "cancelled"
+            ? "http://localhost:5000/api/sessions/cancelled"
+            : "http://localhost:5000/api/sessions/my-sessions";
 
-    const response = await axios.get(endpoint, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const response = await axios.get(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    setSessions(response.data.sessions || []);
-  } catch (err) {
-    setSessions([]);
-    setError(err.response?.data?.message || "Failed to fetch sessions");
-  } finally {
-    setLoading(false);
-  }
-};
+      setSessions(response.data.sessions || []);
+    } catch (err) {
+      setSessions([]);
+      setError(err.response?.data?.message || "Failed to fetch sessions");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchSessions(statusFilter);
@@ -99,9 +101,49 @@ const fetchSessions = async (status) => {
       year: "numeric",
     });
   };
+  const handleUploadClick = (sessionId) => {
+    setSelectedSessionId(sessionId);
+    fileInputRef.current.click();
+  };
+
+  const handleFileChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const res = await axios.post(
+      `http://localhost:5000/api/quiz-results/import/${selectedSessionId}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    alert(`Uploaded successfully! Saved: ${res.data.savedCount}`);
+
+    await fetchSessions(statusFilter);
+  } catch (err) {
+    alert(err.response?.data?.message || "Upload failed");
+  } finally {
+    e.target.value = "";
+  }
+};
 
   return (
     <div>
+      <input
+        type="file"
+        accept=".xlsx,.xls"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
       {/* Confirm Dialog */}
       {confirmDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
@@ -127,11 +169,10 @@ const fetchSessions = async (status) => {
                 onClick={() =>
                   handleAction(confirmDialog.sessionId, confirmDialog.action)
                 }
-                className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition ${
-                  confirmDialog.action === "complete"
-                    ? "bg-emerald-500 hover:bg-emerald-600"
-                    : "bg-red-500 hover:bg-red-600"
-                }`}
+                className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition ${confirmDialog.action === "complete"
+                  ? "bg-emerald-500 hover:bg-emerald-600"
+                  : "bg-red-500 hover:bg-red-600"
+                  }`}
               >
                 {confirmDialog.action === "complete" ? "Confirm" : "Cancel Session"}
               </button>
@@ -146,11 +187,10 @@ const fetchSessions = async (status) => {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition border-b-2 -mb-px ${
-              statusFilter === status
-                ? "border-[#2F66E0] text-[#2F66E0]"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition border-b-2 -mb-px ${statusFilter === status
+              ? "border-[#2F66E0] text-[#2F66E0]"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             {status}
           </button>
@@ -191,21 +231,19 @@ const fetchSessions = async (status) => {
               <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
                 <button
                   onClick={() => setSortOrder("newest")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
-                    sortOrder === "newest"
-                      ? "bg-[#2F66E0] text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium transition ${sortOrder === "newest"
+                    ? "bg-[#2F66E0] text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   Newest
                 </button>
                 <button
                   onClick={() => setSortOrder("oldest")}
-                  className={`px-4 py-2 text-sm font-medium transition border-l border-slate-200 ${
-                    sortOrder === "oldest"
-                      ? "bg-[#2F66E0] text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium transition border-l border-slate-200 ${sortOrder === "oldest"
+                    ? "bg-[#2F66E0] text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   Oldest
                 </button>
@@ -237,18 +275,16 @@ const fetchSessions = async (status) => {
 
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          session.mode === "online"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${session.mode === "online"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-emerald-100 text-emerald-700"
+                          }`}
                       >
                         {session.mode}
                       </span>
                       <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                          STATUS_STYLES[session.status] || "bg-slate-100 text-slate-600"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${STATUS_STYLES[session.status] || "bg-slate-100 text-slate-600"
+                          }`}
                       >
                         {session.status}
                       </span>
@@ -325,7 +361,37 @@ const fetchSessions = async (status) => {
                         Quiz Link
                       </a>
                     )}
+
                   </div>
+                  {session.status === "completed" && (
+  <div className="mt-5 pt-4 border-t border-slate-100">
+    {!session.quizLink ? (
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 text-slate-500 text-sm font-medium">
+        <BookOpen className="w-4 h-4" />
+        No Quiz for this session
+      </div>
+    ) : session.resultsUploaded ? (
+      <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-100 text-emerald-700 text-sm font-semibold">
+        <CheckCircle2 className="w-4 h-4" />
+        Results Uploaded
+      </div>
+    ) : (
+      <>
+        <button
+          onClick={() => handleUploadClick(session._id)}
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition"
+        >
+          <BookOpen className="w-4 h-4" />
+          Upload Quiz Results
+        </button>
+
+        <p className="text-xs text-slate-400 mt-2">
+          Format: Email | Marks | Total
+        </p>
+      </>
+    )}
+  </div>
+)}
 
                   {/* Action Buttons — only for upcoming sessions */}
                   {session.status === "upcoming" && (
