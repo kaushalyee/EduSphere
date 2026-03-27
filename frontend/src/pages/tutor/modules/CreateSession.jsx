@@ -1,18 +1,11 @@
-import React, { useMemo, useState } from "react";
 import axios from "axios";
+import React, { useMemo, useState, useEffect } from "react";
 
-const TOPICS_BY_CATEGORY = {
-  Programming: ["C", "Java", "Python", "JavaScript", "Debugging"],
-  Mathematics: ["Algebra", "Calculus", "Statistics", "Discrete Mathematics"],
-  Networking: ["OSI Model", "TCP/IP", "Routing", "Subnetting"],
-  DSA: ["Arrays", "Linked Lists", "Stacks & Queues", "Trees", "Sorting"],
-  DBMS: ["ER Diagrams", "Normalization", "SQL", "Joins"],
-  OOP: ["Classes & Objects", "Inheritance", "Polymorphism", "Encapsulation"],
-  "Web Development": ["HTML", "CSS", "React", "Node.js", "Express"],
-  "Cyber Basics": ["CIA Triad", "Threats", "Authentication", "Encryption"],
-};
 
-export default function CreateSession() {
+export default function CreateSession({
+  selectedTrendingTopic,
+  setSelectedTrendingTopic,
+}) {
   const [formData, setFormData] = useState({
     category: "",
     topic: "",
@@ -26,7 +19,7 @@ export default function CreateSession() {
     capacity: "",
     description: "",
   });
-
+  const [topicsByCategory, setTopicsByCategory] = useState({});
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errors, setErrors] = useState({});
@@ -36,8 +29,8 @@ export default function CreateSession() {
   const today = new Date().toISOString().split("T")[0];
 
   const availableTopics = useMemo(() => {
-    return TOPICS_BY_CATEGORY[formData.category] || [];
-  }, [formData.category]);
+    return topicsByCategory[formData.category] || [];
+  }, [formData.category, topicsByCategory]);
 
   const isValidUrl = (value) => {
     if (!value) return true;
@@ -48,6 +41,33 @@ export default function CreateSession() {
       return false;
     }
   };
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const res = await axios.get("http://localhost:5000/api/constants/topics");
+        setTopicsByCategory(res.data);
+      } catch (error) {
+        console.error("Failed to fetch topics", error);
+      }
+    };
+
+    fetchTopics();
+  }, []);
+  useEffect(() => {
+  if (selectedTrendingTopic) {
+    setFormData((prev) => ({
+      ...prev,
+      category: selectedTrendingTopic.category || "",
+      topic: selectedTrendingTopic.topic || "",
+    }));
+
+    setErrors((prev) => ({
+      ...prev,
+      category: "",
+      topic: "",
+    }));
+  }
+}, [selectedTrendingTopic]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -174,6 +194,9 @@ export default function CreateSession() {
         capacity: "",
         description: "",
       });
+      if (setSelectedTrendingTopic) {
+  setSelectedTrendingTopic(null);
+}
 
       setErrors({});
     } catch (error) {
@@ -216,10 +239,9 @@ export default function CreateSession() {
             className="w-full border border-slate-300 rounded-xl px-4 py-3"
           >
             <option value="">Select category</option>
-            {Object.keys(TOPICS_BY_CATEGORY).map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
+            {Object.keys(topicsByCategory).map((category) => (<option key={category} value={category}>
+              {category}
+            </option>
             ))}
           </select>
           {errors.category && (

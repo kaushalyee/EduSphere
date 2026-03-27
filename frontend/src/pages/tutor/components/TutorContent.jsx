@@ -2,28 +2,37 @@ import React from "react";
 import DashboardOverview from "../modules/DashboardOverview";
 import CreateSession from "../modules/CreateSession";
 import MySessions from "../modules/MySessions";
+import TrendingRequests from "../modules/TrendingRequests";
 
-function EmptyView({ title }) {
-  return (
-    <div className="bg-white rounded-2xl shadow-sm p-8">
-      <h2 className="text-3xl font-bold text-slate-900">{title}</h2>
-      <p className="text-slate-500 mt-2">Content coming soon...</p>
-    </div>
-  );
-}
-
-export default function TutorContent({ activeTab }) {
+export default function TutorContent({
+  activeTab,
+  setActiveTab,
+  selectedTrendingTopic,
+  setSelectedTrendingTopic,
+}) {
   switch (activeTab) {
     case "dashboard":
       return <DashboardOverview />;
+
     case "create-session":
-      return <CreateSession />;
+      return (
+        <CreateSession
+          selectedTrendingTopic={selectedTrendingTopic}
+          setSelectedTrendingTopic={setSelectedTrendingTopic}
+        />
+      );
+
     case "my-sessions":
       return <MySessions />;
+
     case "trending":
-      return <EmptyView title="Trending Topics" />;
-    case "profile":
-      return <EmptyView title="Profile" />;
+      return (
+        <TrendingRequests
+          setActiveTab={setActiveTab}
+          setSelectedTrendingTopic={setSelectedTrendingTopic}
+        />
+      );
+
     default:
       return <DashboardOverview />;
   }

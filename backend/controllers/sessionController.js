@@ -1,6 +1,7 @@
 const Session = require("../models/Session");
 const { TOPICS_BY_CATEGORY } = require("../constants/topics");
 const QuizResult = require("../models/QuizResult");
+const SessionRequest = require("../models/SessionRequest");
 
 const isValidUrl = (value) => {
   return /^https?:\/\/.+/i.test(value);
@@ -119,6 +120,22 @@ const createSession = async (req, res) => {
       capacity: capacity ? Number(capacity) : null,
       description: description ? description.trim() : "",
     });
+
+const updatedRequests = await SessionRequest.updateMany(
+  {
+    category: category.trim(),
+    topic: topic.trim(),
+    status: "pending",
+  },
+  {
+    $set: {
+      status: "fulfilled",
+      matchedSessionId: session._id,
+    },
+  }
+);
+
+console.log("Updated requests result:", updatedRequests);
 
     return res.status(201).json({
       success: true,

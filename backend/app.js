@@ -26,5 +26,7 @@ app.use("/api/sessions", sessionRoutes);
 app.use("/api/quiz-results", quizResultRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
+app.use("/api/constants", require("./routes/constantsRoutes"));
+app.use("/api/session-requests", require("./routes/sessionRequestRoutes"));
 
 module.exports = app;
