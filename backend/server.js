@@ -2,6 +2,9 @@ const app = require("./app");
 require("dotenv").config(); // loads .env from same folder
 const connectDB = require("./config/db");
 
+// Import and initialize cron jobs
+require("./jobs/autoRemoveListings");
+
 const PORT = process.env.PORT || 5000;
 
 (async () => {
