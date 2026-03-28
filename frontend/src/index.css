@@ -17,3 +17,158 @@
     transform: translateY(-4px);
   }
 }
+
+.button {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  background: transparent;
+  cursor: pointer;
+  border: none;
+}
+
+.button:before,
+.button:after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  inset: 7px;
+}
+
+.button:before {
+  border: 4px solid #f0eeef;
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+.button:after {
+  border: 4px solid #96daf0;
+  transform: scale(1.3);
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+.button:hover:before {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.button:hover:after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.button-box {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.button-elem {
+  width: 20px;
+  height: 20px;
+  margin: 17px 18px;
+  transform: rotate(180deg);
+  fill: #f0eeef;
+}
+
+.button:hover .button-box {
+  transform: translateX(-56px);
+  transition: 0.4s;
+}
+
+/* Gaming UI Arrows */
+.game-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.game-arrow.left {
+  left: -70px;
+}
+
+.game-arrow.right {
+  right: -70px;
+}
+
+.arrow {
+  cursor: pointer;
+  height: 60px;
+  width: 50px;
+  position: relative;
+  transition: transform 0.15s ease;
+}
+
+.arrow-top,
+.arrow-bottom {
+  background-color: rgba(255, 255, 255, 0.15);
+  height: 4px;
+  position: absolute;
+  top: 50%;
+  width: 100%;
+}
+
+.arrow-top:after,
+.arrow-bottom:after {
+  background: linear-gradient(90deg, #7c3aed, #00ffff);
+  content: "";
+  height: 100%;
+  position: absolute;
+  top: 0;
+  transition: all 0.2s ease;
+}
+
+.arrow-top {
+  transform: rotate(45deg);
+  transform-origin: bottom right;
+}
+
+.arrow-bottom {
+  transform: rotate(-45deg);
+  transform-origin: top right;
+}
+
+.arrow-top:after {
+  left: 100%;
+  right: 0;
+}
+
+.arrow-bottom:after {
+  left: 0;
+  right: 100%;
+}
+
+.arrow:hover .arrow-top:after {
+  left: 0;
+}
+
+.arrow:hover .arrow-bottom:after {
+  right: 0;
+}
+
+/* Fix Left Direction */
+.game-arrow.left .arrow {
+  transform: scaleX(-1);
+}
+
+/* Game-like Interactions */
+.game-arrow:hover .arrow {
+  transform: scale(1.15);
+}
+
+.game-arrow.left:hover .arrow {
+  transform: scaleX(-1) scale(1.15);
+}
+
+.arrow:active {
+  transform: scale(0.9);
+}
+
+.game-arrow.disabled {
+  opacity: 0.25;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+

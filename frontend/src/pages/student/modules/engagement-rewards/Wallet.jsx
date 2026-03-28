@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import RewardsSidebar from "./components/RewardsSidebar";
 import useWallet from "../../../../hooks/useWallet";
+import { useAuth } from "../../../../context/AuthContext";
 
 const companions = [
   {
@@ -37,6 +38,7 @@ const companions = [
 ];
 
 export default function Wallet() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("wallet");
   const { balance: walletPoints, loading: walletLoading } = useWallet();
 
@@ -135,7 +137,7 @@ export default function Wallet() {
               </button>
               <div className="ml-2 h-8 w-8 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-purple-500/50">
                 <img
-                  src="https://ui-avatars.com/api/?name=Alex&background=random"
+                  src={`https://ui-avatars.com/api/?name=${user?.name || "Student"}&background=random`}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
