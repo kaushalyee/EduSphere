@@ -60,7 +60,7 @@ export default function ListingCard({ listing, onViewDetails, onContact }) {
           <h3 className="text-lg font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-1">
             {title}
           </h3>
-          <span className="text-xl font-black text-emerald-600">
+          <span className="text-xl font-bold text-emerald-600">
             Rs {price}
           </span>
         </div>

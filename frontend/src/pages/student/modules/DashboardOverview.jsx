@@ -10,8 +10,10 @@ import {
   Clock,
   CheckCircle
 } from "lucide-react";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function DashboardOverview({ setActiveTab }) {
+  const { user } = useAuth();
 
   const stats = [
     {
@@ -79,7 +81,7 @@ export default function DashboardOverview({ setActiveTab }) {
     <div className="space-y-6">
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white">
-        <h1 className="text-3xl font-bold mb-2">Welcome back, Student!</h1>
+        <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name || 'Student'}!</h1>
         <p className="text-blue-100 text-lg">Continue your learning journey and track your progress</p>
       </div>
 

@@ -90,7 +90,7 @@ export default function StudentMarketplace() {
                <ShoppingBag className="w-6 h-6 text-white" />
              </div>
              <div>
-               <h1 className="text-2xl font-black text-gray-900 tracking-tight">Student Marketplace</h1>
+               <h1 className="text-2xl font-bold text-gray-900">Student Marketplace</h1>
              </div>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function StudentMarketplace() {
           {/* Post Item Button */}
           <button
             onClick={() => setIsPostModalOpen(true)}
-            className="px-8 py-5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-[2rem] font-black shadow-lg shadow-purple-100 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
+            className="px-8 py-5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-[2rem] font-bold shadow-lg shadow-purple-100 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 whitespace-nowrap"
           >
             <Plus className="w-6 h-6" />
             Post Item
@@ -143,7 +143,7 @@ export default function StudentMarketplace() {
             <p className="font-bold">{error}</p>
             <button 
               onClick={fetchListings}
-              className="ml-auto underline font-black text-sm"
+              className="ml-auto underline font-bold text-sm"
             >
               Retry
             </button>
@@ -174,7 +174,7 @@ export default function StudentMarketplace() {
               <div className="w-24 h-24 bg-gray-100 rounded-[2rem] flex items-center justify-center mb-6">
                 <ShoppingBag className="w-10 h-10 text-gray-300" />
               </div>
-              <h3 className="text-2xl font-black text-gray-900">No items found</h3>
+              <h3 className="text-2xl font-bold text-gray-900">No items found</h3>
               <p className="text-gray-500 mt-2 font-medium">Try searching for something else or change the category.</p>
             </div>
           )}
