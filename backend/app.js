@@ -8,6 +8,9 @@ const quizResultRoutes = require("./routes/quizResultRoutes");
 const userRoutes = require("./routes/userRoutes");
 const marketplaceRoutes = require("./routes/marketplaceRoutes");
 const engagementRewardRoutes = require("./routes/engagementRewardRoutes");
+const progressRoutes = require("./routes/progressRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
+const comparisonRoutes = require("./routes/comparisonRoutes");
 
 const app = express();
 
@@ -30,5 +33,8 @@ app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/constants", require("./routes/constantsRoutes"));
 app.use("/api/session-requests", require("./routes/sessionRequestRoutes"));
 app.use("/api/engagement-reward", engagementRewardRoutes);
+app.use("/api/progress", progressRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api/comparison", comparisonRoutes);
 
 module.exports = app;

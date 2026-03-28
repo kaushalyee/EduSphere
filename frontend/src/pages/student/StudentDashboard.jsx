@@ -76,7 +76,7 @@ export default function StudentDashboard() {
         />
 
         <main className="flex-1 p-6 overflow-auto">
-          <StudentContent activeTab={activeTab} options={options} />
+          <StudentContent activeTab={activeTab} options={options} setActiveTab={setActiveTab} />
         </main>
       </div>
 
