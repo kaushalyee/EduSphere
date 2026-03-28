@@ -139,8 +139,8 @@ const AssignmentSubmission = () => {
       return false;
     }
     
-    if (assignmentDetails.length < 10) {
-      setError('Please provide more details about the assignment (minimum 10 characters)');
+    if (assignmentDetails.length < 20) {
+      setError('Please provide more details about the assignment (minimum 20 characters)');
       return false;
     }
     
@@ -267,18 +267,9 @@ const AssignmentSubmission = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-800">Assignment Submission</h2>
-          <p className="text-gray-600">Pre-Submission Grade Predictor - Compare requirements with your draft</p>
-        </div>
-        <button
-          className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors shadow-sm"
-        >
-          <Target className="w-4 h-4" />
-          Explore Assignment Submission
-          <ArrowRight className="w-4 h-4" />
-        </button>
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800">Assignment Submission</h2>
+        <p className="text-gray-600">Pre-Submission Grade Predictor - Compare requirements with your draft</p>
       </div>
 
       {/* Direct Upload Interface */}
@@ -330,7 +321,7 @@ const AssignmentSubmission = () => {
                 placeholder="Describe assignment requirements, objectives, and what needs to be done..."
               />
               <p className="text-gray-500 text-xs mt-1">
-                {preSubmissionData.assignmentDetails.length}/10 characters minimum
+                {preSubmissionData.assignmentDetails.length}/20 characters minimum
               </p>
             </div>
 
@@ -379,8 +370,7 @@ const AssignmentSubmission = () => {
             {/* Submit Button */}
             <button
               onClick={handlePreSubmissionSubmit}
-              disabled={!preSubmissionData.subjectName.trim() || !preSubmissionData.assignmentTitle.trim() || preSubmissionData.assignmentDetails.length < 10}
-              className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
             >
               Continue to File Upload
             </button>
@@ -519,15 +509,7 @@ const AssignmentSubmission = () => {
               )}
             </button>
 
-            {error && (
-              <div className="mt-4 p-3 bg-red-50 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                  <p className="text-red-700 text-sm">{error}</p>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
 
           {/* Prediction Results */}
           {prediction && (
