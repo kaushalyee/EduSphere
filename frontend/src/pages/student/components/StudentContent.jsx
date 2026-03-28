@@ -1,11 +1,10 @@
-import React from "react";
 import { Users } from "lucide-react";
+import { Navigate } from "react-router-dom";
 
 import DashboardOverview from "../modules/DashboardOverview";
 import PeerLearning from "../modules/PeerLearning";
-import Market from "../modules/Market";
+import StudentMarketplace from "../marketplace/StudentMarketplace";
 import Progress from "../modules/Progress";
-import Rewards from "../modules/Rewards";
 
 function EmptyView({ title, icon }) {
   return (
@@ -26,11 +25,11 @@ export default function StudentContent({ activeTab, options, setActiveTab }) {
     case "PeerLearning":
       return <PeerLearning />;
     case "Market":
-      return <Market />;
+      return <StudentMarketplace />;
     case "Progress":
       return <Progress />;
     case "Rewards":
-      return <Rewards />;
+      return <Navigate to="/student/rewards" replace />;
     default:
       return (
         <EmptyView

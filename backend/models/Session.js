@@ -12,14 +12,20 @@ const sessionSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: [
-        "Programming",
-        "Mathematics",
-        "Networking",
-        "DSA",
-        "DBMS",
-        "OOP",
-        "Web Development",
-        "Cyber Basics",
+  "Programming Languages",
+    "Data Structures & Algorithms",
+    "Mathematics",
+    "Operating Systems",
+    "Database Management",
+    "Computer Networks",
+    "Software Engineering",
+    "Object-Oriented Programming",
+    "Web Development",
+    "System Design",
+    "Cybersecurity",
+    "DevOps & Cloud",
+    "AI & Machine Learning",
+    "Theory of Computation",
       ],
       trim: true,
     },
@@ -28,6 +34,15 @@ const sessionSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+    },
+    targetYear: {
+      type: Number,
+      default: null,
+    },
+
+    targetSemester: {
+      type: Number,
+      default: null,
     },
 
     date: {
@@ -44,7 +59,7 @@ const sessionSchema = new mongoose.Schema(
     duration: {
       type: Number,
       default: 60,
-      min: 1,
+      min: 30,
     },
 
     mode: {
@@ -87,6 +102,16 @@ const sessionSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+    status: {
+      type: String,
+      enum: ["upcoming", "completed", "cancelled"],
+      default: "upcoming",
+    },
+
+    completedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }

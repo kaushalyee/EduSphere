@@ -7,6 +7,12 @@ import RedirectIfAuth from "./components/RedirectIfAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import StudentDashboard from "./pages/student/StudentDashboard";
+import Rewards from "./pages/student/modules/engagement-rewards/Rewards";
+import Game from "./pages/student/modules/engagement-rewards/Game";
+import Leaderboard from "./pages/student/modules/engagement-rewards/Leaderboard";
+import Statistics from "./pages/student/modules/engagement-rewards/Statistics";
+import Wallet from "./pages/student/modules/engagement-rewards/Wallet";
+import Companion from "./pages/student/modules/engagement-rewards/Companion";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
@@ -52,6 +58,60 @@ export default function App() {
       />
 
       <Route
+        path="/student/rewards"
+        element={
+          <ProtectedRoute role="student">
+            <Rewards />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/rewards/wallet"
+        element={
+          <ProtectedRoute role="student">
+            <Wallet />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/rewards/leaderboard"
+        element={
+          <ProtectedRoute role="student">
+            <Leaderboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/rewards/game"
+        element={
+          <ProtectedRoute role="student">
+            <Game />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/rewards/statistics"
+        element={
+          <ProtectedRoute role="student">
+            <Statistics />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/companion"
+        element={
+          <ProtectedRoute role="student">
+            <Companion />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/admin/dashboard"
         element={
           <ProtectedRoute role="admin">
@@ -59,6 +119,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/tutor/dashboard"
+        element={
+          <ProtectedRoute role="tutor">
+            <TutorDashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
+
   );
 }

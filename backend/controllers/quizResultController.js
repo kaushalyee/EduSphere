@@ -5,6 +5,7 @@ const mongoose = require("mongoose");
 const User = require("../models/User");
 const Session = require("../models/Session");
 const QuizResult = require("../models/QuizResult");
+const { convertQuizResultToRP } = require("../services/quizRPConversionService");
 
 const deleteFileIfExists = (filePath) => {
   if (filePath && fs.existsSync(filePath)) {
@@ -14,7 +15,7 @@ const deleteFileIfExists = (filePath) => {
 
 // POST /api/quiz-results/import/:sessionId
 const importQuizResults = async (req, res) => {
-  const { sessionId } = req.params;
+  const { sessionId: sessionIdParam } = req.params;
 
   try {
     if (!req.file) {
@@ -24,7 +25,7 @@ const importQuizResults = async (req, res) => {
       });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(sessionId)) {
+    if (!mongoose.Types.ObjectId.isValid(sessionIdParam)) {
       deleteFileIfExists(req.file.path);
       return res.status(400).json({
         success: false,
@@ -32,7 +33,7 @@ const importQuizResults = async (req, res) => {
       });
     }
 
-    const session = await Session.findById(sessionId);
+    const session = await Session.findById(sessionIdParam);
 
     if (!session) {
       deleteFileIfExists(req.file.path);
@@ -41,6 +42,15 @@ const importQuizResults = async (req, res) => {
         message: "Session not found",
       });
     }
+
+    if (session.status !== "completed") {
+      deleteFileIfExists(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: "Quiz results can only be uploaded for completed sessions",
+      });
+    }
+    const sessionId = new mongoose.Types.ObjectId(sessionIdParam);
 
     // only session owner tutor can upload results
     if (session.tutorId.toString() !== req.user._id.toString()) {
@@ -55,6 +65,21 @@ const importQuizResults = async (req, res) => {
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows = xlsx.utils.sheet_to_json(sheet);
 
+    const firstRow = rows[0] || {};
+    const headers = Object.keys(firstRow).map((key) => key.trim());
+
+    const requiredHeaders = ["Email", "Marks", "Total"];
+    const missingHeaders = requiredHeaders.filter(
+      (header) => !headers.includes(header)
+    );
+
+    if (missingHeaders.length > 0) {
+      deleteFileIfExists(req.file.path);
+      return res.status(400).json({
+        success: false,
+        message: `Missing required Excel columns: ${missingHeaders.join(", ")}`,
+      });
+    }
     if (!rows || rows.length === 0) {
       deleteFileIfExists(req.file.path);
       return res.status(400).json({
@@ -67,16 +92,19 @@ const importQuizResults = async (req, res) => {
     const skippedDetails = [];
 
     for (const row of rows) {
-      const email = row["Email"] ?? row["email"];
-      const marksValue =
-        row["Marks"] ?? row["marks"] ?? row["Score"] ?? row["Points"];
-      const totalValue =
-        row["Total"] ?? row["total"] ?? row["Total Marks"] ?? row["Total Points"];
+      const normalizedRow = {};
+      for (const key in row) {
+        normalizedRow[key.trim()] = row[key];
+      }
+
+      const email = normalizedRow["Email"];
+      const marksValue = normalizedRow["Marks"];
+      const totalValue = normalizedRow["Total"];
 
       if (!email || marksValue === undefined || totalValue === undefined) {
         skippedDetails.push({
           row,
-          reason: "Missing Email, Marks, or Total",
+          reason: "Missing required columns: Email, Marks, or Total",
         });
         continue;
       }
@@ -123,6 +151,9 @@ const importQuizResults = async (req, res) => {
       });
 
       if (!student) {
+        console.warn(
+          `[importQuizResults] Student not found, skipping row — email: ${normalizedEmail}`
+        );
         skippedDetails.push({
           email: normalizedEmail,
           reason: "Student not found",
@@ -130,18 +161,20 @@ const importQuizResults = async (req, res) => {
         continue;
       }
 
+      const studentId = new mongoose.Types.ObjectId(student._id);
+
       const percentage = Number(
         ((marksObtained / totalMarks) * 100).toFixed(2)
       );
 
       const saved = await QuizResult.findOneAndUpdate(
         {
-          sessionId: session._id,
-          studentId: student._id,
+          sessionId,
+          studentId,
         },
         {
-          sessionId: session._id,
-          studentId: student._id,
+          sessionId,
+          studentId,
           studentEmail: student.email,
           marksObtained,
           totalMarks,
@@ -155,8 +188,19 @@ const importQuizResults = async (req, res) => {
         }
       );
 
+      // Auto convert on save; non-blocking for quiz-result persistence.
+      try {
+        await convertQuizResultToRP(saved._id);
+      } catch (conversionError) {
+        console.error(
+          `[auto-rp-conversion] Failed for quizResult ${saved._id}:`,
+          conversionError.message
+        );
+      }
+
       savedResults.push(saved);
     }
+
 
     deleteFileIfExists(req.file.path);
 

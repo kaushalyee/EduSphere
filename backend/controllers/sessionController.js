@@ -1,5 +1,11 @@
 const Session = require("../models/Session");
 const { TOPICS_BY_CATEGORY } = require("../constants/topics");
+const QuizResult = require("../models/QuizResult");
+const SessionRequest = require("../models/SessionRequest");
+
+const isValidUrl = (value) => {
+  return /^https?:\/\/.+/i.test(value);
+};
 
 const createSession = async (req, res) => {
   try {
@@ -47,17 +53,56 @@ const createSession = async (req, res) => {
       });
     }
 
-    if (mode === "online" && !meetingLink) {
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: "Past dates cannot be selected",
+      });
+    }
+
+    if (duration && Number(duration) < 30) {
+      return res.status(400).json({
+        success: false,
+        message: "Session duration must be at least 30 minutes",
+      });
+    }
+
+    if (mode === "online" && !meetingLink?.trim()) {
       return res.status(400).json({
         success: false,
         message: "Meeting link is required for online sessions",
       });
     }
 
-    if (mode === "offline" && !location) {
+    if (mode === "offline" && !location?.trim()) {
       return res.status(400).json({
         success: false,
         message: "Location is required for offline sessions",
+      });
+    }
+
+    if (meetingLink && !isValidUrl(meetingLink)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid meeting link",
+      });
+    }
+
+    if (quizLink && !isValidUrl(quizLink)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid quiz link",
+      });
+    }
+
+    if (capacity && Number(capacity) < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Capacity must be at least 1",
       });
     }
 
@@ -67,14 +112,30 @@ const createSession = async (req, res) => {
       topic,
       date,
       time,
-      duration: duration || 60,
+      duration: duration ? Number(duration) : 60,
       mode,
-      location: mode === "offline" ? location : "",
-      meetingLink: mode === "online" ? meetingLink : "",
-      quizLink: quizLink || "",
-      capacity: capacity || null,
-      description: description || "",
+      location: mode === "offline" ? location.trim() : "",
+      meetingLink: mode === "online" ? meetingLink.trim() : "",
+      quizLink: quizLink ? quizLink.trim() : "",
+      capacity: capacity ? Number(capacity) : null,
+      description: description ? description.trim() : "",
     });
+
+const updatedRequests = await SessionRequest.updateMany(
+  {
+    category: category.trim(),
+    topic: topic.trim(),
+    status: "pending",
+  },
+  {
+    $set: {
+      status: "fulfilled",
+      matchedSessionId: session._id,
+    },
+  }
+);
+
+console.log("Updated requests result:", updatedRequests);
 
     return res.status(201).json({
       success: true,
@@ -92,7 +153,10 @@ const createSession = async (req, res) => {
 
 const getMySessions = async (req, res) => {
   try {
-    const sessions = await Session.find({ tutorId: req.user._id })
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      status: "upcoming",
+    })
       .populate("tutorId", "name email")
       .sort({ createdAt: -1 });
 
@@ -112,7 +176,7 @@ const getMySessions = async (req, res) => {
 
 const getAllSessions = async (req, res) => {
   try {
-    const sessions = await Session.find()
+    const sessions = await Session.find({ status: "upcoming" })
       .populate("tutorId", "name email")
       .sort({ date: 1, time: 1 });
 
@@ -156,10 +220,144 @@ const getSessionById = async (req, res) => {
     });
   }
 };
+// MARK AS COMPLETE
+const markSessionComplete = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // check ownership
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    // prevent re-completing
+    if (session.status === "completed") {
+      return res.status(400).json({ message: "Session already completed" });
+    }
+
+    // cannot complete cancelled session
+    if (session.status === "cancelled") {
+      return res.status(400).json({ message: "Cancelled session cannot be completed" });
+    }
+
+    session.status = "completed";
+    session.completedAt = new Date();
+
+    await session.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Session marked as complete",
+      session,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+// CANCEL SESSION
+const cancelSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    // check ownership
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+    //check already a cancelled session
+    if (session.status === "cancelled") {
+      return res.status(400).json({ message: "Session already cancelled" });
+    }
+    //  cannot cancel completed session
+    if (session.status === "completed") {
+      return res.status(400).json({ message: "Completed session cannot be cancelled" });
+    }
+
+    session.status = "cancelled";
+
+    await session.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Session cancelled",
+      session,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+const getCompletedSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      status: "completed",
+    }).sort({ updatedAt: -1 });
+
+    const sessionIds = sessions.map((session) => session._id);
+
+    const uploadedSessionIds = await QuizResult.find({
+      sessionId: { $in: sessionIds },
+    }).distinct("sessionId");
+
+    const uploadedSet = new Set(
+      uploadedSessionIds.map((id) => id.toString())
+    );
+
+    const sessionsWithUploadStatus = sessions.map((session) => ({
+      ...session.toObject(),
+      resultsUploaded: uploadedSet.has(session._id.toString()),
+    }));
+
+    res.status(200).json({
+      success: true,
+      sessions: sessionsWithUploadStatus,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Server error while fetching completed sessions",
+    });
+  }
+};
+const getCancelledSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      status: "cancelled",
+    }).sort({ updatedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      sessions,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Server error while fetching cancelled sessions",
+    });
+  }
+};
 
 module.exports = {
   createSession,
   getMySessions,
   getAllSessions,
   getSessionById,
+  markSessionComplete,
+  cancelSession,
+  getCompletedSessions,
+  getCancelledSessions,
 };
