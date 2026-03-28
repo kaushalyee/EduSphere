@@ -1,12 +1,11 @@
 import React from "react";
-import { Menu, LogOut } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export default function StudentHeader({
   isSidebarOpen,
   setIsSidebarOpen,
   activeTab,
   options,
-  handleLogout,
 }) {
   const current = options.find((o) => o.id === activeTab);
 
@@ -30,13 +29,6 @@ export default function StudentHeader({
         )}
       </div>
 
-      <button
-        onClick={handleLogout}
-        className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
-      >
-        <LogOut className="w-4 h-4" />
-        Logout
-      </button>
     </header>
   );
 }

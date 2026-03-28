@@ -61,9 +61,9 @@ export default function ListingDetailModal({ isOpen, onClose, listingId }) {
         ) : error ? (
           <div className="w-full h-[60vh] flex flex-col items-center justify-center p-10 text-center">
             <ShieldAlert className="w-16 h-16 text-rose-500 mb-6" />
-            <h3 className="text-2xl font-black text-gray-900 mb-2">Oops! Something went wrong</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Oops! Something went wrong</h3>
             <p className="text-gray-500 font-medium mb-8">{error}</p>
-            <button onClick={onClose} className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black">Close</button>
+            <button onClick={onClose} className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-bold">Close</button>
           </div>
         ) : (
           <>
@@ -124,24 +124,24 @@ export default function ListingDetailModal({ isOpen, onClose, listingId }) {
 
               <div className="mb-8 mt-4 md:mt-0">
                 <div className="flex gap-2 mb-4">
-                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-black uppercase tracking-wider">
+                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold uppercase tracking-wider">
                     {listing.category}
                   </span>
-                  <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-black uppercase tracking-wider">
+                   <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold uppercase tracking-wider">
                     {listing.condition}
                   </span>
                 </div>
-                <h2 className="text-3xl font-black text-gray-900 leading-tight mb-2">
+                <h2 className="text-3xl font-bold text-gray-900 leading-tight mb-2">
                   {listing.title}
                 </h2>
-                <p className="text-4xl font-black text-emerald-600">
+                <p className="text-4xl font-bold text-emerald-600">
                   Rs {listing.price}
                 </p>
               </div>
 
               <div className="space-y-6 flex-1">
                 <div>
-                   <h4 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-3">
+                   <h4 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">
                     Description
                   </h4>
                   <p className="text-gray-600 leading-relaxed font-medium">
@@ -167,11 +167,11 @@ export default function ListingDetailModal({ isOpen, onClose, listingId }) {
                 {/* Seller Card */}
                 <div className="p-6 rounded-[2rem] bg-gradient-to-br from-gray-50 to-white border border-gray-200 shadow-sm mt-4">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="w-14 h-14 bg-gradient-to-tr from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg">
+                    <div className="w-14 h-14 bg-gradient-to-tr from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-lg">
                       {listing.sellerId?.name?.charAt(0) || "U"}
                     </div>
                     <div>
-                      <h4 className="font-black text-gray-900 leading-none mb-1">{listing.sellerId?.name}</h4>
+                      <h4 className="font-bold text-gray-900 leading-none mb-1">{listing.sellerId?.name}</h4>
                       <p className="text-xs font-bold text-blue-500 uppercase tracking-tight">Verified Student</p>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ export default function ListingDetailModal({ isOpen, onClose, listingId }) {
                   {!showContact ? (
                      <button 
                       onClick={() => setShowContact(true)}
-                      className="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-black flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-gray-200"
+                      className="w-full py-4 bg-gray-900 hover:bg-black text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-gray-200"
                     >
                       <Phone className="w-5 h-5" />
                       Contact Seller
@@ -193,7 +193,7 @@ export default function ListingDetailModal({ isOpen, onClose, listingId }) {
                           </div>
                           <div>
                             <p className="text-[10px] font-bold text-gray-400 uppercase">Phone</p>
-                            <p className="font-black text-gray-800">{listing.phoneNumber}</p>
+                            <p className="font-bold text-gray-800">{listing.phoneNumber}</p>
                           </div>
                         </div>
                       </div>
@@ -204,7 +204,7 @@ export default function ListingDetailModal({ isOpen, onClose, listingId }) {
                           </div>
                           <div>
                             <p className="text-[10px] font-bold text-gray-400 uppercase">WhatsApp</p>
-                            <p className="font-black text-gray-800">{listing.whatsappNumber}</p>
+                            <p className="font-bold text-gray-800">{listing.whatsappNumber}</p>
                           </div>
                         </div>
                       </div>
