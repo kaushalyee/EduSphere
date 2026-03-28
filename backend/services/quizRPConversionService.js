@@ -1,6 +1,7 @@
 const QuizResult = require("../models/QuizResult");
 const Wallet = require("../models/Wallet");
 const RewardTransaction = require("../models/RewardTransaction");
+const { getOrCreateWallet } = require("./walletService");
 
 const calculateRPFromPercentage = (percentage) => {
   if (percentage >= 90) return 100;
@@ -15,13 +16,7 @@ const convertQuizResultToRP = async (quizResultId) => {
     throw new Error(`QuizResult not found: ${quizResultId}`);
   }
 
-  const existingWallet = await Wallet.findOne({ userId: quizResult.studentId });
-  const wallet =
-    existingWallet ||
-    (await Wallet.create({
-      userId: quizResult.studentId,
-      balance: 0,
-    }));
+  const wallet = await getOrCreateWallet(quizResult.studentId);
 
   // Duplicate protection: never create more than one transaction for same quiz result.
   const existingTransaction = await RewardTransaction.findOne({
@@ -44,7 +39,7 @@ const convertQuizResultToRP = async (quizResultId) => {
   const updatedWallet = await Wallet.findByIdAndUpdate(
     wallet._id,
     { $inc: { balance: rp } },
-    { new: true }
+    { returnDocument: "after" }
   );
 
   const transaction = await RewardTransaction.create({

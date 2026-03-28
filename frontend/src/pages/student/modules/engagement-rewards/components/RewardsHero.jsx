@@ -1,6 +1,9 @@
 import { Flame } from "lucide-react";
 
-export default function RewardsHero({ studentName = "Alex", gameAttempts }) {
+export default function RewardsHero({ studentName, gameAttempts }) {
+  const formatName = (name) =>
+    name ? name.charAt(0).toUpperCase() + name.slice(1) : "Student";
+
   return (
     <div className="group relative flex min-h-[300px] flex-col justify-center overflow-hidden rounded-[2rem] bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 p-8 shadow-2xl">
       <div className="pointer-events-none absolute top-0 right-0 h-full w-3/4 opacity-40 mix-blend-color-dodge transition-transform duration-1000 group-hover:scale-105">
@@ -18,7 +21,7 @@ export default function RewardsHero({ studentName = "Alex", gameAttempts }) {
         </div>
 
         <h1 className="mb-5 text-4xl font-extrabold leading-[1.1] tracking-tight text-white drop-shadow-lg md:text-5xl lg:text-5xl">
-          Welcome back, {studentName}!
+          Welcome back, {formatName(studentName)}!
         </h1>
 
         <p className="max-w-sm text-sm font-medium leading-relaxed text-indigo-100/90">

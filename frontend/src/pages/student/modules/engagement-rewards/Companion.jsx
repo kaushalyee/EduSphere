@@ -1,11 +1,13 @@
 import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "../../../../context/AuthContext";
 import RewardsSidebar from "./components/RewardsSidebar";
 import AvatarViewer from "./components/AvatarViewer";
 import CompanionSelector from "./components/CompanionSelector";
 import useWallet from "../../../../hooks/useWallet";
 
 export default function Companion() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("companion");
   const { balance } = useWallet();
 
@@ -32,7 +34,7 @@ export default function Companion() {
               </button>
               <div className="h-8 w-8 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-purple-500/50">
                 <img
-                  src="https://ui-avatars.com/api/?name=Alex&background=random"
+                  src={`https://ui-avatars.com/api/?name=${user?.name || "Student"}&background=random`}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
@@ -46,23 +48,18 @@ export default function Companion() {
 
         <main className="relative z-10 min-h-0 flex-grow overflow-y-auto p-6 md:p-10">
           <CompanionSelector>
-            {({ currentCompanion, next, prev }) => (
-              <div className="mx-auto flex h-full w-full max-w-[1280px] items-center justify-center">
-                <div className="grid w-full grid-cols-[64px_minmax(0,1fr)_64px] items-center gap-4 md:gap-8">
-                  <button
-                    type="button"
-                    onClick={prev}
-                    className="group flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
-                    aria-label="Previous companion"
-                  >
-                    <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" />
-                  </button>
+            {({ currentCompanion, next, prev, index, companions }) => {
+              if (!currentCompanion) return null;
 
+              return (
+                <div className="mx-auto flex h-full w-full max-w-[1280px] items-center justify-center">
                   <div className="flex flex-col items-center">
                     <AvatarViewer
                       modelPath={currentCompanion.model}
-                      cameraOffset={currentCompanion.cameraOffset}
-                      heightOffset={currentCompanion.heightOffset}
+                      onNext={next}
+                      onPrev={prev}
+                      index={index}
+                      total={companions.length}
                     />
                     <h1 className="mt-8 text-5xl font-extrabold uppercase tracking-[0.08em] text-white">
                       {currentCompanion.name}
@@ -79,18 +76,9 @@ export default function Companion() {
                       View Companion
                     </button>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={next}
-                    className="group flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
-                    aria-label="Next companion"
-                  >
-                    <ChevronRight className="h-7 w-7 transition-transform group-hover:translate-x-0.5" />
-                  </button>
                 </div>
-              </div>
-            )}
+              );
+            }}
           </CompanionSelector>
         </main>
       </div>

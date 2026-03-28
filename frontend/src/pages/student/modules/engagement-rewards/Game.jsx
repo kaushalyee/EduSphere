@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Bell, Settings } from "lucide-react";
+import { useAuth } from "../../../../context/AuthContext";
 import RewardsSidebar from "./components/RewardsSidebar";
 import GameHero from "./components/GameHero";
 import GameCard from "./components/GameCard";
@@ -7,6 +8,7 @@ import GameStats from "./components/GameStats";
 import UnlockButton from "./components/UnlockButton";
 
 export default function Game() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("game");
 
   return (
@@ -35,7 +37,7 @@ export default function Game() {
               </button>
               <div className="ml-2 h-8 w-8 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-purple-500/50">
                 <img
-                  src="https://ui-avatars.com/api/?name=Alex&background=random"
+                  src={`https://ui-avatars.com/api/?name=${user?.name || "Student"}&background=random`}
                   alt="Profile"
                   className="h-full w-full object-cover"
                 />
