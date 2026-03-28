@@ -14,6 +14,7 @@ import StudentSidebar from "./components/StudentSidebar";
 import StudentHeader from "./components/StudentHeader";
 import StudentContent from "./components/StudentContent";
 import ChatbotButton from "./components/ChatbotButton";
+import ChatbotOverlay from "./components/ChatbotOverlay";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function StudentDashboard() {
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {
@@ -80,7 +82,8 @@ export default function StudentDashboard() {
         </main>
       </div>
 
-      <ChatbotButton />
+      <ChatbotButton isOpen={isChatOpen} toggleChat={() => setIsChatOpen(!isChatOpen)} />
+      {isChatOpen && <ChatbotOverlay onClose={() => setIsChatOpen(false)} />}
     </div>
   );
 }
