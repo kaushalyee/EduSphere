@@ -7,6 +7,7 @@ const sessionRoutes = require("./routes/sessionRoutes");
 const quizResultRoutes = require("./routes/quizResultRoutes");
 const userRoutes = require("./routes/userRoutes");
 const marketplaceRoutes = require("./routes/marketplaceRoutes");
+const engagementRewardRoutes = require("./routes/engagementRewardRoutes");
 
 const app = express();
 
@@ -28,5 +29,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/marketplace", marketplaceRoutes);
 app.use("/api/constants", require("./routes/constantsRoutes"));
 app.use("/api/session-requests", require("./routes/sessionRequestRoutes"));
+app.use("/api/engagement-reward", engagementRewardRoutes);
 
 module.exports = app;
