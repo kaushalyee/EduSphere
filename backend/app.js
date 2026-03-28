@@ -5,7 +5,10 @@ const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const quizResultRoutes = require("./routes/quizResultRoutes");
-const userRoutes = require("./routes/userRoutes"); // ✅ ADD THIS
+const userRoutes = require("./routes/userRoutes"); // 
+const progressRoutes = require("./routes/progressRoutes");
+const assignmentRoutes = require("./routes/assignmentRoutes");
+const comparisonRoutes = require("./routes/comparisonRoutes");
 
 const app = express();
 
@@ -22,6 +25,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/quiz-results", quizResultRoutes);
-app.use("/api/users", userRoutes); // ✅ ADD THIS
+app.use("/api/users", userRoutes); // 
+app.use("/api/progress", progressRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api/comparison", comparisonRoutes);
 
 module.exports = app;

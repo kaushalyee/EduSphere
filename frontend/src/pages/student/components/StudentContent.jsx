@@ -17,16 +17,16 @@ function EmptyView({ title, icon }) {
   );
 }
 
-export default function StudentContent({ activeTab, options }) {
+export default function StudentContent({ activeTab, options, setActiveTab }) {
   const current = options.find((o) => o.id === activeTab);
 
   switch (activeTab) {
     case "Dashboard":
-      return <DashboardOverview />;
+      return <DashboardOverview setActiveTab={setActiveTab} />;
     case "PeerLearning":
       return <PeerLearning />;
-case "Market":
-  return <Market />;
+    case "Market":
+      return <Market />;
     case "Progress":
       return <Progress />;
     case "Rewards":

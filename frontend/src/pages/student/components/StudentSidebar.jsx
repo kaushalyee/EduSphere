@@ -9,7 +9,7 @@ export default function StudentSidebar({
 }) {
   return (
     <aside
-      className={`bg-slate-900 text-slate-300 h-screen transition-all duration-300 flex flex-col ${
+      className={`bg-slate-900 text-slate-300 min-h-screen transition-all duration-300 flex flex-col ${
         isSidebarOpen ? "w-64" : "w-20"
       }`}
     >
