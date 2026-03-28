@@ -1,10 +1,17 @@
 const Wallet = require("../models/Wallet");
 const { convertQuizResultToRP } = require("../services/quizRPConversionService");
+const { toUserObjectId } = require("../services/walletService");
 
 const getMyWalletBalance = async (req, res) => {
   try {
     const userId = req.user?._id;
-    const wallet = await Wallet.findOne({ userId });
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+    const wallet = await Wallet.findOne({ userId: toUserObjectId(userId) });
 
     return res.status(200).json({
       success: true,
