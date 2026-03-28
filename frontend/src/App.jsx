@@ -119,6 +119,15 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/tutor/dashboard"
+        element={
+          <ProtectedRoute role="tutor">
+            <TutorDashboard />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
+
   );
 }
