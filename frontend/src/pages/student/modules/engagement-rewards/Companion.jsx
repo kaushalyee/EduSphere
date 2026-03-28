@@ -3,9 +3,11 @@ import { useState } from "react";
 import RewardsSidebar from "./components/RewardsSidebar";
 import AvatarViewer from "./components/AvatarViewer";
 import CompanionSelector from "./components/CompanionSelector";
+import useWallet from "../../../../hooks/useWallet";
 
 export default function Companion() {
   const [activeTab, setActiveTab] = useState("companion");
+  const { balance } = useWallet();
 
   return (
     <div className="fixed inset-0 z-[100] flex overflow-hidden bg-[#0a0e19] font-sans text-white selection:bg-purple-500/30">
@@ -37,7 +39,7 @@ export default function Companion() {
               </div>
             </div>
             <div className="rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_18px_rgba(168,85,247,0.25)] backdrop-blur-md">
-              Reward Points: 2,450
+              Reward Points: {balance.toLocaleString()}
             </div>
           </div>
         </header>

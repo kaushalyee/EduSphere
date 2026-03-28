@@ -1,15 +1,18 @@
-export default function ActivityFeed() {
+export default function ActivityFeed({ balance = 0 }) {
+  const rewardA = Math.max(1, Math.round(balance * 0.01));
+  const rewardB = Math.max(1, Math.round(balance * 0.03));
+
   const activities = [
     {
       title: "Solved Puzzle #442",
       time: "2 hours ago",
-      points: "+10 pts",
+      points: `+${rewardA} pts`,
       active: true,
     },
     {
       title: "Assignment Uploaded",
       time: "5 hours ago",
-      points: "+45 pts",
+      points: `+${rewardB} pts`,
       active: false,
     },
   ];

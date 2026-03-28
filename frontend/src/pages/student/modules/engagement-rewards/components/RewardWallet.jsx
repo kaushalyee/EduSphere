@@ -1,6 +1,8 @@
 import { Wallet } from "lucide-react";
 
 export default function RewardWallet({ points, attempts }) {
+  const weeklyEarn = Math.max(0, Math.round(points * 0.15));
+
   return (
     <div className="group relative flex h-full flex-col justify-between overflow-hidden rounded-[2rem] border border-white/5 bg-[#121629] p-7 shadow-xl">
       <div className="pointer-events-none absolute top-0 right-0 h-32 w-32 rounded-full bg-purple-500/10 blur-[40px] transition-all duration-500 group-hover:bg-purple-500/20"></div>
@@ -46,7 +48,7 @@ export default function RewardWallet({ points, attempts }) {
               WEEKLY EARN
             </div>
             <div className="text-xl font-extrabold tracking-tight text-white">
-              +450
+              +{weeklyEarn.toLocaleString()}
             </div>
           </div>
           <div className="rounded-2xl border border-white/5 bg-white/5 p-4 transition-colors hover:bg-white/10">

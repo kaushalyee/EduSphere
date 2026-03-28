@@ -1,24 +1,30 @@
 import { CheckCircle2, Circle, Flame, MoreHorizontal } from "lucide-react";
+import useWallet from "../../../../../hooks/useWallet";
 
 export default function DailyTargets() {
+  const { balance } = useWallet();
+  const targetA = Math.max(1, Math.round(balance * 0.04));
+  const targetB = Math.max(1, Math.round(balance * 0.08));
+  const targetC = Math.max(1, Math.round(balance * 0.12));
+
   const targets = [
     {
       title: "Attend Morning Session",
-      points: "+50 R-PTS",
+      points: `+${targetA} R-PTS`,
       completed: true,
       icon: CheckCircle2,
       active: false,
     },
     {
       title: "Complete Physics Quiz",
-      points: "+120 R-PTS",
+      points: `+${targetB} R-PTS`,
       completed: false,
       icon: MoreHorizontal,
       active: true,
     },
     {
       title: "Maintain Focus Streak",
-      points: "+200 R-PTS",
+      points: `+${targetC} R-PTS`,
       completed: false,
       icon: Circle,
       active: false,

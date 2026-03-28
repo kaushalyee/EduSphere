@@ -88,16 +88,6 @@ export default function RewardsSidebar({ activeTab, setActiveTab }) {
           );
         })}
       </div>
-
-      <div className="mt-auto">
-        <div className="h-12 w-12 cursor-pointer overflow-hidden rounded-full border-2 border-purple-500/50 bg-gray-800 transition-colors hover:border-purple-400">
-          <img
-            src="https://ui-avatars.com/api/?name=Student&background=random"
-            alt="Profile"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      </div>
     </div>
   );
 }

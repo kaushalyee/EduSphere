@@ -6,6 +6,7 @@ const adminRoutes = require("./routes/adminRoutes");
 const sessionRoutes = require("./routes/sessionRoutes");
 const quizResultRoutes = require("./routes/quizResultRoutes");
 const userRoutes = require("./routes/userRoutes"); // ✅ ADD THIS
+const engagementRewardRoutes = require("./routes/engagementRewardRoutes");
 
 const app = express();
 
@@ -23,5 +24,6 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/quiz-results", quizResultRoutes);
 app.use("/api/users", userRoutes); // ✅ ADD THIS
+app.use("/api/engagement-reward", engagementRewardRoutes);
 
 module.exports = app;

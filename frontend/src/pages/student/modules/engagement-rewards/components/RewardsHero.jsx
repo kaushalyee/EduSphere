@@ -1,4 +1,4 @@
-import { Flame, Play } from "lucide-react";
+import { Flame } from "lucide-react";
 
 export default function RewardsHero({ studentName = "Alex", gameAttempts }) {
   return (
@@ -21,34 +21,9 @@ export default function RewardsHero({ studentName = "Alex", gameAttempts }) {
           Welcome back, {studentName}!
         </h1>
 
-        <p className="mb-8 max-w-sm text-sm font-medium leading-relaxed text-indigo-100/90">
+        <p className="max-w-sm text-sm font-medium leading-relaxed text-indigo-100/90">
           Every step you take today builds your future success. Stay consistent and keep progressing.
         </p>
-
-        <div className="mt-auto flex flex-wrap items-center gap-4">
-          <button
-            disabled={gameAttempts === 0}
-            className={`flex items-center gap-2 rounded-full px-8 py-3.5 font-bold transition-all duration-300 ${
-              gameAttempts > 0
-                ? "bg-white text-indigo-700 hover:scale-105 hover:bg-gray-50 hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]"
-                : "cursor-not-allowed bg-white/40 text-indigo-900"
-            }`}
-          >
-            <Play
-              size={18}
-              className={
-                gameAttempts > 0
-                  ? "fill-indigo-700 text-indigo-700"
-                  : "fill-indigo-900 text-indigo-900"
-              }
-            />
-            <span className="tracking-wide">Play Now</span>
-          </button>
-
-          <button className="rounded-full border-2 border-white/30 px-8 py-3.5 font-bold tracking-wide text-white backdrop-blur-sm transition-colors hover:bg-white/10">
-            View Missions
-          </button>
-        </div>
       </div>
     </div>
   );

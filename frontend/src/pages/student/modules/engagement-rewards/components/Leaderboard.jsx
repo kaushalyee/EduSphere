@@ -1,4 +1,8 @@
+import useWallet from "../../../../../hooks/useWallet";
+
 export default function Leaderboard() {
+  const { balance } = useWallet();
+
   const topThree = [
     {
       name: "SARAH K.",
@@ -18,13 +22,13 @@ export default function Leaderboard() {
     {
       name: "Alex Vance",
       rank: 4,
-      points: "14,200",
+      points: Math.max(0, balance + 200).toLocaleString(),
       avatar: "https://ui-avatars.com/api/?name=AV&background=475569&color=fff",
     },
     {
       name: "Jason Thorne",
       rank: 5,
-      points: "13,950",
+      points: Math.max(0, balance + 100).toLocaleString(),
       avatar: "https://ui-avatars.com/api/?name=JT&background=475569&color=fff",
     },
   ];

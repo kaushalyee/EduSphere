@@ -1,6 +1,10 @@
 import { Grid2x2, Lock, Star, Timer, Zap } from "lucide-react";
+import useWallet from "../../../../../hooks/useWallet";
 
 export default function GameCard({ gameAttempts = 0, mode = "featured" }) {
+  const { balance } = useWallet();
+  const rewardCap = Math.max(1, Math.round(balance * 0.4));
+
   if (mode === "locked") {
     return (
       <div className="mx-auto w-full max-w-3xl rounded-3xl bg-gradient-to-br from-white/5 to-white/10 p-5 shadow-[0_0_60px_rgba(124,58,237,0.15)] backdrop-blur-xl transition-all duration-300 hover:scale-[1.01]">
@@ -34,7 +38,7 @@ export default function GameCard({ gameAttempts = 0, mode = "featured" }) {
             PUZZLE CHALLENGE
           </h2>
           <p className="mb-8 max-w-sm text-sm font-medium leading-relaxed text-gray-400">
-            Test your logic and earn up to 500 R-Points in this week&apos;s
+            Test your logic and earn up to {rewardCap} R-Points in this week&apos;s
             special arena.
           </p>
 

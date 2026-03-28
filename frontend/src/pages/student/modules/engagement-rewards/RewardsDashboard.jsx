@@ -9,11 +9,12 @@ import Leaderboard from "./components/Leaderboard";
 import EngagementChart from "./components/EngagementChart";
 import ActivityFeed from "./components/ActivityFeed";
 import CompanionCard from "./components/CompanionCard";
+import useWallet from "../../../../hooks/useWallet";
 
 export default function RewardsDashboard() {
   const [activeTab, setActiveTab] = useState("home");
-  const [gameAttempts] = useState(12);
-  const [points] = useState(1240);
+  const { balance } = useWallet();
+  const gameAttempts = Math.max(0, Math.min(20, Math.floor(balance / 10)));
 
   return (
     <div className="fixed inset-0 z-[100] flex overflow-hidden bg-[#0a0e19] font-sans text-white selection:bg-purple-500/30">
@@ -56,7 +57,7 @@ export default function RewardsDashboard() {
               <RewardsHero gameAttempts={gameAttempts} />
             </div>
             <div className="h-full lg:col-span-1 xl:col-span-1">
-              <RewardWallet points={points} attempts={gameAttempts} />
+              <RewardWallet points={balance} attempts={gameAttempts} />
             </div>
             <div className="h-full lg:col-span-2 xl:col-span-2">
               <GameCard gameAttempts={gameAttempts} />
@@ -69,7 +70,7 @@ export default function RewardsDashboard() {
             </div>
             <div className="grid h-[420px] grid-cols-1 gap-6 lg:col-span-1 lg:grid-cols-2 xl:col-span-2 xl:gap-8">
               <EngagementChart />
-              <ActivityFeed />
+              <ActivityFeed balance={balance} />
             </div>
             <div className="h-full lg:col-span-1 xl:col-span-1">
               <CompanionCard />

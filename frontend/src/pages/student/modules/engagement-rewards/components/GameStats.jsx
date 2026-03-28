@@ -1,30 +1,36 @@
 import { Coins, TimerReset, Wallet } from "lucide-react";
-
-const stats = [
-  {
-    id: "balance",
-    title: "Your Balance",
-    value: "1,240 R-Points",
-    icon: Wallet,
-    progress: "78%",
-  },
-  {
-    id: "cost",
-    title: "Attempt Cost",
-    value: "10 R-Points",
-    icon: Coins,
-    progress: "42%",
-  },
-  {
-    id: "attempts",
-    title: "Available Attempts",
-    value: "0 Attempts",
-    icon: TimerReset,
-    progress: "8%",
-  },
-];
+import useWallet from "../../../../../hooks/useWallet";
 
 export default function GameStats() {
+  const { balance } = useWallet();
+  const attemptCost = Math.max(1, Math.round(balance * 0.01));
+  const availableAttempts = Math.floor(balance / attemptCost);
+  const progressPct = Math.max(0, Math.min(100, Math.round((balance / 2000) * 100)));
+
+  const stats = [
+    {
+      id: "balance",
+      title: "Your Balance",
+      value: `${balance.toLocaleString()} R-Points`,
+      icon: Wallet,
+      progress: `${progressPct}%`,
+    },
+    {
+      id: "cost",
+      title: "Attempt Cost",
+      value: `${attemptCost} R-Points`,
+      icon: Coins,
+      progress: `${Math.max(10, Math.min(100, availableAttempts * 5))}%`,
+    },
+    {
+      id: "attempts",
+      title: "Available Attempts",
+      value: `${availableAttempts} Attempts`,
+      icon: TimerReset,
+      progress: `${Math.max(8, Math.min(100, availableAttempts * 10))}%`,
+    },
+  ];
+
   return (
     <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
       {stats.map((stat) => {

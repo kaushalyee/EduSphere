@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Bell,
   CalendarDays,
@@ -10,61 +10,7 @@ import {
   Wallet as WalletIcon,
 } from "lucide-react";
 import RewardsSidebar from "./components/RewardsSidebar";
-
-const stats = [
-  {
-    id: "lifetime",
-    title: "Lifetime Points",
-    value: "12,840",
-    progress: 88,
-    icon: Coins,
-  },
-  {
-    id: "weekly",
-    title: "Weekly Points",
-    value: "420",
-    progress: 62,
-    icon: Flame,
-  },
-  {
-    id: "attempts",
-    title: "Game Attempts Used",
-    value: "12/20",
-    progress: 60,
-    icon: Target,
-  },
-];
-
-const activities = [
-  {
-    id: 1,
-    title: "Assignment Improvement",
-    description: "Data Structures assignment score boosted",
-    points: "+10 R-Points",
-    time: "2h ago",
-  },
-  {
-    id: 2,
-    title: "Quiz Mastery",
-    description: "Weekly quiz completed with top percentile",
-    points: "+15 R-Points",
-    time: "5h ago",
-  },
-  {
-    id: 3,
-    title: "Companion Boost",
-    description: "Used hint pack in Reward Rush challenge",
-    points: "-5 R-Points",
-    time: "Yesterday",
-  },
-  {
-    id: 4,
-    title: "Study Streak Bonus",
-    description: "Maintained 7-day engagement streak",
-    points: "+20 R-Points",
-    time: "2 days ago",
-  },
-];
+import useWallet from "../../../../hooks/useWallet";
 
 const companions = [
   {
@@ -92,6 +38,70 @@ const companions = [
 
 export default function Wallet() {
   const [activeTab, setActiveTab] = useState("wallet");
+  const { balance: walletPoints, loading: walletLoading } = useWallet();
+
+  const stats = useMemo(() => {
+    const weeklyPoints = Math.max(0, Math.round(walletPoints * 0.2));
+    const attemptsUsed = Math.max(0, Math.min(20, 20 - Math.floor(walletPoints / 10)));
+
+    return [
+      {
+        id: "lifetime",
+        title: "Lifetime Points",
+        value: walletPoints.toLocaleString(),
+        progress: Math.max(5, Math.min(100, Math.round((walletPoints / 2000) * 100))),
+        icon: Coins,
+      },
+      {
+        id: "weekly",
+        title: "Weekly Points",
+        value: weeklyPoints.toLocaleString(),
+        progress: Math.max(5, Math.min(100, Math.round((weeklyPoints / 600) * 100))),
+        icon: Flame,
+      },
+      {
+        id: "attempts",
+        title: "Game Attempts Used",
+        value: `${attemptsUsed}/20`,
+        progress: Math.max(5, Math.min(100, Math.round((attemptsUsed / 20) * 100))),
+        icon: Target,
+      },
+    ];
+  }, [walletPoints]);
+
+  const activities = useMemo(
+    () => [
+      {
+        id: 1,
+        title: "Assignment Improvement",
+        description: "Data Structures assignment score boosted",
+        points: `+${Math.max(1, Math.round(walletPoints * 0.01))} R-Points`,
+        time: "2h ago",
+      },
+      {
+        id: 2,
+        title: "Quiz Mastery",
+        description: "Weekly quiz completed with top percentile",
+        points: `+${Math.max(1, Math.round(walletPoints * 0.015))} R-Points`,
+        time: "5h ago",
+      },
+      {
+        id: 3,
+        title: "Companion Boost",
+        description: "Used hint pack in Reward Rush challenge",
+        points: `-${Math.max(1, Math.round(walletPoints * 0.005))} R-Points`,
+        time: "Yesterday",
+      },
+      {
+        id: 4,
+        title: "Study Streak Bonus",
+        description: "Maintained 7-day engagement streak",
+        points: `+${Math.max(1, Math.round(walletPoints * 0.02))} R-Points`,
+        time: "2 days ago",
+      },
+    ],
+    [walletPoints]
+  );
 
   return (
     <div className="fixed inset-0 z-[100] flex overflow-hidden bg-[#0a0e19] font-sans text-white selection:bg-purple-500/30">
@@ -144,7 +154,7 @@ export default function Wallet() {
                     Reward Rush
                   </p>
                   <h1 className="mt-2 text-5xl font-black tracking-tight">
-                    1,240
+                    {walletPoints.toLocaleString()}
                   </h1>
                   <p className="mt-2 text-sm text-white/90">
                     Earned through consistent academic engagement
@@ -152,7 +162,7 @@ export default function Wallet() {
                 </div>
                 <div className="flex items-center gap-2 self-start rounded-full bg-white/15 px-4 py-2 text-sm font-semibold text-white shadow-[0_0_16px_rgba(255,255,255,0.2)] backdrop-blur-md md:self-center">
                   <Sparkles size={16} />
-                  +25 R-Points today
+                  +{Math.max(1, Math.round(walletPoints * 0.01))} R-Points today
                 </div>
               </div>
             </section>
@@ -162,7 +172,9 @@ export default function Wallet() {
                 <WalletIcon size={18} />
                 Wallet Snapshot
               </div>
-              <p className="text-3xl font-extrabold">1,240</p>
+              <p className="text-3xl font-extrabold">
+                {walletLoading ? "..." : walletPoints.toLocaleString()}
+              </p>
               <p className="mt-1 text-sm text-gray-300">
                 R-Points available now
               </p>
