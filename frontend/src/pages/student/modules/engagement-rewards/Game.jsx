@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Settings } from "lucide-react";
 import { useAuth } from "../../../../context/AuthContext";
 import RewardsSidebar from "./components/RewardsSidebar";
@@ -9,6 +10,7 @@ import UnlockButton from "./components/UnlockButton";
 
 export default function Game() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("game");
 
   return (
@@ -51,7 +53,7 @@ export default function Game() {
             <GameHero />
             <GameCard mode="locked" />
             <GameStats />
-            <UnlockButton />
+            <UnlockButton onClick={() => navigate("/student/game/play")} />
           </div>
         </main>
       </div>

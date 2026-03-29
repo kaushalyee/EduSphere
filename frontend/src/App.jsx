@@ -13,6 +13,7 @@ import Leaderboard from "./pages/student/modules/engagement-rewards/Leaderboard"
 import Statistics from "./pages/student/modules/engagement-rewards/Statistics";
 import Wallet from "./pages/student/modules/engagement-rewards/Wallet";
 import Companion from "./pages/student/modules/engagement-rewards/Companion";
+import GameBoard from "./pages/student/modules/engagement-rewards/game/GameBoard";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
@@ -124,6 +125,22 @@ export default function App() {
         element={
           <ProtectedRoute role="tutor">
             <TutorDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/game"
+        element={
+          <ProtectedRoute role="student">
+            <Game />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/student/game/play"
+        element={
+          <ProtectedRoute role="student">
+            <GameBoard />
           </ProtectedRoute>
         }
       />
