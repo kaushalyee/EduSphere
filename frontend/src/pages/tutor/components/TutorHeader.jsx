@@ -17,7 +17,7 @@ export default function TutorHeader({
   };
 
   const greeting = isNewUser
-    ? `Welcome${tutorName ? `, ${tutorName}` : ""}! 🎉 Let's get started.`
+    ? `Welcome${tutorName ? `, ${tutorName}` : ""}! Let's get started.`
     : `Welcome back${tutorName ? `, ${tutorName}` : ""}!`;
 
   return (
