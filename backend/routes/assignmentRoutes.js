@@ -7,7 +7,11 @@ const {
   analyzeSubmission,
   submitAssignment,
   getAssignmentDetails,
-  getStudentSubmissions
+  getStudentSubmissions,
+  createAssignment,
+  updateAssignment,
+  deleteAssignment,
+  getTutorAssignments
 } = require('../controllers/assignmentController');
 
 // Configure multer for file uploads
@@ -38,6 +42,7 @@ const upload = multer({
 
 console.log(">>> REGISTERING ASSIGNMENT ROUTES <<<");
 
+// READ Operations
 // Route to get all assignments for a student
 router.get('/student/:studentId', getStudentAssignments);
 
@@ -47,6 +52,22 @@ router.get('/:assignmentId/details', getAssignmentDetails);
 // Route to get all submissions for a student
 router.get('/student/:studentId/submissions', getStudentSubmissions);
 
+// Route to get all assignments for a tutor
+router.get('/tutor/:tutorId', getTutorAssignments);
+
+// CREATE Operation
+// Route to create a new assignment
+router.post('/', createAssignment);
+
+// UPDATE Operation
+// Route to update an assignment
+router.put('/:id', updateAssignment);
+
+// DELETE Operation
+// Route to delete an assignment
+router.delete('/:id', deleteAssignment);
+
+// Special Operations
 // Route to analyze assignment submission (file upload)
 router.post('/analyze-submission', upload.fields([
   { name: 'requirementsFile', maxCount: 1 },

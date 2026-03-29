@@ -392,6 +392,7 @@ export default function PeerLearning() {
                 name="preferredDate"
                 value={formData.preferredDate}
                 onChange={handleChange}
+                min={new Date().toISOString().split("T")[0]}
                 className="w-full border border-slate-300 rounded-xl px-4 py-3"
               />
             </div>

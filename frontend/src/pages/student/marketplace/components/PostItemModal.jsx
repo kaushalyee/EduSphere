@@ -211,7 +211,7 @@ export default function PostItemModal({ isOpen, onClose, onPostSuccess }) {
         {/* Header */}
         <div className="px-8 py-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <div>
-            <h2 className="text-2xl font-black text-gray-900">Post New Item</h2>
+            <h2 className="text-2xl font-bold text-gray-900">Post New Item</h2>
             <p className="text-gray-500 text-sm mt-0.5">Fill in the details to list your item</p>
           </div>
           <button
@@ -374,7 +374,7 @@ export default function PostItemModal({ isOpen, onClose, onPostSuccess }) {
                     className="w-full h-full object-cover rounded-xl border-2 border-primary-100 shadow-sm"
                   />
                   {index === 0 && (
-                    <span className="absolute -top-2 -left-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md uppercase">
+                    <span className="absolute -top-2 -left-2 bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md uppercase">
                       Primary
                     </span>
                   )}
@@ -420,7 +420,7 @@ export default function PostItemModal({ isOpen, onClose, onPostSuccess }) {
           <button
             onClick={handleSubmit}
             disabled={isSubmitting || (!isFormValid() && Object.keys(touched).length > 0)}
-            className={`flex-[2] px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl font-black shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${isSubmitting || (!isFormValid() && Object.keys(touched).length > 0) ? "opacity-50 cursor-not-allowed grayscale" : "shadow-purple-200"}`}
+            className={`flex-[2] px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-2xl font-bold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 ${isSubmitting || (!isFormValid() && Object.keys(touched).length > 0) ? "opacity-50 cursor-not-allowed grayscale" : "shadow-purple-200"}`}
           >
             {isSubmitting ? (
               <>

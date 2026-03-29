@@ -1,5 +1,4 @@
 import { Link, useNavigate } from "react-router-dom";
-import { GraduationCap, LogOut } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const roleRedirectPath = (role) => {
@@ -19,60 +18,169 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white/80 backdrop-blur-md shadow-md sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2 group">
-            <GraduationCap className="h-8 w-8 text-primary-600 group-hover:text-accent-600 transition-colors" />
-            <span className="text-2xl font-bold gradient-text">EduSphere</span>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+        .nav-wrap {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          background: rgba(236, 246, 255, 0.85);
+          backdrop-filter: blur(16px);
+          border-bottom: 1px solid rgba(99, 179, 237, 0.2);
+        }
+
+        .nav-inner {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 0 2rem;
+          height: 62px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .nav-logo {
+          display: flex;
+          align-items: center;
+          gap: 9px;
+          text-decoration: none;
+        }
+
+        .logo-icon {
+          width: 34px;
+          height: 34px;
+          background: linear-gradient(135deg, #3B82F6, #60A5FA);
+          border-radius: 9px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          font-weight: 800;
+          font-size: 14px;
+          color: #fff;
+          transition: transform 0.2s;
+          box-shadow: 0 2px 10px rgba(59,130,246,0.3);
+        }
+
+        .nav-logo:hover .logo-icon {
+          transform: rotate(-6deg) scale(1.05);
+        }
+
+        .logo-name {
+          font-weight: 700;
+          font-size: 1.1rem;
+          color: #1E3A5F;
+          letter-spacing: -0.02em;
+        }
+
+        .nav-links {
+          display: flex;
+          align-items: center;
+          gap: 2.25rem;
+        }
+
+        .nav-link {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #4A7FA5;
+          text-decoration: none;
+          transition: color 0.2s;
+        }
+
+        .nav-link:hover {
+          color: #1E3A5F;
+        }
+
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .nav-btn-ghost {
+          font-size: 0.875rem;
+          font-weight: 500;
+          color: #4A7FA5;
+          text-decoration: none;
+          padding: 7px 14px;
+          border-radius: 8px;
+          transition: background 0.2s, color 0.2s;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .nav-btn-ghost:hover {
+          background: rgba(59,130,246,0.08);
+          color: #1E3A5F;
+        }
+
+        .nav-btn-solid {
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: #fff;
+          background: linear-gradient(135deg, #3B82F6, #2563EB);
+          border: none;
+          border-radius: 8px;
+          padding: 8px 20px;
+          text-decoration: none;
+          cursor: pointer;
+          font-family: 'Plus Jakarta Sans', sans-serif;
+          box-shadow: 0 2px 8px rgba(59,130,246,0.25);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .nav-btn-solid:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+        }
+
+        @media (max-width: 768px) {
+          .nav-links { display: none; }
+          .nav-inner { padding: 0 1.25rem; }
+        }
+      `}</style>
+
+      <nav className="nav-wrap">
+        <div className="nav-inner">
+          <Link to="/" className="nav-logo">
+            <div className="logo-icon">E</div>
+            <span className="logo-name">EduSphere</span>
           </Link>
 
-          <div className="hidden md:flex items-center space-x-8">
-            <a href="#home" className="text-gray-700 hover:text-primary-600 transition-colors font-medium">
-              Home
-            </a>
-            <a href="#features" className="text-gray-700 hover:text-primary-600 transition-colors font-medium">
-              Features
-            </a>
-            <a href="#cta" className="text-gray-700 hover:text-primary-600 transition-colors font-medium">
-              Join Us
-            </a>
+          <div className="nav-links">
+            <a href="#home" className="nav-link">Home</a>
+            <a href="#features" className="nav-link">Features</a>
+            <a href="#cta" className="nav-link">Join Us</a>
           </div>
 
-          <div className="flex items-center space-x-4">
+          <div className="nav-actions">
             {!isAuth ? (
               <>
-                <Link to="/login" className="px-4 py-2 text-primary-600 hover:text-primary-700 font-medium transition-colors">
-                  Login
-                </Link>
-                <Link
-                  to="/register"
-                  className="px-6 py-2 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300 font-medium"
-                >
-                  Register
-                </Link>
+                <Link to="/login" className="nav-btn-ghost">Login</Link>
+                <Link to="/register" className="nav-btn-solid">Get Started</Link>
               </>
             ) : (
               <>
-                <Link
-                  to={roleRedirectPath(user?.role)}
-                  className="px-4 py-2 text-primary-700 font-semibold hover:text-accent-600 transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="inline-flex items-center gap-2 px-5 py-2 border border-primary-200 rounded-full bg-white/70 hover:bg-white hover:shadow-md transition-all font-semibold text-gray-700"
-                >
-                  <LogOut className="h-4 w-4" />
+                <Link to={roleRedirectPath(user?.role)} className="nav-btn-ghost">Dashboard</Link>
+                <button onClick={handleLogout} className="nav-btn-ghost" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                    <polyline points="16 17 21 12 16 7"/>
+                    <line x1="21" y1="12" x2="9" y2="12"/>
+                  </svg>
                   Logout
                 </button>
               </>
             )}
           </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 };
 
