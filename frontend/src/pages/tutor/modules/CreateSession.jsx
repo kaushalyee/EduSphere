@@ -1,7 +1,6 @@
 import axios from "axios";
 import React, { useMemo, useState, useEffect } from "react";
 
-
 export default function CreateSession({
   selectedTrendingTopic,
   setSelectedTrendingTopic,
@@ -25,7 +24,6 @@ export default function CreateSession({
   const [errors, setErrors] = useState({});
 
   const token = localStorage.getItem("token");
-
   const today = new Date().toISOString().split("T")[0];
 
   const availableTopics = useMemo(() => {
@@ -41,6 +39,7 @@ export default function CreateSession({
       return false;
     }
   };
+
   useEffect(() => {
     const fetchTopics = async () => {
       try {
@@ -50,24 +49,19 @@ export default function CreateSession({
         console.error("Failed to fetch topics", error);
       }
     };
-
     fetchTopics();
   }, []);
-  useEffect(() => {
-  if (selectedTrendingTopic) {
-    setFormData((prev) => ({
-      ...prev,
-      category: selectedTrendingTopic.category || "",
-      topic: selectedTrendingTopic.topic || "",
-    }));
 
-    setErrors((prev) => ({
-      ...prev,
-      category: "",
-      topic: "",
-    }));
-  }
-}, [selectedTrendingTopic]);
+  useEffect(() => {
+    if (selectedTrendingTopic) {
+      setFormData((prev) => ({
+        ...prev,
+        category: selectedTrendingTopic.category || "",
+        topic: selectedTrendingTopic.topic || "",
+      }));
+      setErrors((prev) => ({ ...prev, category: "", topic: "" }));
+    }
+  }, [selectedTrendingTopic]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -78,33 +72,85 @@ export default function CreateSession({
     if (!formData.time) newErrors.time = "Time is required";
     if (!formData.mode) newErrors.mode = "Mode is required";
 
+    // Past date
     if (formData.date && formData.date < today) {
       newErrors.date = "Past dates cannot be selected";
     }
 
+    // Time in the past (only if today)
+    if (formData.date === today && formData.time) {
+      const now = new Date();
+      const [hours, mins] = formData.time.split(":").map(Number);
+      const selected = new Date();
+      selected.setHours(hours, mins, 0, 0);
+      if (selected <= now) {
+        newErrors.time = "Time must be in the future for today's sessions";
+      }
+    }
+
+    // Duration
     if (!formData.duration || Number(formData.duration) < 30) {
       newErrors.duration = "Duration must be at least 30 minutes";
     }
-
-    if (formData.mode === "online" && !formData.meetingLink.trim()) {
-      newErrors.meetingLink = "Meeting link is required for online sessions";
+    if (Number(formData.duration) > 480) {
+      newErrors.duration = "Duration cannot exceed 480 minutes (8 hours)";
     }
 
-    if (formData.mode === "offline" && !formData.location.trim()) {
-      newErrors.location = "Location is required for offline sessions";
+    // Modes
+    if (formData.mode === "online") {
+      if (!formData.meetingLink.trim()) {
+        newErrors.meetingLink = "Meeting link is required for online sessions";
+      } else {
+        const allowed = ["zoom.us", "meet.google.com", "teams.microsoft.com"];
+        try {
+          const hostname = new URL(formData.meetingLink).hostname;
+          if (!allowed.some((d) => hostname.includes(d))) {
+            newErrors.meetingLink = "Please enter a valid Zoom, Google Meet, or Teams link";
+          }
+        } catch {
+          newErrors.meetingLink = "Please enter a valid meeting link";
+        }
+      }
     }
 
-    if (formData.meetingLink && !isValidUrl(formData.meetingLink)) {
-      newErrors.meetingLink = "Please enter a valid meeting link";
+    if (formData.mode === "offline") {
+      if (!formData.location.trim()) {
+        newErrors.location = "Location is required for offline sessions";
+      } else if (formData.location.trim().length < 5) {
+        newErrors.location = "Please enter a more specific location (min 5 characters)";
+      }
     }
 
-    if (formData.quizLink && !isValidUrl(formData.quizLink)) {
-      newErrors.quizLink = "Please enter a valid quiz link";
+  
+  // Quiz link
+if (formData.quizLink) {
+  try {
+    const hostname = new URL(formData.quizLink).hostname;
+    if (!hostname.includes("forms.office.com")) {
+      newErrors.quizLink = "Please enter a valid Microsoft Forms link (forms.office.com)";
     }
+  } catch {
+    newErrors.quizLink = "Please enter a valid quiz link";
+  }
+}
 
+    // Capacity
     if (formData.capacity && Number(formData.capacity) < 1) {
       newErrors.capacity = "Capacity must be at least 1";
     }
+    if (formData.capacity && Number(formData.capacity) > 500) {
+      newErrors.capacity = "Capacity cannot exceed 500";
+    }
+
+    
+// Description
+if (!formData.description.trim()) {
+  newErrors.description = "Description is required";
+} else if (formData.description.trim().length < 10) {
+  newErrors.description = "Description should be at least 10 characters";
+} else if (formData.description.trim().length > 1000) {
+  newErrors.description = "Description cannot exceed 1000 characters";
+}
 
     return newErrors;
   };
@@ -115,11 +161,7 @@ export default function CreateSession({
     setSuccessMessage("");
 
     if (name === "category") {
-      setFormData((prev) => ({
-        ...prev,
-        category: value,
-        topic: "",
-      }));
+      setFormData((prev) => ({ ...prev, category: value, topic: "" }));
       setErrors((prev) => ({ ...prev, category: "", topic: "" }));
       return;
     }
@@ -131,24 +173,12 @@ export default function CreateSession({
         location: value === "online" ? "" : prev.location,
         meetingLink: value === "offline" ? "" : prev.meetingLink,
       }));
-      setErrors((prev) => ({
-        ...prev,
-        mode: "",
-        location: "",
-        meetingLink: "",
-      }));
+      setErrors((prev) => ({ ...prev, mode: "", location: "", meetingLink: "" }));
       return;
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    setErrors((prev) => ({
-      ...prev,
-      [name]: "",
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (e) => {
@@ -157,7 +187,6 @@ export default function CreateSession({
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
-
     if (Object.keys(validationErrors).length > 0) return;
 
     setLoading(true);
@@ -172,11 +201,7 @@ export default function CreateSession({
       const response = await axios.post(
         "http://localhost:5000/api/sessions",
         payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setSuccessMessage(response.data.message || "Session created successfully");
@@ -194,10 +219,8 @@ export default function CreateSession({
         capacity: "",
         description: "",
       });
-      if (setSelectedTrendingTopic) {
-  setSelectedTrendingTopic(null);
-}
 
+      if (setSelectedTrendingTopic) setSelectedTrendingTopic(null);
       setErrors({});
     } catch (error) {
       setErrors({
@@ -228,6 +251,7 @@ export default function CreateSession({
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* Category */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Category *
@@ -236,12 +260,15 @@ export default function CreateSession({
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.category ? "border-red-400" : "border-slate-300"
+            }`}
           >
             <option value="">Select category</option>
-            {Object.keys(topicsByCategory).map((category) => (<option key={category} value={category}>
-              {category}
-            </option>
+            {Object.keys(topicsByCategory).map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
             ))}
           </select>
           {errors.category && (
@@ -249,6 +276,7 @@ export default function CreateSession({
           )}
         </div>
 
+        {/* Topic */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Topic *
@@ -258,7 +286,9 @@ export default function CreateSession({
             value={formData.topic}
             onChange={handleChange}
             disabled={!formData.category}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.topic ? "border-red-400" : "border-slate-300"
+            }`}
           >
             <option value="">Select topic</option>
             {availableTopics.map((topic) => (
@@ -272,6 +302,7 @@ export default function CreateSession({
           )}
         </div>
 
+        {/* Date */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Date *
@@ -282,13 +313,16 @@ export default function CreateSession({
             min={today}
             value={formData.date}
             onChange={handleChange}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.date ? "border-red-400" : "border-slate-300"
+            }`}
           />
           {errors.date && (
             <p className="text-red-500 text-sm mt-1">{errors.date}</p>
           )}
         </div>
 
+        {/* Time */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Time *
@@ -298,13 +332,16 @@ export default function CreateSession({
             name="time"
             value={formData.time}
             onChange={handleChange}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.time ? "border-red-400" : "border-slate-300"
+            }`}
           />
           {errors.time && (
             <p className="text-red-500 text-sm mt-1">{errors.time}</p>
           )}
         </div>
 
+        {/* Duration */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Duration (minutes)
@@ -313,15 +350,19 @@ export default function CreateSession({
             type="number"
             name="duration"
             min="30"
+            max="480"
             value={formData.duration}
             onChange={handleChange}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.duration ? "border-red-400" : "border-slate-300"
+            }`}
           />
           {errors.duration && (
             <p className="text-red-500 text-sm mt-1">{errors.duration}</p>
           )}
         </div>
 
+        {/* Mode */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Mode *
@@ -330,7 +371,9 @@ export default function CreateSession({
             name="mode"
             value={formData.mode}
             onChange={handleChange}
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.mode ? "border-red-400" : "border-slate-300"
+            }`}
           >
             <option value="">Select mode</option>
             <option value="online">Online</option>
@@ -341,6 +384,7 @@ export default function CreateSession({
           )}
         </div>
 
+        {/* Location (offline only) */}
         {formData.mode === "offline" && (
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -352,7 +396,9 @@ export default function CreateSession({
               value={formData.location}
               onChange={handleChange}
               placeholder="Enter hall / classroom / venue"
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              className={`w-full border rounded-xl px-4 py-3 ${
+                errors.location ? "border-red-400" : "border-slate-300"
+              }`}
             />
             {errors.location && (
               <p className="text-red-500 text-sm mt-1">{errors.location}</p>
@@ -360,6 +406,7 @@ export default function CreateSession({
           </div>
         )}
 
+        {/* Meeting Link (online only) */}
         {formData.mode === "online" && (
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -370,8 +417,10 @@ export default function CreateSession({
               name="meetingLink"
               value={formData.meetingLink}
               onChange={handleChange}
-              placeholder="Enter Zoom / Google Meet link"
-              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+              placeholder="Enter Zoom / Google Meet / Teams link"
+              className={`w-full border rounded-xl px-4 py-3 ${
+                errors.meetingLink ? "border-red-400" : "border-slate-300"
+              }`}
             />
             {errors.meetingLink && (
               <p className="text-red-500 text-sm mt-1">{errors.meetingLink}</p>
@@ -379,9 +428,10 @@ export default function CreateSession({
           </div>
         )}
 
+        {/* Quiz Link */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Quiz Link
+            Quiz Link <span className="text-slate-400 font-normal">(Optional)</span>
           </label>
           <input
             type="url"
@@ -389,31 +439,38 @@ export default function CreateSession({
             value={formData.quizLink}
             onChange={handleChange}
             placeholder="Optional quiz form link"
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.quizLink ? "border-red-400" : "border-slate-300"
+            }`}
           />
           {errors.quizLink && (
             <p className="text-red-500 text-sm mt-1">{errors.quizLink}</p>
           )}
         </div>
 
+        {/* Capacity */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
-            Capacity
+            Capacity <span className="text-slate-400 font-normal">(Optional)</span>
           </label>
           <input
             type="number"
             name="capacity"
             min="1"
+            max="500"
             value={formData.capacity}
             onChange={handleChange}
             placeholder="Optional seat limit"
-            className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            className={`w-full border rounded-xl px-4 py-3 ${
+              errors.capacity ? "border-red-400" : "border-slate-300"
+            }`}
           />
           {errors.capacity && (
             <p className="text-red-500 text-sm mt-1">{errors.capacity}</p>
           )}
         </div>
 
+        {/* Description */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Description
@@ -423,11 +480,26 @@ export default function CreateSession({
             rows="5"
             value={formData.description}
             onChange={handleChange}
-            placeholder="Write session details"
-            className="w-full border border-slate-300 rounded-xl px-4 py-3 resize-none"
+            placeholder="Write session details (min 10 characters if provided)"
+            className={`w-full border rounded-xl px-4 py-3 resize-none ${
+              errors.description ? "border-red-400" : "border-slate-300"
+            }`}
           />
+          <div className="flex justify-between items-center mt-1">
+            {errors.description ? (
+              <p className="text-red-500 text-sm">{errors.description}</p>
+            ) : (
+              <span />
+            )}
+            <p className={`text-xs ml-auto ${
+              formData.description.length > 1000 ? "text-red-500" : "text-slate-400"
+            }`}>
+              {formData.description.length} / 1000
+            </p>
+          </div>
         </div>
 
+        {/* Submit */}
         <div className="md:col-span-2 pt-2">
           <button
             type="submit"

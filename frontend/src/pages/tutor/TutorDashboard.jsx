@@ -1,18 +1,52 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import {
+  LayoutDashboard,
+  Flame,
+  PlusSquare,
+  CalendarDays,
+} from "lucide-react";
+
 import TutorSidebar from "./components/TutorSidebar";
 import TutorHeader from "./components/TutorHeader";
 import TutorContent from "./components/TutorContent";
 
 export default function TutorDashboard() {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
   const [activeTab, setActiveTab] = useState(
     localStorage.getItem("tutorActiveTab") || "dashboard"
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isNewUser, setIsNewUser] = useState(false);
-
   const [selectedTrendingTopic, setSelectedTrendingTopic] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+
+  const menuItems = [
+    {
+      id: "dashboard",
+      title: "Dashboard Overview",
+      icon: <LayoutDashboard className="w-5 h-5" />,
+    },
+    {
+      id: "trending",
+      title: "Trending Topics",
+      icon: <Flame className="w-5 h-5" />,
+    },
+    {
+      id: "create-session",
+      title: "Create Session",
+      icon: <PlusSquare className="w-5 h-5" />,
+    },
+    {
+      id: "my-sessions",
+      title: "My Sessions",
+      icon: <CalendarDays className="w-5 h-5" />,
+    },
+  ];
 
   useEffect(() => {
     const newUserFlag = localStorage.getItem("isNewUser");
@@ -27,22 +61,23 @@ export default function TutorDashboard() {
   }, [activeTab]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+    if (window.confirm("Are you sure you want to log out?")) {
+      logout();
+      navigate("/");
+    }
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f3f4f6]">
+    <div className="min-h-screen bg-gray-50 flex">
       <TutorSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         isSidebarOpen={isSidebarOpen}
         tutorName={storedUser?.name || "Tutor Name"}
-        onLogout={handleLogout}
+        menuItems={menuItems}
       />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col">
         <TutorHeader
           activeTab={activeTab}
           isSidebarOpen={isSidebarOpen}
@@ -51,7 +86,7 @@ export default function TutorDashboard() {
           tutorName={storedUser?.name || ""}
         />
 
-        <main className="p-6">
+        <main className="flex-1 p-6 overflow-auto">
           <TutorContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
