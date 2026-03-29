@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api/api';
+import { useAuth } from '../../context/AuthContext';
 import {
   LineChart,
   Line,
@@ -27,13 +28,12 @@ import {
 } from 'lucide-react';
 
 const LearningTrajectoryGraph = () => {
+  const { user } = useAuth();
   const [trajectoryData, setTrajectoryData] = useState([]);
-  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
-  // New feature states
-  const [dateRange, setDateRange] = useState('1month');
+  const [dateRange, setDateRange] = useState('all');
   const [scorecard, setScorecard] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [streaks, setStreaks] = useState({});
@@ -43,11 +43,18 @@ const LearningTrajectoryGraph = () => {
   const [stagnationAlerts, setStagnationAlerts] = useState([]);
   const [selectedQuiz, setSelectedQuiz] = useState(null);
 
-  useEffect(() => {
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-        const studentId = "demo_student";
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching data for student:', user?._id);
+      
+      if (!user || !user._id) {
+        setError('User not authenticated');
+        setLoading(false);
+        return;
+      }
+      
+      const studentId = user._id;
         
         // Fetch all data in parallel
         const [
@@ -68,16 +75,40 @@ const LearningTrajectoryGraph = () => {
           api.get(`/progress/trajectory/${studentId}/stagnation-alerts`)
         ]);
         
-        // Process trajectory data
-        const subjectsData = trajectoryResponse.data.trajectory.map(subj => {
-          const formattedPoints = subj.dataPoints.map(item => {
-            const dateObj = new Date(item.date);
+        console.log('API responses received');
+        
+        // Process trajectory data with error handling
+        const subjectsData = (trajectoryResponse.data.trajectory || []).map(subj => {
+          try {
+            const formattedPoints = (subj.dataPoints || []).map(item => {
+              try {
+                const dateObj = new Date(item.date);
+                return {
+                  ...item,
+                  formattedDate: `${dateObj.getMonth() + 1}/${dateObj.getDate()}`
+                };
+              } catch (dateErr) {
+                console.error('Date formatting error:', dateErr, item);
+                return {
+                  ...item,
+                  formattedDate: 'Invalid Date'
+                };
+              }
+            });
+            return { ...subj, dataPoints: formattedPoints };
+          } catch (subjErr) {
+            console.error('Subject processing error:', subjErr, subj);
             return {
-              ...item,
-              formattedDate: `${dateObj.getMonth() + 1}/${dateObj.getDate()}`
+              subject: subj.subject || 'Unknown',
+              trend: 'stable',
+              latestScore: 0,
+              highestScore: 0,
+              lowestScore: 0,
+              averageScore: 0,
+              totalAttempts: 0,
+              dataPoints: []
             };
-          });
-          return { ...subj, dataPoints: formattedPoints };
+          }
         });
 
         setTrajectoryData(subjectsData);
@@ -103,44 +134,49 @@ const LearningTrajectoryGraph = () => {
       }
     };
 
+  useEffect(() => {
     fetchAllData();
-  }, [dateRange]); // Re-fetch when date range changes
+  }, [dateRange, user]); // Re-fetch when date range or user changes
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8 h-64 bg-white rounded-2xl shadow-sm border border-gray-100">
-        <div className="text-gray-500 animate-pulse font-medium">Loading advanced trajectory...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center p-8 h-64 bg-red-50 rounded-2xl shadow-sm border border-red-100">
-        <div className="text-red-500 font-medium">{error}</div>
-      </div>
-    );
-  }
-
-  if (!trajectoryData.length) {
-    return (
-      <div className="flex items-center justify-center p-8 h-64 bg-white rounded-2xl shadow-sm border border-gray-100">
-        <div className="text-gray-500">No trajectory data found. Check back after attempting some quizzes!</div>
-      </div>
-    );
-  }
-
-  const activeData = trajectoryData.find(d => d.subject === selectedSubject) || trajectoryData[0];
-
-  const getTrendIcon = (trend) => {
-    switch(trend) {
-      case 'improving': return <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-sm font-semibold"><TrendingUp className="w-4 h-4 mr-1" /> Improving</div>;
-      case 'declining': return <div className="flex items-center text-red-600 bg-red-50 px-2 py-1 rounded text-sm font-semibold"><TrendingDown className="w-4 h-4 mr-1" /> Declining</div>;
-      default: return <div className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded text-sm font-semibold"><Minus className="w-4 h-4 mr-1" /> Stable</div>;
+  try {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center p-8 h-64 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-gray-500 animate-pulse font-medium">Loading advanced trajectory...</div>
+        </div>
+      );
     }
-  };
 
-  return (
+    if (error) {
+      return (
+        <div className="flex items-center justify-center p-8 h-64 bg-red-50 rounded-2xl shadow-sm border border-red-100">
+          <div className="text-red-500 font-medium">{error}</div>
+        </div>
+      );
+    }
+
+    if (!trajectoryData.length) {
+      return (
+        <div className="flex items-center justify-center p-8 h-64 bg-white rounded-2xl shadow-sm border border-gray-100">
+          <div className="text-center">
+            <div className="text-gray-500 mb-2">No quiz results found yet.</div>
+            <div className="text-gray-400 text-sm">Complete some quizzes to see your learning trajectory!</div>
+          </div>
+        </div>
+      );
+    }
+
+    const activeData = trajectoryData.find(d => d && d.subject === selectedSubject) || (trajectoryData.length > 0 ? trajectoryData[0] : null);
+
+    const getTrendIcon = (trend) => {
+      switch(trend) {
+        case 'improving': return <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-sm font-semibold"><TrendingUp className="w-4 h-4 mr-1" /> Improving</div>;
+        case 'declining': return <div className="flex items-center text-red-600 bg-red-50 px-2 py-1 rounded text-sm font-semibold"><TrendingDown className="w-4 h-4 mr-1" /> Declining</div>;
+        default: return <div className="flex items-center text-gray-600 bg-gray-50 px-2 py-1 rounded text-sm font-semibold"><Minus className="w-4 h-4 mr-1" /> Stable</div>;
+      }
+    };
+
+    return (
     <div className="space-y-6">
       {/* Main Learning Trajectory Component */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col space-y-6">
@@ -161,6 +197,8 @@ const LearningTrajectoryGraph = () => {
                 onChange={(e) => setDateRange(e.target.value)}
                 className="text-sm font-medium bg-transparent border-none focus:outline-none text-gray-700"
               >
+                <option value="all">All Time</option>
+                <option value="1week">Last Week</option>
                 <option value="2weeks">Last 2 Weeks</option>
                 <option value="1month">Last Month</option>
                 <option value="3months">Last 3 Months</option>
@@ -169,12 +207,12 @@ const LearningTrajectoryGraph = () => {
             </div>
             
             {/* Subject Selection */}
-            <div className="flex gap-2 p-1 bg-gray-50 rounded-lg overflow-x-auto border border-gray-100">
+            <div className="flex gap-1 p-1 bg-gray-50 rounded-lg overflow-x-auto border border-gray-100">
               {trajectoryData.map((subj) => (
                 <button
                   key={subj.subject}
                   onClick={() => setSelectedSubject(subj.subject)}
-                  className={`px-4 py-2 text-sm font-semibold rounded-md transition-all whitespace-nowrap ${
+                  className={`px-3 py-2 text-xs font-semibold rounded-md transition-all whitespace-nowrap ${
                     selectedSubject === subj.subject
                       ? 'bg-white text-indigo-600 shadow-sm border border-gray-200'
                       : 'text-gray-600 hover:text-indigo-500 hover:bg-gray-100 border border-transparent'
@@ -285,7 +323,7 @@ const LearningTrajectoryGraph = () => {
                     <div className="p-2 bg-white rounded-lg text-indigo-600 shadow-sm"><Target className="w-5 h-5"/></div>
                     <div>
                       <p className="text-xs text-indigo-500 font-bold uppercase tracking-wide">Average</p>
-                      <p className="text-lg font-extrabold text-indigo-900">{activeData.averageScore}%</p>
+                      <p className="text-lg font-extrabold text-indigo-900">{activeData.averageScore || 0}%</p>
                     </div>
                   </div>
                   
@@ -293,7 +331,7 @@ const LearningTrajectoryGraph = () => {
                     <div className="p-2 bg-white rounded-lg text-green-600 shadow-sm"><Award className="w-5 h-5"/></div>
                     <div>
                       <p className="text-xs text-green-600 font-bold uppercase tracking-wide">Highest</p>
-                      <p className="text-lg font-extrabold text-green-900">{activeData.highestScore}%</p>
+                      <p className="text-lg font-extrabold text-green-900">{activeData.highestScore || 0}%</p>
                     </div>
                   </div>
 
@@ -301,14 +339,14 @@ const LearningTrajectoryGraph = () => {
                     <div className="p-2 bg-white rounded-lg text-orange-600 shadow-sm"><Crosshair className="w-5 h-5"/></div>
                     <div>
                       <p className="text-xs text-orange-600 font-bold uppercase tracking-wide">Latest</p>
-                      <p className="text-lg font-extrabold text-orange-900">{activeData.latestScore}%</p>
+                      <p className="text-lg font-extrabold text-orange-900">{activeData.latestScore || 0}%</p>
                     </div>
                   </div>
 
                   <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 flex items-center gap-3">
                     <div>
                       <p className="text-xs text-gray-500 font-bold uppercase tracking-wide mb-1">Current Trend</p>
-                      {getTrendIcon(activeData.trend)}
+                      {getTrendIcon(activeData.trend || 'stable')}
                     </div>
                   </div>
                 </div>
@@ -317,7 +355,7 @@ const LearningTrajectoryGraph = () => {
                 <div className="h-80 w-full bg-white border border-gray-100 rounded-xl p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
-                      data={activeData.dataPoints}
+                      data={activeData.dataPoints || []}
                       margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
                     >
                       <defs>
@@ -457,7 +495,15 @@ const LearningTrajectoryGraph = () => {
         )}
       </div>
     </div>
-  );
+    );
+  } catch (renderError) {
+    console.error('Component render error:', renderError);
+    return (
+      <div className="flex items-center justify-center p-8 h-64 bg-red-50 rounded-2xl shadow-sm border border-red-100">
+        <div className="text-red-500 font-medium">Component error: {renderError.message}</div>
+      </div>
+    );
+  }
 };
 
 export default LearningTrajectoryGraph;
