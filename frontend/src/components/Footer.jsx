@@ -15,9 +15,7 @@ const Footer = () => {
                     </p>
 
                     <div className="flex items-center justify-center gap-1 text-gray-600">
-                        <span>© 2026 EduSphere. Made with</span>
-                        <Heart className="h-4 w-4 text-red-500 fill-current" />
-                        <span>for students</span>
+                        <span>© 2026 EduSphere</span>
                     </div>
                 </div>
             </div>
