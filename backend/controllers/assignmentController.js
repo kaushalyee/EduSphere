@@ -11,73 +11,16 @@ exports.getStudentAssignments = async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    // Mock data for now - in real implementation, fetch from database
-    const mockAssignments = [
-      {
-        _id: '1',
-        title: "Database Design Project",
-        subject: "Database Systems",
-        description: "Design a complete database system for an e-commerce platform",
-        dueDate: new Date("2024-04-15"),
-        status: "pending",
-        requirements: [
-          "Entity-Relationship Diagram",
-          "Normalization (3NF)",
-          "SQL Schema",
-          "Sample Queries"
-        ],
-        maxMarks: 100,
-        submissionType: "document"
-      },
-      {
-        _id: '2',
-        title: "Algorithm Analysis",
-        subject: "Programming",
-        description: "Analyze time and space complexity of given algorithms",
-        dueDate: new Date("2024-04-10"),
-        status: "submitted",
-        submittedAt: new Date("2024-04-08"),
-        requirements: [
-          "Big O notation analysis",
-          "Space complexity calculations",
-          "Optimization suggestions",
-          "Code examples"
-        ],
-        maxMarks: 100,
-        submissionType: "document",
-        prediction: {
-          gradeRange: "85-92%",
-          confidence: 87,
-          strengths: ["Clear explanations", "Good examples"],
-          improvements: ["Add more test cases", "Include edge cases"]
-        }
-      },
-      {
-        _id: '3',
-        title: "Network Security Report",
-        subject: "Networking",
-        description: "Comprehensive report on network security vulnerabilities and solutions",
-        dueDate: new Date("2024-04-20"),
-        status: "graded",
-        submittedAt: new Date("2024-04-18"),
-        gradedAt: new Date("2024-04-19"),
-        grade: 88,
-        requirements: [
-          "Vulnerability analysis",
-          "Security solutions",
-          "Implementation plan",
-          "Risk assessment"
-        ],
-        maxMarks: 100,
-        submissionType: "document",
-        feedback: "Excellent analysis of security vulnerabilities. Implementation plan could be more detailed."
-      }
-    ];
+    // Fetch real assignments from database
+    const assignments = await AssignmentRequirement.find()
+      .populate('sessionId', 'topic category date time')
+      .populate('tutorId', 'name email')
+      .sort({ deadline: 1 });
 
     return res.status(200).json({
       success: true,
-      assignments: mockAssignments,
-      total: mockAssignments.length
+      assignments,
+      total: assignments.length
     });
   } catch (error) {
     console.error("Error fetching assignments:", error);
@@ -837,6 +780,239 @@ exports.getStudentSubmissions = async (req, res) => {
       success: false,
       message: "Server error while fetching submissions.",
       error: error.message,
+    });
+  }
+};
+
+/**
+ * POST /api/assignments
+ * Creates a new assignment requirement
+ */
+exports.createAssignment = async (req, res) => {
+  try {
+    const {
+      sessionId,
+      tutorId,
+      title,
+      description,
+      deadline,
+      maxScore,
+      attachmentUrl,
+      requirements
+    } = req.body;
+
+    // Validation
+    if (!sessionId || !tutorId || !title || !description || !deadline) {
+      return res.status(400).json({
+        success: false,
+        message: "Required fields: sessionId, tutorId, title, description, deadline"
+      });
+    }
+
+    // Check if deadline is in the future
+    if (new Date(deadline) <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Deadline must be in the future"
+      });
+    }
+
+    // Create new assignment
+    const assignment = new AssignmentRequirement({
+      sessionId,
+      tutorId,
+      title: title.trim(),
+      description: description.trim(),
+      deadline: new Date(deadline),
+      maxScore: maxScore || 100,
+      attachmentUrl: attachmentUrl || "",
+      requirements: requirements || []
+    });
+
+    await assignment.save();
+
+    // Populate related data for response
+    await assignment.populate([
+      { path: 'sessionId', select: 'topic category date time' },
+      { path: 'tutorId', select: 'name email' }
+    ]);
+
+    return res.status(201).json({
+      success: true,
+      assignment,
+      message: "Assignment created successfully"
+    });
+  } catch (error) {
+    console.error("Error creating assignment:", error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors
+      });
+    }
+    
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Assignment already exists for this session"
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Server error while creating assignment.",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * PUT /api/assignments/:id
+ * Updates an existing assignment
+ */
+exports.updateAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    // Find assignment by ID
+    const assignment = await AssignmentRequirement.findById(id);
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assignment not found"
+      });
+    }
+
+    // Validate deadline if being updated
+    if (updates.deadline && new Date(updates.deadline) <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Deadline must be in the future"
+      });
+    }
+
+    // Trim string fields
+    if (updates.title) updates.title = updates.title.trim();
+    if (updates.description) updates.description = updates.description.trim();
+
+    // Update assignment
+    const updatedAssignment = await AssignmentRequirement.findByIdAndUpdate(
+      id,
+      updates,
+      { new: true, runValidators: true }
+    ).populate([
+      { path: 'sessionId', select: 'topic category date time' },
+      { path: 'tutorId', select: 'name email' }
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      assignment: updatedAssignment,
+      message: "Assignment updated successfully"
+    });
+  } catch (error) {
+    console.error("Error updating assignment:", error);
+    
+    // Handle validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating assignment.",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * DELETE /api/assignments/:id
+ * Deletes an assignment
+ */
+exports.deleteAssignment = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find assignment by ID
+    const assignment = await AssignmentRequirement.findById(id);
+    if (!assignment) {
+      return res.status(404).json({
+        success: false,
+        message: "Assignment not found"
+      });
+    }
+
+    // Check if assignment has submissions (optional - depends on your business logic)
+    // const hasSubmissions = await AssignmentSubmission.findOne({ assignmentId: id });
+    // if (hasSubmissions) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: "Cannot delete assignment with existing submissions"
+    //   });
+    // }
+
+    // Delete assignment
+    await AssignmentRequirement.findByIdAndDelete(id);
+
+    // Optionally delete related files
+    if (assignment.attachmentUrl) {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(__dirname, '..', assignment.attachmentUrl);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Assignment deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting assignment:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while deleting assignment.",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * GET /api/assignments/tutor/:tutorId
+ * Returns all assignments created by a specific tutor
+ */
+exports.getTutorAssignments = async (req, res) => {
+  try {
+    const { tutorId } = req.params;
+
+    const assignments = await AssignmentRequirement.find({ tutorId })
+      .populate('sessionId', 'topic category date time')
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      assignments,
+      total: assignments.length
+    });
+  } catch (error) {
+    console.error("Error fetching tutor assignments:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching assignments.",
+      error: error.message
     });
   }
 };
