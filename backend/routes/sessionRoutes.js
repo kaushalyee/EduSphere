@@ -10,6 +10,7 @@ const {
   cancelSession,
   getCompletedSessions,
   getCancelledSessions,
+  getStudentFeed,
 } = require("../controllers/sessionController");
 
 const { protect, authorize } = require("../middlewares/authMiddleware");
@@ -26,10 +27,13 @@ router.get("/completed", protect, authorize("tutor"), getCompletedSessions);
 // Tutor - Cancelled sessions
 router.get("/cancelled", protect, authorize("tutor"), getCancelledSessions);
 
+// Student - Recommended feed   BEFORE /:id
+router.get("/feed", protect, authorize("student"), getStudentFeed);
+
 // Student - View all sessions
 router.get("/", protect, getAllSessions);
 
-// Get single session
+// Get single session   /:id always last
 router.get("/:id", protect, getSessionById);
 
 // Mark complete
