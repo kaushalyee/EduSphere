@@ -37,7 +37,6 @@ export default function PeerLearning() {
         console.error("Failed to fetch topics", err);
       }
     };
-
     fetchTopics();
   }, []);
 
@@ -46,11 +45,7 @@ export default function PeerLearning() {
       setFetchingRequests(true);
       const res = await axios.get(
         "http://localhost:5000/api/session-requests/my-requests",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       setMyRequests(res.data.requests || []);
     } catch (err) {
@@ -60,17 +55,14 @@ export default function PeerLearning() {
     }
   };
 
+  // ── CHANGED: now calls /feed instead of /sessions ──
   const fetchSessions = async () => {
     try {
       setFetchingSessions(true);
-
-      const res = await axios.get("http://localhost:5000/api/sessions", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await axios.get("http://localhost:5000/api/sessions/feed", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      setSessions(res.data.sessions || []);
+      setSessions(res.data.feed || []);
     } catch (err) {
       console.error("Failed to fetch sessions", err);
     } finally {
@@ -89,23 +81,13 @@ export default function PeerLearning() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setMessage("");
     setError("");
-
     if (name === "category") {
-      setFormData((prev) => ({
-        ...prev,
-        category: value,
-        topic: "",
-      }));
+      setFormData((prev) => ({ ...prev, category: value, topic: "" }));
       return;
     }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -120,19 +102,12 @@ export default function PeerLearning() {
 
     try {
       setLoading(true);
-
       const res = await axios.post(
         "http://localhost:5000/api/session-requests",
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
       setMessage(res.data.message || "Request submitted successfully");
-
       setFormData({
         category: "",
         topic: "",
@@ -140,7 +115,6 @@ export default function PeerLearning() {
         preferredTime: "",
         preferredDate: "",
       });
-
       fetchMyRequests();
       fetchSessions();
     } catch (err) {
@@ -161,6 +135,10 @@ export default function PeerLearning() {
   };
 
   const activeIndex = TABS.findIndex((t) => t.id === activeTab);
+
+  // ── split feed into two groups ──
+  const recommended = sessions.filter((s) => s.isRecommended);
+  const others = sessions.filter((s) => !s.isRecommended);
 
   return (
     <div className="space-y-6">
@@ -193,99 +171,68 @@ export default function PeerLearning() {
       {/* Sessions Tab */}
       {activeTab === "sessions" && (
         <div className="bg-white rounded-2xl shadow-sm p-8">
-          <h3 className="text-2xl font-bold text-slate-900 mb-4">
-            Available Sessions
-          </h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-slate-900">
+              Available Sessions
+            </h3>
+            {recommended.length > 0 && (
+              <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full">
+                {recommended.length} recommended for you
+              </span>
+            )}
+          </div>
 
           {fetchingSessions ? (
             <p className="text-slate-500">Loading sessions...</p>
           ) : sessions.length === 0 ? (
             <p className="text-slate-500">No sessions available right now.</p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {sessions.map((session) => (
-                <div
-                  key={session._id}
-                  className="border border-slate-200 rounded-xl p-5"
-                >
-                  <p className="text-sm font-medium text-blue-600">
-                    {session.category}
+            <div className="space-y-8">
+
+              {/* Recommended Section */}
+              {recommended.length > 0 && (
+                <div>
+                  <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">
+                    Recommended for you
                   </p>
-
-                  <h4 className="text-lg font-bold text-slate-900">
-                    {session.topic}
-                  </h4>
-
-                  <div className="mt-2 space-y-1 text-sm text-slate-600">
-                    <p>
-                      <span className="font-semibold">Tutor:</span>{" "}
-                      {session.tutorId?.name || "N/A"}
-                    </p>
-                    <p>
-                      <span className="font-semibold">Date:</span>{" "}
-                      {formatSessionDate(session.date)}
-                    </p>
-                    <p>
-                      <span className="font-semibold">Time:</span> {session.time}
-                    </p>
-                    <p>
-                      <span className="font-semibold">Duration:</span>{" "}
-                      {session.duration} mins
-                    </p>
-                    <p>
-                      <span className="font-semibold">Mode:</span> {session.mode}
-                    </p>
-
-                    {session.mode === "offline" && session.location && (
-                      <p>
-                        <span className="font-semibold">Location:</span>{" "}
-                        {session.location}
-                      </p>
-                    )}
-
-                    {session.mode === "online" && session.meetingLink && (
-                      <p>
-                        <span className="font-semibold">Meeting:</span>{" "}
-                        <a
-                          href={session.meetingLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 underline"
-                        >
-                          Join Session
-                        </a>
-                      </p>
-                    )}
-
-                    {session.quizLink && (
-                      <p>
-                        <span className="font-semibold">Quiz:</span>{" "}
-                        <a
-                          href={session.quizLink}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-blue-600 underline"
-                        >
-                          Open Quiz
-                        </a>
-                      </p>
-                    )}
-
-                    {session.description && (
-                      <p className="pt-1">
-                        <span className="font-semibold">Description:</span>{" "}
-                        {session.description}
-                      </p>
-                    )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {recommended.map((session) => (
+                      <SessionCard
+                        key={session._id}
+                        session={session}
+                        formatSessionDate={formatSessionDate}
+                      />
+                    ))}
                   </div>
                 </div>
-              ))}
+              )}
+
+              {/* Other Sessions */}
+              {others.length > 0 && (
+                <div>
+                  {recommended.length > 0 && (
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                      Other sessions
+                    </p>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {others.map((session) => (
+                      <SessionCard
+                        key={session._id}
+                        session={session}
+                        formatSessionDate={formatSessionDate}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
         </div>
       )}
 
-      {/* Request a Session Tab (form) */}
+      {/* Request a Session Tab */}
       {activeTab === "new" && (
         <div className="bg-white rounded-2xl shadow-sm p-8 max-w-5xl">
           <h2 className="text-3xl font-bold text-slate-900 mb-2">
@@ -440,6 +387,63 @@ export default function PeerLearning() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Session Card Component ──
+function SessionCard({ session, formatSessionDate }) {
+  return (
+    <div
+      className={`border rounded-xl p-5 transition-all ${
+        session.isRecommended
+          ? "border-blue-300 bg-blue-50"
+          : "border-slate-200 bg-white"
+      }`}
+    >
+      {/* Recommended badge */}
+      {session.isRecommended && (
+        <span className="inline-block text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mb-2">
+          Matches your weak topic
+        </span>
+      )}
+
+      <p className="text-sm font-medium text-blue-600">{session.category}</p>
+      <h4 className="text-lg font-bold text-slate-900">{session.topic}</h4>
+
+      <div className="mt-2 space-y-1 text-sm text-slate-600">
+        <p><span className="font-semibold">Tutor:</span> {session.tutorId?.name || "N/A"}</p>
+        <p><span className="font-semibold">Date:</span> {formatSessionDate(session.date)}</p>
+        <p><span className="font-semibold">Time:</span> {session.time}</p>
+        <p><span className="font-semibold">Duration:</span> {session.duration} mins</p>
+        <p><span className="font-semibold">Mode:</span> {session.mode}</p>
+
+        {session.mode === "offline" && session.location && (
+          <p><span className="font-semibold">Location:</span> {session.location}</p>
+        )}
+
+        {session.mode === "online" && session.meetingLink && (
+          <p>
+            <span className="font-semibold">Meeting:</span>{" "}
+            <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+              Join Session
+            </a>
+          </p>
+        )}
+
+        {session.quizLink && (
+          <p>
+            <span className="font-semibold">Quiz:</span>{" "}
+            <a href={session.quizLink} target="_blank" rel="noreferrer" className="text-blue-600 underline">
+              Open Quiz
+            </a>
+          </p>
+        )}
+
+        {session.description && (
+          <p className="pt-1"><span className="font-semibold">Description:</span> {session.description}</p>
+        )}
+      </div>
     </div>
   );
 }

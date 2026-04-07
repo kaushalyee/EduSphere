@@ -126,12 +126,12 @@ const Register = () => {
       role,
       ...(role === "student"
         ? {
-            studentID: studentID.trim().toUpperCase(),
-            year: Number(year),
-            semester: Number(semester),
-            weakCategories,
-            weakTopics,
-          }
+          studentID: studentID.trim().toUpperCase(),
+          year: Number(year),
+          semester: Number(semester),
+          weakCategories,
+          weakTopics,
+        }
         : {}),
     };
 
@@ -335,11 +335,10 @@ const Register = () => {
                         {(TOPICS_BY_CATEGORY[cat] || []).map((topic) => (
                           <label
                             key={topic}
-                            className={`cursor-pointer select-none px-3 py-1 rounded-full text-sm border ${
-                              weakTopics.includes(topic)
-                                ? "bg-primary-600 text-white border-primary-600"
-                                : "bg-gray-50 text-gray-700 border-gray-200"
-                            }`}
+                            className={`cursor-pointer select-none px-3 py-1 rounded-full text-sm border ${weakTopics.includes(topic)
+                              ? "bg-primary-600 text-white border-primary-600"
+                              : "bg-gray-50 text-gray-700 border-gray-200"
+                              }`}
                           >
                             <input
                               type="checkbox"
@@ -382,12 +381,7 @@ const Register = () => {
 
             <button
               type="submit"
-              disabled={!isFormValid}
-              className={`w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 ${
-                isFormValid
-                  ? "hover:shadow-lg hover:scale-105 cursor-pointer"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
+              className="w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer"
             >
               Create Account
             </button>
