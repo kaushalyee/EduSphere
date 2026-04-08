@@ -7,7 +7,7 @@ import Avatar from "./Avatar";
 function AvatarLoadingFallback() {
   return (
     <Html center>
-      <div className="rounded bg-black/70 px-3 py-2 text-xs text-white">
+      <div className="rounded bg-white/70 px-3 py-2 text-xs text-gray-900 shadow-sm border border-gray-200">
         Loading avatar...
       </div>
     </Html>
@@ -17,7 +17,7 @@ function AvatarLoadingFallback() {
 function AvatarErrorFallback({ error, model }) {
   return (
     <Html center>
-      <div className="max-w-[220px] rounded bg-black/80 px-3 py-2 text-center text-xs text-white">
+      <div className="max-w-[220px] rounded bg-white/80 px-3 py-2 text-center text-xs text-red-600 shadow-sm border border-red-200">
         Failed to load avatar{model ? `: ${model}` : ""}.
         {error?.message ? ` ${error.message}` : ""}
       </div>
@@ -66,9 +66,9 @@ class AvatarErrorBoundary extends Component {
 export default function AvatarViewer({ modelPath: model, onNext, onPrev, index, total }) {
   return (
     <div className="w-full flex flex-col items-center justify-center mt-6">
-      <div className="relative w-[400px] h-[500px] md:w-[500px] md:h-[600px]">
+      <div className="relative w-[400px] h-[500px] md:w-[500px] md:h-[600px] bg-white rounded-3xl p-4 md:p-6 shadow-md border border-gray-100">
         {/* Avatar Card */}
-        <div className="w-full h-full rounded-3xl bg-gradient-to-b from-blue-500/20 to-slate-900 shadow-2xl flex items-center justify-center overflow-hidden border border-white/5">
+        <div className="w-full h-full rounded-2xl bg-gradient-to-b from-blue-50 to-gray-50 flex items-center justify-center overflow-hidden border border-gray-200/50">
           <Canvas camera={{ position: [0, 1.2, 4], fov: 40 }} shadows>
             <ambientLight intensity={1.2} />
             <directionalLight position={[3, 5, 5]} intensity={1.5} />
@@ -93,25 +93,25 @@ export default function AvatarViewer({ modelPath: model, onNext, onPrev, index, 
 
         {/* Left Arrow */}
         <div 
-          className={`game-arrow left ${index === 0 ? "disabled" : ""}`} 
+          className={`game-arrow left ${index === 0 ? "disabled opacity-50" : "cursor-pointer"}`} 
           onClick={onPrev}
           aria-label="Previous Avatar"
+          style={{ position: 'absolute', top: '50%', left: '-20px', transform: 'translateY(-50%)', zIndex: 10 }}
         >
-          <div className="arrow">
-            <div className="arrow-top"></div>
-            <div className="arrow-bottom"></div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md border border-gray-100 hover:bg-gray-50 hover:scale-105 transition-all text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
           </div>
         </div>
 
         {/* Right Arrow */}
         <div 
-          className={`game-arrow right ${index === total - 1 ? "disabled" : ""}`} 
+          className={`game-arrow right ${index === total - 1 ? "disabled opacity-50" : "cursor-pointer"}`} 
           onClick={onNext}
           aria-label="Next Avatar"
+          style={{ position: 'absolute', top: '50%', right: '-20px', transform: 'translateY(-50%)', zIndex: 10 }}
         >
-          <div className="arrow">
-            <div className="arrow-top"></div>
-            <div className="arrow-bottom"></div>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-md border border-gray-100 hover:bg-gray-50 hover:scale-105 transition-all text-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </div>
         </div>
 

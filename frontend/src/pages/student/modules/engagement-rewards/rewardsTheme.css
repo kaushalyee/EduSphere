@@ -1,0 +1,131 @@
+.rewards-themed {
+  min-height: 100vh;
+  position: relative;
+}
+
+.rewards-theme-shell {
+  position: relative;
+  min-height: 100vh;
+}
+
+.rewards-theme-shell::before,
+.rewards-theme-shell::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(46px);
+  opacity: 0.45;
+  z-index: 0;
+}
+
+.rewards-theme-shell::before {
+  width: 20rem;
+  height: 20rem;
+  top: -5rem;
+  left: -3rem;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.38), rgba(124, 58, 237, 0));
+}
+
+.rewards-theme-shell::after {
+  width: 22rem;
+  height: 22rem;
+  bottom: -6rem;
+  right: -4rem;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.32), rgba(59, 130, 246, 0));
+}
+
+.rewards-theme-content {
+  position: relative;
+  z-index: 1;
+}
+
+.rewards-variant-default {
+  background: linear-gradient(135deg, #f5edf0, #e0e7ff, #f3e8ff);
+}
+
+.rewards-variant-dashboard {
+  background: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
+}
+
+.rewards-variant-wallet {
+  background: linear-gradient(135deg, #eef2ff, #dbeafe, #e0e7ff);
+}
+
+.rewards-variant-game {
+  background: linear-gradient(135deg, #ede9fe, #c4b5fd, #a78bfa);
+}
+
+.rewards-variant-leaderboard {
+  background: linear-gradient(135deg, #fff7ed, #fde68a, #fca5a5);
+}
+
+.rewards-variant-companion {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff, #c084fc);
+}
+
+.rewards-glass-card {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+.rewards-primary-btn {
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #7c3aed, #3b82f6);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rewards-primary-btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.06);
+}
+
+.rewards-heading {
+  color: #1f2937;
+}
+
+.rewards-subtext {
+  color: #6b7280;
+}
+
+/* Welcome Card Fixes */
+.welcome-card {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 0px; /* Parent padding is handled by rewards-glass-card */
+  gap: 20px !important;
+  width: 100%;
+}
+
+.welcome-left {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.welcome-right {
+  flex-shrink: 0 !important;
+  width: 130px !important; /* Balanced size */
+  height: 130px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.welcome-right img {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: contain !important;
+  background: transparent !important;
+}
+
+.welcome-left h1,
+.welcome-left h2 {
+  white-space: normal !important;
+}
+

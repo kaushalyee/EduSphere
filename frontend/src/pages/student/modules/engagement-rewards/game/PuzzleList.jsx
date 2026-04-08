@@ -1,15 +1,13 @@
 import React from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getLevelsBySize } from '../levels/levels';
 
-const PuzzleList: React.FC = () => {
-    const { size } = useParams<{ size: string }>();
+const PuzzleList = () => {
     const navigate = useNavigate();
-    const gridSize = parseInt(size || '5', 10);
-    const levels = getLevelsBySize(gridSize);
+    const levels = getLevelsBySize();
 
-    const handleLevelSelect = (levelId: string) => {
-        navigate(`/game/${gridSize}/${levelId}`);
+    const handleLevelSelect = (levelId) => {
+        navigate(`/game/5/${levelId}`);
     };
 
     return (
@@ -19,7 +17,7 @@ const PuzzleList: React.FC = () => {
             </Link>
 
             <div className="card puzzle-list-card">
-                <h1 className="puzzle-list-title">{gridSize} X {gridSize}</h1>
+                <h1 className="puzzle-list-title">5 X 5</h1>
 
                 <div className="puzzle-grid">
                     {[1, 2, 3, 4, 5].map((num) => {

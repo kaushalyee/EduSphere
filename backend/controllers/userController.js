@@ -26,3 +26,21 @@ exports.completeOnboarding = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * Returns the user's total GP (wallet balance).
+ * GET /api/users/wallet
+ */
+exports.getWallet = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    res.status(200).json({
+      totalGP: user.totalGP || 0,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

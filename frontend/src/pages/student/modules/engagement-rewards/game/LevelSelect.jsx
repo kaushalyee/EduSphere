@@ -2,11 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
 
-const LevelSelect: React.FC = () => {
+const LevelSelect = () => {
     const navigate = useNavigate();
-    const gridSizes = [5, 6, 7, 8, 9, 10];
+    const gridSizes = [5];
 
-    const handleSizeSelect = (size: number) => {
+    const handleSizeSelect = (size) => {
         navigate(`/levels/${size}`);
     };
 

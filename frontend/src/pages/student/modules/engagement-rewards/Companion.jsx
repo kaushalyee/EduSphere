@@ -1,87 +1,59 @@
-import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useAuth } from "../../../../context/AuthContext";
-import RewardsSidebar from "./components/RewardsSidebar";
+import { useAuth } from "@/context/AuthContext";
+
 import AvatarViewer from "./components/AvatarViewer";
 import CompanionSelector from "./components/CompanionSelector";
-import useWallet from "../../../../hooks/useWallet";
+import useWallet from "@/hooks/useWallet";
 
 export default function Companion() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState("companion");
   const { balance } = useWallet();
 
   return (
-    <div className="fixed inset-0 z-[100] flex overflow-hidden bg-[#0a0e19] font-sans text-white selection:bg-purple-500/30">
-      <RewardsSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <>
+      <div className="flex w-full items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold rewards-heading">Your Companions</h1>
+          <p className="text-sm rewards-subtext mt-1">Unlock and select your study companions</p>
+        </div>
+        <div className="rounded-full bg-white/70 px-4 py-1.5 text-sm font-semibold text-[#3b82f6] border border-white/60">
+          Reward Points: {balance.toLocaleString()}
+        </div>
+      </div>
+      
+      <CompanionSelector>
+        {({ currentCompanion, next, prev, index, companions }) => {
+          if (!currentCompanion) return null;
 
-      <div className="relative flex h-full flex-grow flex-col overflow-hidden">
-        <div className="pointer-events-none absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-purple-900/10 blur-[150px]"></div>
-        <div className="pointer-events-none absolute -bottom-32 -left-32 h-[600px] w-[600px] rounded-full bg-indigo-900/10 blur-[150px]"></div>
-
-        <header className="relative z-20 flex h-[90px] shrink-0 items-center border-b border-white/5 bg-[#0a0e19]/80 px-10 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-r from-white via-indigo-100 to-gray-400 bg-clip-text text-3xl font-extrabold tracking-tighter text-transparent drop-shadow-sm">
-              Reward Rush
-            </div>
-          </div>
-
-          <div className="ml-auto flex flex-col items-end gap-2">
-            <div className="flex items-center gap-4">
-              <button className="group relative text-gray-400 transition-colors hover:text-white">
-                <Bell size={22} className="transition-transform group-hover:scale-110" />
-                <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0a0e19] bg-gradient-to-br from-purple-400 to-indigo-600 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
-              </button>
-              <div className="h-8 w-8 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-purple-500/50">
-                <img
-                  src={`https://ui-avatars.com/api/?name=${user?.name || "Student"}&background=random`}
-                  alt="Profile"
-                  className="h-full w-full object-cover"
+          return (
+            <div className="mx-auto flex w-full max-w-[1280px] items-center justify-center pb-10">
+              <div className="rewards-glass-card flex flex-col items-center p-8 w-full max-w-4xl">
+                <AvatarViewer
+                  modelPath={currentCompanion.model}
+                  onNext={next}
+                  onPrev={prev}
+                  index={index}
+                  total={companions.length}
                 />
+                <h1 className="mt-8 text-4xl font-extrabold uppercase tracking-wide rewards-heading">
+                  {currentCompanion.name}
+                </h1>
+                <p className="mt-2 text-center text-sm font-medium rewards-subtext">
+                  {currentCompanion.unlocked
+                    ? "Unlocked Companion"
+                    : "Locked - Complete more challenges to unlock"}
+                </p>
+                <button
+                  type="button"
+                  className="rewards-primary-btn mt-6 px-8 py-3 text-sm font-bold uppercase tracking-wider"
+                >
+                  View Companion
+                </button>
               </div>
             </div>
-            <div className="rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_18px_rgba(168,85,247,0.25)] backdrop-blur-md">
-              Reward Points: {balance.toLocaleString()}
-            </div>
-          </div>
-        </header>
-
-        <main className="relative z-10 min-h-0 flex-grow overflow-y-auto p-6 md:p-10">
-          <CompanionSelector>
-            {({ currentCompanion, next, prev, index, companions }) => {
-              if (!currentCompanion) return null;
-
-              return (
-                <div className="mx-auto flex h-full w-full max-w-[1280px] items-center justify-center">
-                  <div className="flex flex-col items-center">
-                    <AvatarViewer
-                      modelPath={currentCompanion.model}
-                      onNext={next}
-                      onPrev={prev}
-                      index={index}
-                      total={companions.length}
-                    />
-                    <h1 className="mt-8 text-5xl font-extrabold uppercase tracking-[0.08em] text-white">
-                      {currentCompanion.name}
-                    </h1>
-                    <p className="mt-2 text-center text-sm text-cyan-100/70">
-                      {currentCompanion.unlocked
-                        ? "Unlocked Companion"
-                        : "Locked - Complete more challenges to unlock"}
-                    </p>
-                    <button
-                      type="button"
-                      className="mt-6 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 px-8 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_25px_rgba(124,58,237,0.45)] transition hover:brightness-110"
-                    >
-                      View Companion
-                    </button>
-                  </div>
-                </div>
-              );
-            }}
-          </CompanionSelector>
-        </main>
-      </div>
-    </div>
+          );
+        }}
+      </CompanionSelector>
+    </>
   );
 }

@@ -68,9 +68,8 @@ export default function StudentDashboard() {
         options={options}
       />
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="main-content flex-1 min-w-0 flex flex-col">
         <StudentHeader
-          isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           activeTab={activeTab}
           options={options}

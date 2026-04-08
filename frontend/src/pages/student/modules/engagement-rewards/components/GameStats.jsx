@@ -1,17 +1,16 @@
 import { Coins, TimerReset, Wallet } from "lucide-react";
-import useWallet from "../../../../../hooks/useWallet";
-
-export default function GameStats() {
-  const { balance } = useWallet();
-  const attemptCost = Math.max(1, Math.round(balance * 0.01));
-  const availableAttempts = Math.floor(balance / attemptCost);
-  const progressPct = Math.max(0, Math.min(100, Math.round((balance / 2000) * 100)));
+export default function GameStats({
+  walletBalance = 0,
+  attemptCost = 0,
+  availableAttempts = 0,
+}) {
+  const progressPct = Math.max(0, Math.min(100, Math.round((walletBalance / 2000) * 100)));
 
   const stats = [
     {
       id: "balance",
       title: "Your Balance",
-      value: `${balance.toLocaleString()} R-Points`,
+      value: `${walletBalance.toLocaleString()} R-Points`,
       icon: Wallet,
       progress: `${progressPct}%`,
     },
@@ -40,27 +39,25 @@ export default function GameStats() {
         return (
           <article
             key={stat.id}
-            className={`rounded-2xl bg-gradient-to-br from-white/5 to-transparent p-4 shadow-[0_0_22px_rgba(168,85,247,0.12)] ring-1 ring-white/5 backdrop-blur-xl transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(124,58,237,0.2)] ${
-              isAttempts ? "border border-red-500/20 bg-red-500/10" : ""
+            className={`rounded-xl border bg-white p-4 shadow-sm transition-transform hover:scale-[1.02] hover:shadow-md ${
+              isAttempts ? "border-orange-200" : "border-gray-100"
             }`}
           >
             <div
-              className={`mb-3 inline-flex rounded-xl p-2.5 text-white ${
+              className={`mb-3 inline-flex rounded-lg p-2.5 ${
                 isAttempts
-                  ? "bg-gradient-to-br from-red-500 to-pink-500"
-                  : "bg-gradient-to-br from-purple-500 to-indigo-600"
+                  ? "bg-orange-50 text-orange-600"
+                  : "bg-blue-50 text-blue-600"
               }`}
             >
               <Icon size={18} />
             </div>
-            <p className="text-xs text-gray-300">{stat.title}</p>
-            <p className={`mt-1 text-xl font-bold ${isAttempts ? "text-red-400" : "text-white"}`}>{stat.value}</p>
-            <div className="mt-3 h-1.5 rounded-full bg-white/10">
+            <p className="text-xs font-semibold text-gray-500 uppercase">{stat.title}</p>
+            <p className={`mt-1 text-xl font-bold ${isAttempts ? "text-orange-600" : "text-gray-900"}`}>{stat.value}</p>
+            <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden">
               <div
                 className={`h-1.5 rounded-full ${
-                  isAttempts
-                    ? "bg-gradient-to-r from-red-500 to-pink-500"
-                    : "bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-500"
+                  isAttempts ? "bg-orange-500" : "bg-blue-600"
                 }`}
                 style={{ width: stat.progress }}
               ></div>

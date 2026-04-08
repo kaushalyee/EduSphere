@@ -12,23 +12,26 @@ export default function StudentSidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
+  const isRewardsPage = location.pathname.startsWith("/student/rewards");
   const isActive = (path) => location.pathname === path;
 
   return (
     <aside
-      className={`bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto transition-all duration-300 flex flex-col ${
-        isSidebarOpen ? "w-64" : "w-20"
-      }`}
+      className="sidebar bg-white border-r border-gray-200 h-screen flex flex-col"
     >
       {/* Logo */}
-      <div className="h-16 flex items-center px-4 border-b border-gray-100">
-        <GraduationCap className="w-7 h-7 text-blue-600" />
-        {isSidebarOpen && (
-          <span className="ml-2 text-gray-800 font-bold text-lg">
-            EduSphere
-          </span>
-        )}
-      </div>
+      <button 
+        onClick={() => {
+          navigate("/student/dashboard");
+          setActiveTab("Dashboard");
+        }}
+        className="h-16 flex items-center px-[18px] border-b border-gray-100 w-full text-left hover:bg-gray-50 transition-colors"
+      >
+        <GraduationCap className="w-7 h-7 flex-shrink-0 text-blue-600" />
+        <span className="nav-text ml-4 text-gray-800 font-bold text-lg">
+          EduSphere
+        </span>
+      </button>
 
       {/* Menu */}
       <nav className="flex-1 py-4">
@@ -57,16 +60,16 @@ export default function StudentSidebar({
                     }
                     setActiveTab(opt.id);
                   }}
-                  className={`w-full flex items-center px-4 py-3 transition-all duration-200 ${
+                  className={`sidebar-item w-full flex items-center px-[22px] py-3 transition-all duration-200 ${
                     active
-                      ? "bg-blue-50 text-blue-600 font-semibold border-l-4 border-blue-600"
+                      ? "active bg-blue-50 text-blue-600 font-semibold border-l-4 border-blue-600"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-l-4 border-transparent"
-                  } ${!isSidebarOpen ? "justify-center" : "gap-3"}`}
+                  }`}
                 >
-                  <div className={active ? "text-blue-600" : "text-gray-400"}>
+                  <div className={`flex-shrink-0 ${active ? "text-blue-600" : "text-gray-400"}`}>
                     {opt.icon}
                   </div>
-                  {isSidebarOpen && <span>{opt.title}</span>}
+                  <span className="nav-text text-sm font-medium">{opt.title}</span>
                 </button>
               </li>
             );
@@ -83,12 +86,10 @@ export default function StudentSidebar({
               navigate("/");
             }
           }}
-          className={`w-full flex items-center px-4 py-3 text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-xl group ${
-            !isSidebarOpen ? "justify-center" : "gap-3"
-          }`}
+          className="w-full flex items-center px-[22px] py-3 text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-xl group"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {isSidebarOpen && <span className="font-semibold">Logout</span>}
+          <span className="nav-text font-semibold ml-3">Logout</span>
         </button>
       </div>
     </aside>

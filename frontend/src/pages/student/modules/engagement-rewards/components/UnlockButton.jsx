@@ -1,23 +1,20 @@
 import { KeyRound } from "lucide-react";
-import useWallet from "../../../../../hooks/useWallet";
 
-export default function UnlockButton({ onClick }) {
-  const { balance } = useWallet();
-  const unlockCost = Math.max(1, Math.round(balance * 0.01));
-
+export default function UnlockButton({ onClick, disabled = false }) {
   return (
-    <section className="mx-auto w-full max-w-3xl text-center">
-      <button 
+    <section className="mx-auto w-full max-w-3xl text-center pt-2">
+      <button
         onClick={onClick}
-        className="w-full rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-red-500 px-8 py-3 text-base font-bold text-white shadow-[0_0_40px_rgba(239,68,68,0.3)] transition-all duration-300 hover:scale-105 active:scale-95 animate-[pulse_3s_infinite]"
+        disabled={disabled}
+        className="rewards-primary-btn w-full px-8 py-3.5 text-base font-bold active:scale-95 disabled:cursor-not-allowed disabled:bg-gray-400 disabled:shadow-none disabled:brightness-100 disabled:hover:scale-100"
       >
         <span className="inline-flex items-center gap-2">
           <KeyRound size={18} />
           Unlock FlowFree
         </span>
       </button>
-      <p className="mt-2 text-xs text-gray-400">
-        Unlocking will deduct {unlockCost} R-Points and grant one attempt.
+      <p className="mt-3 text-xs font-medium text-gray-500">
+        Cost increases with usage today. Perform better in quizzes to reduce cost.
       </p>
     </section>
   );

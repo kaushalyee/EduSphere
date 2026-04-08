@@ -7,12 +7,13 @@ import RedirectIfAuth from "./components/RedirectIfAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import StudentDashboard from "./pages/student/StudentDashboard";
-import Rewards from "./pages/student/modules/engagement-rewards/Rewards";
+import RewardsLayout from "./pages/student/modules/engagement-rewards/components/RewardsLayout";
+import RewardsDashboard from "./pages/student/modules/engagement-rewards/RewardsDashboard";
+import Wallet from "./pages/student/modules/engagement-rewards/Wallet";
 import Game from "./pages/student/modules/engagement-rewards/Game";
 import Leaderboard from "./pages/student/modules/engagement-rewards/Leaderboard";
-import Statistics from "./pages/student/modules/engagement-rewards/Statistics";
-import Wallet from "./pages/student/modules/engagement-rewards/Wallet";
 import Companion from "./pages/student/modules/engagement-rewards/Companion";
+
 import GameBoard from "./pages/student/modules/engagement-rewards/game/GameBoard";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -50,64 +51,49 @@ export default function App() {
       />
 
       <Route
-        path="/tutor/dashboard"
-        element={
-          <ProtectedRoute role="tutor">
-            <TutorDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/student/rewards"
         element={
           <ProtectedRoute role="student">
-            <Rewards />
+            <RewardsLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<RewardsDashboard />} />
+        <Route path="wallet" element={<Wallet />} />
+        <Route path="game" element={<Game />} />
+        <Route path="leaderboard" element={<Leaderboard />} />
+        <Route path="companion" element={<Companion />} />
+      </Route>
+
+      <Route
+        path="/student/game/play"
+        element={
+          <ProtectedRoute role="student">
+            <GameBoard />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/student/rewards/wallet"
+        path="/student/game/play/:attempt"
         element={
           <ProtectedRoute role="student">
-            <Wallet />
+            <GameBoard />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/student/rewards/leaderboard"
+        path="/student/rewards/game/play"
         element={
           <ProtectedRoute role="student">
-            <Leaderboard />
+            <GameBoard />
           </ProtectedRoute>
         }
       />
-
       <Route
-        path="/student/rewards/game"
+        path="/student/rewards/game/play/:attempt"
         element={
           <ProtectedRoute role="student">
-            <Game />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/student/rewards/statistics"
-        element={
-          <ProtectedRoute role="student">
-            <Statistics />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/student/companion"
-        element={
-          <ProtectedRoute role="student">
-            <Companion />
+            <GameBoard />
           </ProtectedRoute>
         }
       />
@@ -125,22 +111,6 @@ export default function App() {
         element={
           <ProtectedRoute role="tutor">
             <TutorDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/game"
-        element={
-          <ProtectedRoute role="student">
-            <Game />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/game/play"
-        element={
-          <ProtectedRoute role="student">
-            <GameBoard />
           </ProtectedRoute>
         }
       />
