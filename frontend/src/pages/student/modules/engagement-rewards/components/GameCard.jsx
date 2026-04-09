@@ -1,5 +1,7 @@
 import { Grid2x2, Star, Timer, Zap } from "lucide-react";
 import useWallet from "@/hooks/useWallet";
+import puzzleImg from "@/assets/puzzle.jpg";
+import textureBg from "@/assets/texture.png";
 
 export default function GameCard({ gameAttempts = 0, mode = "featured" }) {
   const { balance } = useWallet();
@@ -7,27 +9,91 @@ export default function GameCard({ gameAttempts = 0, mode = "featured" }) {
 
   if (mode === "locked") {
     return (
-      <div className="relative w-full rounded-2xl border border-[#3A3A38] bg-[#2C2C2A] p-8 text-center overflow-hidden h-full flex flex-col justify-center transition-all duration-200 shadow-md">
-        <div className="mx-auto mb-4 inline-flex items-center gap-1 rounded-full bg-[#3B3B39] px-3 py-1 text-[10px] font-black tracking-widest text-gray-200 uppercase">
-          <Grid2x2 size={12} />
-          LOCKED
+      <div style={{
+        position: 'relative',
+        borderRadius: '16px',
+        overflow: 'hidden',
+        minHeight: '280px',
+        backgroundImage: `url(${textureBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+        border: '1px solid rgba(0,0,0,0.05)'
+      }}>
+        {/* Right half — puzzle.jpg with a subtle gradient fade to blend with texture */}
+        <div style={{
+          position: 'absolute',
+          top: 0, 
+          right: 0,
+          width: '50%', 
+          height: '100%',
+          backgroundImage: `linear-gradient(to left, rgba(224, 247, 250, 0), rgba(224, 247, 250, 0.4)), url(${puzzleImg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          opacity: 0.7
+        }} />
+
+        {/* Center overlay — lock content */}
+        <div style={{
+          position: 'relative',
+          zIndex: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          textAlign: 'center',
+          minHeight: '280px',
+          gap: '12px',
+          padding: '2rem',
+        }}>
+          <div style={{
+            height: '110px',
+            width: '110px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(255,255,255,0.4)',
+            backdropFilter: 'blur(8px)',
+            borderRadius: '20px',
+            border: '2px solid rgba(255,255,255,0.6)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+            margin: '8px 0'
+          }}>
+            <svg width="72" height="72" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="10" rx="2.5" fill="#E24B4A" />
+              <path
+                d="M8 11V8a4 4 0 0 1 8 0v3"
+                stroke="#E24B4A"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="12" cy="16" r="1.5" fill="white" />
+            </svg>
+          </div>
+
+          <h2 style={{ 
+            color: '#004d40', 
+            fontWeight: 800, 
+            fontSize: '2.25rem',
+            margin: 0,
+            textShadow: '0 1px 8px rgba(255,255,255,0.6)',
+            letterSpacing: '-0.02em'
+          }}>
+            FlowFree
+          </h2>
+          <p style={{ 
+            color: '#00695c', 
+            fontSize: '15px', 
+            fontWeight: 500,
+            margin: 0,
+            maxWidth: '280px',
+            textShadow: '0 1px 6px rgba(255,255,255,0.5)',
+            lineHeight: 1.4
+          }}>
+            Connect matching colors and fill the grid.
+          </p>
         </div>
-        <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-2xl bg-[#363634]">
-          <svg width="92" height="92" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <rect x="5" y="11" width="14" height="10" rx="2" fill="#E24B4A" />
-            <path
-              d="M8 11V8a4 4 0 0 1 8 0v3"
-              stroke="#E24B4A"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <circle cx="12" cy="16" r="1.5" fill="#F8EAEA" />
-            <rect x="11.3" y="16.8" width="1.4" height="2.6" rx="0.7" fill="#F8EAEA" />
-          </svg>
-        </div>
-        <h2 className="text-4xl font-black text-white tracking-tight">FlowFree</h2>
-        <p className="mt-2 text-sm text-gray-300 font-medium px-4 tracking-wide">Connect matching colors and fill the grid.</p>
       </div>
     );
   }

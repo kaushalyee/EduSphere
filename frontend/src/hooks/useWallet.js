@@ -1,173 +1,91 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/api";
 import { useAuth } from "../context/AuthContext";
 
-const normalizeBalance = (value) => {
-  const numericValue = Number(value ?? 0);
-  return Number.isFinite(numericValue) ? numericValue : 0;
-};
-
-const WALLET_CACHE_KEY = "engagement-reward-wallet-cache";
 const WALLET_STALE_TIME = 60 * 1000;
-
-let walletCache = {
-  balance: 0,
-  fetchedAt: 0,
-  promise: null,
-};
-
-const canUseStorage = () => typeof window !== "undefined" && typeof window.sessionStorage !== "undefined";
-
-const getCachedWallet = () => {
-  const memoryAge = Date.now() - walletCache.fetchedAt;
-  if (walletCache.fetchedAt && memoryAge < WALLET_STALE_TIME) {
-    return {
-      balance: normalizeBalance(walletCache.balance),
-      isFresh: true,
-    };
-  }
-
-  if (!canUseStorage()) {
-    return {
-      balance: normalizeBalance(walletCache.balance),
-      isFresh: false,
-    };
-  }
-
-  try {
-    const raw = window.sessionStorage.getItem(WALLET_CACHE_KEY);
-    if (!raw) {
-      return {
-        balance: normalizeBalance(walletCache.balance),
-        isFresh: false,
-      };
-    }
-
-    const parsed = JSON.parse(raw);
-    const fetchedAt = Number(parsed?.fetchedAt ?? 0);
-    const balance = normalizeBalance(parsed?.balance);
-    const isFresh = fetchedAt > 0 && Date.now() - fetchedAt < WALLET_STALE_TIME;
-
-    if (fetchedAt > walletCache.fetchedAt) {
-      walletCache = {
-        ...walletCache,
-        balance,
-        fetchedAt,
-      };
-    }
-
-    return { balance, isFresh };
-  } catch {
-    return {
-      balance: normalizeBalance(walletCache.balance),
-      isFresh: false,
-    };
-  }
-};
-
-const persistWalletCache = (balance) => {
-  const normalizedBalance = normalizeBalance(balance);
-  const fetchedAt = Date.now();
-
-  walletCache = {
-    balance: normalizedBalance,
-    fetchedAt,
-    promise: null,
-  };
-
-  if (!canUseStorage()) return;
-
-  try {
-    window.sessionStorage.setItem(
-      WALLET_CACHE_KEY,
-      JSON.stringify({ balance: normalizedBalance, fetchedAt })
-    );
-  } catch {
-    // Ignore storage write failures and keep serving the in-memory cache.
-  }
-};
 
 export default function useWallet() {
   const { token, user } = useAuth();
-  const initialCache = useMemo(() => getCachedWallet(), []);
-  const [balance, setBalance] = useState(initialCache.balance);
-  const [loading, setLoading] = useState(Boolean(token) && !initialCache.isFresh);
-  const [error, setError] = useState("");
+  const userId = user?._id;
+  const cacheKey = `wallet_${userId}`;
 
-  const fetchWallet = useCallback(async (options = {}) => {
-    const { force = false } = options;
-
-    if (!token) {
-      walletCache = {
-        balance: 0,
-        fetchedAt: 0,
-        promise: null,
-      };
-      if (canUseStorage()) {
-        window.sessionStorage.removeItem(WALLET_CACHE_KEY);
+  const initialBalance = useMemo(() => {
+    if (!userId) return 0;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.userId === userId && (Date.now() - parsed.timestamp < WALLET_STALE_TIME)) {
+          return Number(parsed.balance ?? 0);
+        }
       }
+    } catch (e) {
+      console.error("[useWallet] Cache Read Error", e);
+    }
+    return 0;
+  }, [userId, cacheKey]);
+
+  const [balance, setBalance] = useState(initialBalance);
+  const [loading, setLoading] = useState(Boolean(token));
+  const [error, setError] = useState("");
+  const latestRequestRef = useRef(0);
+
+  useEffect(() => {
+    setBalance(initialBalance);
+  }, [initialBalance]);
+
+  const fetchWallet = useCallback(async () => {
+    const requestId = latestRequestRef.current + 1;
+    latestRequestRef.current = requestId;
+
+    if (!token || !userId) {
       setBalance(0);
-      setLoading(false);
       setError("");
-      return;
-    }
-
-    const cachedWallet = getCachedWallet();
-    if (!force && cachedWallet.isFresh) {
-      setBalance(cachedWallet.balance);
       setLoading(false);
-      return cachedWallet.balance;
-    }
-
-    if (!force && walletCache.promise) {
-      setLoading(true);
-      return walletCache.promise;
+      return;
     }
 
     try {
       setLoading(true);
       setError("");
-      walletCache.promise = api
-        .get("/engagement-reward/wallet/me")
-        .then(({ data }) => {
-          const nextBalance = normalizeBalance(data?.data?.balance);
-          persistWalletCache(nextBalance);
-          setBalance(nextBalance);
-          return nextBalance;
-        });
+      const { data } = await api.get("/engagement-reward/wallet/me");
 
-      return await walletCache.promise;
-    } catch (err) {
-      walletCache.promise = null;
-      setBalance(0);
-      setError(
-        err?.response?.data?.message ||
-          err?.message ||
-          "Failed to load wallet balance"
+      if (latestRequestRef.current !== requestId) {
+        return;
+      }
+
+      const balanceValue = Number(data?.data?.balance ?? 0);
+      
+      setBalance(balanceValue);
+      
+      // Persist to user-specific cache
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          userId: userId,
+          balance: balanceValue,
+          timestamp: Date.now()
+        })
       );
+    } catch (err) {
+      console.error("[useWallet] Fetch Error:", err);
+      if (latestRequestRef.current !== requestId) {
+        return;
+      }
+      setError(err?.response?.data?.message || "Failed to load wallet");
     } finally {
-      walletCache.promise = null;
-      setLoading(false);
+      if (latestRequestRef.current === requestId) {
+        setLoading(false);
+      }
     }
-  }, [token]);
+  }, [token, userId, cacheKey]);
 
   useEffect(() => {
-    // Reset immediately when auth context changes to avoid cross-user leaks.
-    if (!token) {
-      setBalance(0);
-      setLoading(false);
-      setError("");
-      return;
-    }
-
-    const cachedWallet = getCachedWallet();
-    setBalance(cachedWallet.balance);
-    setLoading(!cachedWallet.isFresh);
-    fetchWallet({ force: !cachedWallet.isFresh });
-  }, [token, user?._id, fetchWallet]);
+    fetchWallet();
+  }, [fetchWallet]);
 
   return {
-    balance: normalizeBalance(balance),
+    balance: Number(balance ?? 0),
     loading,
     error,
     refresh: fetchWallet,

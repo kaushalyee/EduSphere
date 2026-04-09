@@ -12,11 +12,11 @@ const {
 const router = express.Router();
 
 // Game module routes (prefixed with /game)
-router.get("/game/status", protect, getDailyStatus);
-router.post("/game/reset", protect, resetDailyAttempts);
-router.post("/game/unlock", protect, unlockGame);
-router.post("/game/complete", protect, completeGame);
-router.post("/game/submit", submitScore);
+router.get("/status", protect, getDailyStatus);
+router.post("/reset", protect, resetDailyAttempts);
+router.post("/unlock", protect, unlockGame);
+router.post("/complete", protect, completeGame);
+router.post("/submit", submitScore);
 
 // Leaderboard route
 router.get("/leaderboard", getLeaderboard);

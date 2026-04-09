@@ -6,6 +6,7 @@ const WalletContext = createContext();
 
 export const WalletProvider = ({ children }) => {
   const [totalGP, setTotalGP] = useState(0);
+  const [sessionGP, setSessionGP] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const { isAuth, user } = useAuth();
 
@@ -15,7 +16,7 @@ export const WalletProvider = ({ children }) => {
     setIsLoading(true);
     try {
       // Use the project's default axios configuration or the one set globally
-      const res = await axios.get("/api/user/wallet");
+      const res = await axios.get("/api/users/wallet");
       if (res.data && res.data.totalGP !== undefined) {
         setTotalGP(res.data.totalGP);
       }
@@ -36,7 +37,7 @@ export const WalletProvider = ({ children }) => {
   }, [isAuth, fetchWallet]);
 
   return (
-    <WalletContext.Provider value={{ totalGP, setTotalGP, fetchWallet, isLoading }}>
+    <WalletContext.Provider value={{ totalGP, setTotalGP, sessionGP, setSessionGP, fetchWallet, isLoading }}>
       {children}
     </WalletContext.Provider>
   );

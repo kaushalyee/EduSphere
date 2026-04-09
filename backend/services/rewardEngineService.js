@@ -6,7 +6,7 @@ const { toUserObjectId } = require("./walletService");
 const BASE_COST = 50;
 const MIN_COST = 30;
 const MAX_COST = 80;
-const BASE_DAILY_LIMIT = 5;
+const BASE_DAILY_LIMIT = 3;
 
 function getTodayDateKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
@@ -20,18 +20,15 @@ function getPerformanceMultiplier(lastQuizScore) {
 }
 
 function getUsageMultiplier(attemptsUsedToday) {
-  if (attemptsUsedToday >= 5) {
+  if (attemptsUsedToday >= 3) {
     return { multiplier: null, blocked: true };
   }
-  if (attemptsUsedToday >= 4) return { multiplier: 1.2, blocked: false };
-  if (attemptsUsedToday >= 3) return { multiplier: 1.1, blocked: false };
+  if (attemptsUsedToday >= 2) return { multiplier: 1.2, blocked: false };
+  if (attemptsUsedToday >= 1) return { multiplier: 1.1, blocked: false };
   return { multiplier: 1.0, blocked: false };
 }
 
 function getMaxAttempts(lastQuizScore) {
-  if (lastQuizScore >= 90) return 5;
-  if (lastQuizScore >= 75) return 4;
-  if (lastQuizScore >= 50) return 3;
   return 3;
 }
 

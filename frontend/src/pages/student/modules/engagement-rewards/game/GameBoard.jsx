@@ -6,9 +6,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useWallet } from '@/context/WalletContext';
 import axios from 'axios';
 
-// Configuration for backend communication
-axios.defaults.baseURL = "http://localhost:5000";
-
 /**
  * Helper to convert "M:SS" string to total seconds.
  */
@@ -179,7 +176,7 @@ const GameBoard = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { user } = useAuth();
-    const { fetchWallet } = useWallet();
+    const { fetchWallet, setSessionGP } = useWallet();
 
     useEffect(() => {
         setPaths({});
@@ -286,7 +283,7 @@ const GameBoard = () => {
                 });
 
                 // 1. Submit to the new GP system
-                const gpRes = await axios.post("/api/game/submit", {
+                const gpRes = await api.post("/game/submit", {
                     userId: user._id,
                     time: timeInSeconds,
                     gridSize: `${GRID_SIZE}x${GRID_SIZE}`
@@ -294,6 +291,7 @@ const GameBoard = () => {
 
                 if (gpRes.data.success) {
                     setGpEarned(gpRes.data.gp);
+                    setSessionGP(prev => prev + gpRes.data.gp);
                     // Refresh total wallet balance from server
                     await fetchWallet();
                 }

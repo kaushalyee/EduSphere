@@ -63,6 +63,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setToken('');
     setUser(null);
+    sessionStorage.clear();
   };
 
   const value = useMemo(

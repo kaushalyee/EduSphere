@@ -39,27 +39,25 @@ export default function GameStats({
         return (
           <article
             key={stat.id}
-            className={`rounded-xl border bg-white p-4 shadow-sm transition-transform hover:scale-[1.02] hover:shadow-md ${
-              isAttempts ? "border-orange-200" : "border-gray-100"
+            className={`rounded-xl border p-5 shadow-sm transition-transform hover:scale-[1.02] hover:shadow-md ${
+              stat.id === "balance" ? "card-balance" :
+              stat.id === "cost" ? "card-cost" :
+              "card-attempts"
             }`}
           >
-            <div
-              className={`mb-3 inline-flex rounded-lg p-2.5 ${
-                isAttempts
-                  ? "bg-orange-50 text-orange-600"
-                  : "bg-blue-50 text-blue-600"
-              }`}
-            >
-              <Icon size={18} />
+            <div className={`mb-4 inline-flex rounded-lg p-2.5 bg-white/50 shadow-sm`}>
+              <Icon size={20} />
             </div>
-            <p className="text-xs font-semibold text-gray-500 uppercase">{stat.title}</p>
-            <p className={`mt-1 text-xl font-bold ${isAttempts ? "text-orange-600" : "text-gray-900"}`}>{stat.value}</p>
-            <div className="mt-3 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+            <p className="text-xs font-bold uppercase tracking-wider opacity-80 mb-2">{stat.title}</p>
+            <h2 className="text-3xl font-black">{stat.value}</h2>
+            
+            <div className="mt-4 h-1.5 rounded-full bg-black/5 overflow-hidden">
               <div
-                className={`h-1.5 rounded-full ${
-                  isAttempts ? "bg-orange-500" : "bg-blue-600"
-                }`}
-                style={{ width: stat.progress }}
+                className="h-1.5 rounded-full transition-all duration-500"
+                style={{ 
+                  width: stat.progress,
+                  backgroundColor: 'currentColor'
+                }}
               ></div>
             </div>
           </article>

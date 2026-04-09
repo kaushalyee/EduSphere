@@ -1,12 +1,35 @@
 import { Wallet } from "lucide-react";
+import { useState, useEffect } from "react";
 
-export default function RewardWallet({ points, attempts }) {
+function getTimeUntilMidnight() {
+  const now = new Date();
+  const midnight = new Date();
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight - now;
+  
+  const h = Math.floor(diff / (1000 * 60 * 60));
+  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return { h, m };
+}
+
+export default function RewardWallet({ points, attemptsUsedToday, maxAttempts }) {
+  const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(getTimeUntilMidnight());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const safePoints = points ?? 0;
-  const safeAttempts = attempts ?? 0;
+  const used = attemptsUsedToday ?? 0;
+  const limit = maxAttempts ?? 3;
+  const remaining = Math.max(0, limit - used);
   const weeklyEarn = Math.max(0, Math.round(safePoints * 0.15));
   
-  // Calculate segments (Max 20 attempts, 4 per segment = 5 segments)
-  const filledSegments = Math.ceil(safeAttempts / 4);
+  // Calculate segments (Max 3 attempts)
+  const filledSegments = used;
 
   return (
     <div className="relative flex h-full flex-col justify-between rounded-xl border border-gray-100 bg-white p-5 shadow-md overflow-hidden">
@@ -38,11 +61,11 @@ export default function RewardWallet({ points, attempts }) {
         <div>
           <div className="mb-3 flex justify-between text-[10px] font-black tracking-widest text-gray-400 uppercase">
             <span>GAME ATTEMPTS</span>
-            <span className="text-gray-500 font-bold">{safeAttempts} / 20</span>
+            <span className="text-gray-500 font-bold">{used} / {limit} USED TODAY</span>
           </div>
           
           <div className="flex gap-1.5 h-1.5 w-full">
-            {[1, 2, 3, 4, 5].map((segIdx) => (
+            {[1, 2, 3].map((segIdx) => (
               <div 
                 key={segIdx}
                 className={`flex-1 rounded-full transition-all duration-300 ${
@@ -53,6 +76,12 @@ export default function RewardWallet({ points, attempts }) {
               />
             ))}
           </div>
+          <p className="mt-2 text-[10px] font-medium text-gray-400">
+            {remaining > 0 
+              ? `${remaining} attempt${remaining === 1 ? '' : 's'} remaining` 
+              : `Resets in ${timeLeft.h}h ${timeLeft.m}m`
+            }
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-3">

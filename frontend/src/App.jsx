@@ -17,8 +17,11 @@ import Companion from "./pages/student/modules/engagement-rewards/Companion";
 import GameBoard from "./pages/student/modules/engagement-rewards/game/GameBoard";
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import { useAuth } from "./context/AuthContext";
 
 export default function App() {
+  const { user } = useAuth();
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
@@ -58,7 +61,7 @@ export default function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<RewardsDashboard />} />
+        <Route index element={<RewardsDashboard key={user?._id ?? "guest"} />} />
         <Route path="wallet" element={<Wallet />} />
         <Route path="game" element={<Game />} />
         <Route path="leaderboard" element={<Leaderboard />} />

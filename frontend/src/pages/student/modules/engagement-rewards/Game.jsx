@@ -80,7 +80,7 @@ export default function Game() {
   );
 
   return (
-    <div className="mx-auto flex w-full max-w-[1200px] flex-col justify-start gap-5 pb-10">
+    <div className="game-page-container mx-auto flex w-full max-w-[1200px] flex-col justify-start gap-5 pb-10">
       <GameHero />
       <div className="rewards-glass-card p-1">
         <GameCard mode="locked" />
@@ -96,12 +96,9 @@ export default function Game() {
           availableAttempts={availableAttempts}
         />
       </div>
-      <p className="text-center text-xs font-medium text-gray-500">
-        Attempts used today: {attemptsUsedToday} / {maxAttempts}
-      </p>
-      {balanceTooLow ? <p className="text-center text-sm font-medium text-orange-600">Insufficient balance for next unlock.</p> : null}
-      {attemptsExhausted ? <p className="text-center text-sm font-medium text-red-600">Daily attempt limit reached. Resets at midnight.</p> : null}
-      {error ? <p className="text-center text-sm font-medium text-red-600">{error}</p> : null}
+      {balanceTooLow ? <p className="text-center text-sm font-medium text-orange-600 mt-2">Insufficient balance for next unlock.</p> : null}
+      {attemptsExhausted ? <p className="text-center text-sm font-medium text-red-600 mt-2">You have used all 3 attempts today. Come back tomorrow.</p> : null}
+      {error ? <p className="text-center text-sm font-medium text-red-600 mt-2">{error}</p> : null}
     </div>
   );
 }
