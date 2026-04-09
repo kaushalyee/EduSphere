@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import Toast from "../../../components/ui/Toast";
 
 const TABS = [
   { id: "sessions", label: "Available Sessions" },
@@ -17,6 +18,13 @@ export default function PeerLearning() {
   const [fetchingSessions, setFetchingSessions] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
+
+  const [sessionSearch, setSessionSearch] = useState("");
+  const [sessionModeFilter, setSessionModeFilter] = useState("all");
+  const [sessionCategoryFilter, setSessionCategoryFilter] = useState("all");
+  const [showRecommendedOnly, setShowRecommendedOnly] = useState(false);
+  const [highlightedSessionId, setHighlightedSessionId] = useState(null);
 
   const [formData, setFormData] = useState({
     category: "",
@@ -55,7 +63,6 @@ export default function PeerLearning() {
     }
   };
 
-  // ── CHANGED: now calls /feed instead of /sessions ──
   const fetchSessions = async () => {
     try {
       setFetchingSessions(true);
@@ -78,6 +85,53 @@ export default function PeerLearning() {
   const availableTopics = useMemo(() => {
     return topicsByCategory[formData.category] || [];
   }, [formData.category, topicsByCategory]);
+
+  const sessionCategories = useMemo(() => {
+    return [...new Set(sessions.map((session) => session.category).filter(Boolean))];
+  }, [sessions]);
+
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((session) => {
+      const matchesSearch =
+        !sessionSearch.trim() ||
+        session.topic?.toLowerCase().includes(sessionSearch.toLowerCase()) ||
+        session.category?.toLowerCase().includes(sessionSearch.toLowerCase()) ||
+        session.tutorId?.name?.toLowerCase().includes(sessionSearch.toLowerCase());
+
+      const matchesMode =
+        sessionModeFilter === "all" || session.mode === sessionModeFilter;
+
+      const matchesCategory =
+        sessionCategoryFilter === "all" ||
+        session.category === sessionCategoryFilter;
+
+      const matchesRecommended =
+        !showRecommendedOnly || session.isRecommended;
+
+      return (
+        matchesSearch &&
+        matchesMode &&
+        matchesCategory &&
+        matchesRecommended
+      );
+    });
+  }, [
+    sessions,
+    sessionSearch,
+    sessionModeFilter,
+    sessionCategoryFilter,
+    showRecommendedOnly,
+  ]);
+
+  const recommended = filteredSessions.filter((s) => s.isRecommended);
+  const others = filteredSessions.filter((s) => !s.isRecommended);
+
+  const clearSessionFilters = () => {
+    setSessionSearch("");
+    setSessionModeFilter("all");
+    setSessionCategoryFilter("all");
+    setShowRecommendedOnly(false);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -107,7 +161,12 @@ export default function PeerLearning() {
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMessage(res.data.message || "Request submitted successfully");
+
+      setToast({
+        type: "success",
+        text: res.data.message || "Request submitted successfully",
+      });
+
       setFormData({
         category: "",
         topic: "",
@@ -115,14 +174,28 @@ export default function PeerLearning() {
         preferredTime: "",
         preferredDate: "",
       });
+
       fetchMyRequests();
       fetchSessions();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to submit request");
+      setToast({
+        type: "error",
+        text: err.response?.data?.message || "Failed to submit request",
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!toast) return;
+
+    const timer = setTimeout(() => {
+      setToast(null);
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   const formatDate = (value) => {
     if (!value) return "No preferred date";
@@ -135,14 +208,28 @@ export default function PeerLearning() {
   };
 
   const activeIndex = TABS.findIndex((t) => t.id === activeTab);
+  const pendingRequests = myRequests.filter(
+    (request) => request.status === "pending" || !request.status
+  );
 
-  // ── split feed into two groups ──
-  const recommended = sessions.filter((s) => s.isRecommended);
-  const others = sessions.filter((s) => !s.isRecommended);
+  const fulfilledRequests = myRequests.filter(
+    (request) => request.status === "fulfilled"
+  );
+  const handleViewMatchedSession = (matchedSessionId) => {
+    setHighlightedSessionId(matchedSessionId);
+    setActiveTab("sessions");
+  };
 
   return (
     <div className="space-y-6">
-      {/* Sliding Tab Bar */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.text}
+          onClose={() => setToast(null)}
+        />
+      )}
+
       <div className="bg-white rounded-2xl shadow-sm p-2">
         <div className="relative flex items-center gap-1">
           <div
@@ -156,11 +243,10 @@ export default function PeerLearning() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`relative z-10 flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-colors duration-300 ${
-                activeTab === tab.id
-                  ? "text-white"
-                  : "text-slate-500 hover:text-slate-700"
-              }`}
+              className={`relative z-10 flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl transition-colors duration-300 ${activeTab === tab.id
+                ? "text-white"
+                : "text-slate-500 hover:text-slate-700"
+                }`}
             >
               {tab.label}
             </button>
@@ -168,28 +254,91 @@ export default function PeerLearning() {
         </div>
       </div>
 
-      {/* Sessions Tab */}
       {activeTab === "sessions" && (
         <div className="bg-white rounded-2xl shadow-sm p-8">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-slate-900">
-              Available Sessions
-            </h3>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-2xl font-bold text-slate-900">
+                Available Sessions
+              </h3>
+              <p className="text-slate-500 text-sm mt-1">
+                Search and filter sessions to find the best match for your learning needs.
+              </p>
+            </div>
+
             {recommended.length > 0 && (
-              <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full">
+              <span className="text-sm text-blue-600 font-medium bg-blue-50 px-3 py-1 rounded-full w-fit">
                 {recommended.length} recommended for you
               </span>
             )}
           </div>
 
+          <div className="mb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            <input
+              type="text"
+              placeholder="Search by topic, category, or tutor"
+              value={sessionSearch}
+              onChange={(e) => setSessionSearch(e.target.value)}
+              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            />
+
+            <select
+              value={sessionModeFilter}
+              onChange={(e) => setSessionModeFilter(e.target.value)}
+              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            >
+              <option value="all">All Modes</option>
+              <option value="online">Online</option>
+              <option value="offline">Offline</option>
+            </select>
+
+            <select
+              value={sessionCategoryFilter}
+              onChange={(e) => setSessionCategoryFilter(e.target.value)}
+              className="w-full border border-slate-300 rounded-xl px-4 py-3"
+            >
+              <option value="all">All Categories</option>
+              {sessionCategories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={clearSessionFilters}
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Clear Filters
+            </button>
+          </div>
+
+          <div className="mb-6 flex items-center gap-3">
+            <input
+              id="recommendedOnly"
+              type="checkbox"
+              checked={showRecommendedOnly}
+              onChange={(e) => setShowRecommendedOnly(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <label
+              htmlFor="recommendedOnly"
+              className="text-sm font-medium text-slate-700"
+            >
+              Show recommended sessions only
+            </label>
+          </div>
+
           {fetchingSessions ? (
             <p className="text-slate-500">Loading sessions...</p>
-          ) : sessions.length === 0 ? (
-            <p className="text-slate-500">No sessions available right now.</p>
+          ) : filteredSessions.length === 0 ? (
+            <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-6">
+              <p className="text-slate-500">
+                No sessions match your current filters.
+              </p>
+            </div>
           ) : (
             <div className="space-y-8">
-
-              {/* Recommended Section */}
               {recommended.length > 0 && (
                 <div>
                   <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-3">
@@ -201,13 +350,13 @@ export default function PeerLearning() {
                         key={session._id}
                         session={session}
                         formatSessionDate={formatSessionDate}
+                        isHighlighted={highlightedSessionId === session._id}
                       />
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Other Sessions */}
               {others.length > 0 && (
                 <div>
                   {recommended.length > 0 && (
@@ -221,18 +370,17 @@ export default function PeerLearning() {
                         key={session._id}
                         session={session}
                         formatSessionDate={formatSessionDate}
+                        isHighlighted={highlightedSessionId === session._id}
                       />
                     ))}
                   </div>
                 </div>
               )}
-
             </div>
           )}
         </div>
       )}
 
-      {/* Request a Session Tab */}
       {activeTab === "new" && (
         <div className="bg-white rounded-2xl shadow-sm p-8 max-w-5xl">
           <h2 className="text-3xl font-bold text-slate-900 mb-2">
@@ -283,7 +431,7 @@ export default function PeerLearning() {
                 value={formData.topic}
                 onChange={handleChange}
                 disabled={!formData.category}
-                className="w-full border border-slate-300 rounded-xl px-4 py-3"
+                className="w-full border border-slate-300 rounded-xl px-4 py-3 disabled:bg-slate-100"
               >
                 <option value="">Select topic</option>
                 {availableTopics.map((topic) => (
@@ -357,32 +505,122 @@ export default function PeerLearning() {
         </div>
       )}
 
-      {/* My Requests Tab */}
       {activeTab === "requests" && (
         <div className="bg-white rounded-2xl shadow-sm p-8">
-          <h3 className="text-2xl font-bold text-slate-900 mb-4">My Requests</h3>
+          <h3 className="text-2xl font-bold text-slate-900 mb-6">My Requests</h3>
 
           {fetchingRequests ? (
             <p className="text-slate-500">Loading your requests...</p>
           ) : myRequests.length === 0 ? (
             <p className="text-slate-500">You have not submitted any requests yet.</p>
           ) : (
-            <div className="space-y-4">
-              {myRequests.map((request) => (
-                <div
-                  key={request._id}
-                  className="border border-slate-200 rounded-xl p-4"
-                >
-                  <p className="text-sm font-medium text-blue-600">{request.category}</p>
-                  <h4 className="text-lg font-bold text-slate-900">{request.topic}</h4>
-                  <p className="text-slate-600 mt-1">
-                    Mode: {request.preferredMode} | Time: {request.preferredTime}
-                  </p>
-                  <p className="text-slate-500 text-sm mt-1">
-                    {formatDate(request.preferredDate)}
-                  </p>
+            <div className="space-y-8">
+              {/* Pending Requests */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-bold text-slate-900">Pending Requests</h4>
+                  <span className="text-sm font-medium text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
+                    {pendingRequests.length}
+                  </span>
                 </div>
-              ))}
+
+                {pendingRequests.length === 0 ? (
+                  <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                    <p className="text-slate-500">No pending requests.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {pendingRequests.map((request) => (
+                      <div
+                        key={request._id}
+                        className="border border-amber-200 bg-amber-50 rounded-xl p-4"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-blue-600">
+                              {request.category}
+                            </p>
+                            <h4 className="text-lg font-bold text-slate-900">
+                              {request.topic}
+                            </h4>
+                          </div>
+
+                          <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-3 py-1 rounded-full">
+                            Pending
+                          </span>
+                        </div>
+
+                        <p className="text-slate-600 mt-2">
+                          Mode: {request.preferredMode} | Time: {request.preferredTime}
+                        </p>
+                        <p className="text-slate-500 text-sm mt-1">
+                          {formatDate(request.preferredDate)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Fulfilled Requests */}
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-bold text-slate-900">Fulfilled Requests</h4>
+                  <span className="text-sm font-medium text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                    {fulfilledRequests.length}
+                  </span>
+                </div>
+
+                {fulfilledRequests.length === 0 ? (
+                  <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
+                    <p className="text-slate-500">No fulfilled requests yet.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {fulfilledRequests.map((request) => (
+                      <div
+                        key={request._id}
+                        className="border border-emerald-200 bg-emerald-50 rounded-xl p-4"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-medium text-blue-600">
+                              {request.category}
+                            </p>
+                            <h4 className="text-lg font-bold text-slate-900">
+                              {request.topic}
+                            </h4>
+                          </div>
+
+                          <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full">
+                            Fulfilled
+                          </span>
+                        </div>
+
+                        <p className="text-slate-600 mt-2">
+                          Mode: {request.preferredMode} | Time: {request.preferredTime}
+                        </p>
+
+                        <p className="text-slate-500 text-sm mt-1">
+                          {formatDate(request.preferredDate)}
+                        </p>
+                        <p className="mt-3 text-sm font-medium text-emerald-700">
+                          A tutor has created a session for this request.
+                        </p>
+
+                        {request.matchedSessionId && (
+                          <button
+                            onClick={() => handleViewMatchedSession(request.matchedSessionId)}
+                            className="mt-3 inline-flex items-center rounded-lg bg-[#2F66E0] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2457c7] transition"
+                          >
+                            View Session
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -391,58 +629,93 @@ export default function PeerLearning() {
   );
 }
 
-// ── Session Card Component ──
-function SessionCard({ session, formatSessionDate }) {
+function SessionCard({ session, formatSessionDate, isHighlighted }) {
+  const formattedDate = formatSessionDate(session.date);
+
   return (
     <div
-      className={`border rounded-xl p-5 transition-all ${
-        session.isRecommended
-          ? "border-blue-300 bg-blue-50"
-          : "border-slate-200 bg-white"
+      className={`rounded-2xl p-5 transition-all flex gap-4 ${
+        isHighlighted
+          ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
+          : "bg-white border border-slate-200"
       }`}
     >
-      {/* Recommended badge */}
-      {session.isRecommended && (
-        <span className="inline-block text-xs font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full mb-2">
-          Matches your weak topic
-        </span>
-      )}
+      {/* 📅 DATE BOX */}
+      <div className="flex flex-col items-center justify-center bg-[#2F66E0] text-white rounded-xl px-4 py-3 min-w-[80px]">
+        <p className="text-xs uppercase">Date</p>
+        <p className="text-lg font-bold">
+          {new Date(session.date).getDate()}
+        </p>
+        <p className="text-xs">
+          {new Date(session.date).toLocaleString("default", {
+            month: "short",
+          })}
+        </p>
+      </div>
 
-      <p className="text-sm font-medium text-blue-600">{session.category}</p>
-      <h4 className="text-lg font-bold text-slate-900">{session.topic}</h4>
-
-      <div className="mt-2 space-y-1 text-sm text-slate-600">
-        <p><span className="font-semibold">Tutor:</span> {session.tutorId?.name || "N/A"}</p>
-        <p><span className="font-semibold">Date:</span> {formatSessionDate(session.date)}</p>
-        <p><span className="font-semibold">Time:</span> {session.time}</p>
-        <p><span className="font-semibold">Duration:</span> {session.duration} mins</p>
-        <p><span className="font-semibold">Mode:</span> {session.mode}</p>
-
-        {session.mode === "offline" && session.location && (
-          <p><span className="font-semibold">Location:</span> {session.location}</p>
+      {/* 📄 CONTENT */}
+      <div className="flex-1">
+        {/* Highlight badge */}
+        {isHighlighted && (
+          <span className="text-xs bg-[#2F66E0] text-white px-2 py-1 rounded-full">
+            Matched Session
+          </span>
         )}
 
-        {session.mode === "online" && session.meetingLink && (
-          <p>
-            <span className="font-semibold">Meeting:</span>{" "}
-            <a href={session.meetingLink} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-              Join Session
-            </a>
+        {/* Title */}
+        <h3 className="text-lg font-bold text-slate-900 mt-1">
+          {session.topic}
+        </h3>
+
+        <p className="text-sm text-blue-600 font-medium">
+          {session.category}
+        </p>
+
+        {/* ⏰ TIME BIG */}
+        <div className="flex items-center gap-4 mt-3">
+          <p className="text-xl font-bold text-[#2F66E0]">
+            {session.time}
           </p>
-        )}
 
-        {session.quizLink && (
-          <p>
-            <span className="font-semibold">Quiz:</span>{" "}
-            <a href={session.quizLink} target="_blank" rel="noreferrer" className="text-blue-600 underline">
-              Open Quiz
+          <span className="text-sm bg-gray-100 px-2 py-1 rounded-lg">
+            {session.duration} mins
+          </span>
+        </div>
+
+        {/* DETAILS */}
+        <div className="mt-3 text-sm text-slate-600 space-y-1">
+          <p>👨‍🏫 {session.tutorId?.name || "N/A"}</p>
+          <p>📍 {session.mode}</p>
+
+          {session.mode === "offline" && session.location && (
+            <p>📌 {session.location}</p>
+          )}
+        </div>
+
+        {/* LINKS */}
+        <div className="mt-4 flex gap-3 flex-wrap">
+          {session.meetingLink && (
+            <a
+              href={session.meetingLink}
+              target="_blank"
+              rel="noreferrer"
+              className="bg-[#2F66E0] text-white px-3 py-1 rounded-lg text-sm"
+            >
+              Join
             </a>
-          </p>
-        )}
+          )}
 
-        {session.description && (
-          <p className="pt-1"><span className="font-semibold">Description:</span> {session.description}</p>
-        )}
+          {session.quizLink && (
+            <a
+              href={session.quizLink}
+              target="_blank"
+              rel="noreferrer"
+              className="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg text-sm"
+            >
+              Quiz
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -323,10 +323,11 @@ const getCompletedSessions = async (req, res) => {
       resultsUploaded: uploadedSet.has(session._id.toString()),
     }));
 
-    res.status(200).json({
-      success: true,
-      sessions: sessionsWithUploadStatus,
-    });
+res.status(200).json({
+  success: true,
+  count: sessionsWithUploadStatus.length,
+  sessions: sessionsWithUploadStatus,
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -341,10 +342,11 @@ const getCancelledSessions = async (req, res) => {
       status: "cancelled",
     }).sort({ updatedAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      sessions,
-    });
+res.status(200).json({
+  success: true,
+  count: sessions.length,
+  sessions,
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({
