@@ -1,5 +1,6 @@
 import axios from "axios";
 import React, { useMemo, useState, useEffect } from "react";
+import { CheckCircle2, AlertCircle, X } from "lucide-react";
 
 export default function CreateSession({
   selectedTrendingTopic,
@@ -18,10 +19,15 @@ export default function CreateSession({
     capacity: "",
     description: "",
   });
+
   const [topicsByCategory, setTopicsByCategory] = useState({});
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const [errors, setErrors] = useState({});
+  const [toast, setToast] = useState({
+    show: false,
+    type: "success",
+    message: "",
+  });
 
   const token = localStorage.getItem("token");
   const today = new Date().toISOString().split("T")[0];
@@ -30,15 +36,23 @@ export default function CreateSession({
     return topicsByCategory[formData.category] || [];
   }, [formData.category, topicsByCategory]);
 
-  const isValidUrl = (value) => {
-    if (!value) return true;
-    try {
-      const url = new URL(value);
-      return url.protocol === "http:" || url.protocol === "https:";
-    } catch {
-      return false;
-    }
+  const showToast = (type, message) => {
+    setToast({
+      show: true,
+      type,
+      message,
+    });
   };
+
+  useEffect(() => {
+    if (!toast.show) return;
+
+    const timer = setTimeout(() => {
+      setToast((prev) => ({ ...prev, show: false }));
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [toast.show]);
 
   useEffect(() => {
     const fetchTopics = async () => {
@@ -47,8 +61,10 @@ export default function CreateSession({
         setTopicsByCategory(res.data);
       } catch (error) {
         console.error("Failed to fetch topics", error);
+        showToast("error", "Failed to load topics");
       }
     };
+
     fetchTopics();
   }, []);
 
@@ -72,31 +88,29 @@ export default function CreateSession({
     if (!formData.time) newErrors.time = "Time is required";
     if (!formData.mode) newErrors.mode = "Mode is required";
 
-    // Past date
     if (formData.date && formData.date < today) {
       newErrors.date = "Past dates cannot be selected";
     }
 
-    // Time in the past (only if today)
     if (formData.date === today && formData.time) {
       const now = new Date();
       const [hours, mins] = formData.time.split(":").map(Number);
       const selected = new Date();
       selected.setHours(hours, mins, 0, 0);
+
       if (selected <= now) {
         newErrors.time = "Time must be in the future for today's sessions";
       }
     }
 
-    // Duration
     if (!formData.duration || Number(formData.duration) < 30) {
       newErrors.duration = "Duration must be at least 30 minutes";
     }
+
     if (Number(formData.duration) > 480) {
       newErrors.duration = "Duration cannot exceed 480 minutes (8 hours)";
     }
 
-    // Modes
     if (formData.mode === "online") {
       if (!formData.meetingLink.trim()) {
         newErrors.meetingLink = "Meeting link is required for online sessions";
@@ -105,7 +119,8 @@ export default function CreateSession({
         try {
           const hostname = new URL(formData.meetingLink).hostname;
           if (!allowed.some((d) => hostname.includes(d))) {
-            newErrors.meetingLink = "Please enter a valid Zoom, Google Meet, or Teams link";
+            newErrors.meetingLink =
+              "Please enter a valid Zoom, Google Meet, or Teams link";
           }
         } catch {
           newErrors.meetingLink = "Please enter a valid meeting link";
@@ -117,48 +132,44 @@ export default function CreateSession({
       if (!formData.location.trim()) {
         newErrors.location = "Location is required for offline sessions";
       } else if (formData.location.trim().length < 5) {
-        newErrors.location = "Please enter a more specific location (min 5 characters)";
+        newErrors.location =
+          "Please enter a more specific location (min 5 characters)";
       }
     }
 
-  
-  // Quiz link
-if (formData.quizLink) {
-  try {
-    const hostname = new URL(formData.quizLink).hostname;
-    if (!hostname.includes("forms.office.com")) {
-      newErrors.quizLink = "Please enter a valid Microsoft Forms link (forms.office.com)";
+    if (formData.quizLink) {
+      try {
+        const hostname = new URL(formData.quizLink).hostname;
+        if (!hostname.includes("forms.office.com")) {
+          newErrors.quizLink =
+            "Please enter a valid Microsoft Forms link (forms.office.com)";
+        }
+      } catch {
+        newErrors.quizLink = "Please enter a valid quiz link";
+      }
     }
-  } catch {
-    newErrors.quizLink = "Please enter a valid quiz link";
-  }
-}
 
-    // Capacity
     if (formData.capacity && Number(formData.capacity) < 1) {
       newErrors.capacity = "Capacity must be at least 1";
     }
+
     if (formData.capacity && Number(formData.capacity) > 500) {
       newErrors.capacity = "Capacity cannot exceed 500";
     }
 
-    
-// Description
-if (!formData.description.trim()) {
-  newErrors.description = "Description is required";
-} else if (formData.description.trim().length < 10) {
-  newErrors.description = "Description should be at least 10 characters";
-} else if (formData.description.trim().length > 1000) {
-  newErrors.description = "Description cannot exceed 1000 characters";
-}
+    if (!formData.description.trim()) {
+      newErrors.description = "Description is required";
+    } else if (formData.description.trim().length < 10) {
+      newErrors.description = "Description should be at least 10 characters";
+    } else if (formData.description.trim().length > 1000) {
+      newErrors.description = "Description cannot exceed 1000 characters";
+    }
 
     return newErrors;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
-    setSuccessMessage("");
 
     if (name === "category") {
       setFormData((prev) => ({ ...prev, category: value, topic: "" }));
@@ -178,15 +189,15 @@ if (!formData.description.trim()) {
     }
 
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: "" }));
+    setErrors((prev) => ({ ...prev, [name]: "", api: "" }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage("");
 
     const validationErrors = validateForm();
     setErrors(validationErrors);
+
     if (Object.keys(validationErrors).length > 0) return;
 
     setLoading(true);
@@ -204,7 +215,10 @@ if (!formData.description.trim()) {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setSuccessMessage(response.data.message || "Session created successfully");
+      showToast(
+        "success",
+        response.data.message || "Session created successfully"
+      );
 
       setFormData({
         category: "",
@@ -223,26 +237,47 @@ if (!formData.description.trim()) {
       if (setSelectedTrendingTopic) setSelectedTrendingTopic(null);
       setErrors({});
     } catch (error) {
-      setErrors({
-        api: error.response?.data?.message || "Failed to create session",
-      });
+      const message =
+        error.response?.data?.message || "Failed to create session";
+      setErrors({ api: message });
+      showToast("error", message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-8 max-w-5xl">
+    <div className="relative bg-white rounded-2xl shadow-sm p-8 max-w-5xl">
+      {toast.show && (
+        <div
+          className={`fixed top-5 right-5 z-[100] min-w-[280px] max-w-sm rounded-xl shadow-lg border px-4 py-3 flex items-start gap-3 ${
+            toast.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+              : "bg-red-50 border-red-200 text-red-700"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
+          ) : (
+            <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+          )}
+
+          <div className="flex-1 text-sm font-medium">{toast.message}</div>
+
+          <button
+            type="button"
+            onClick={() => setToast((prev) => ({ ...prev, show: false }))}
+            className="text-slate-400 hover:text-slate-600 transition"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       <h2 className="text-3xl font-bold text-slate-900 mb-2">Create Session</h2>
       <p className="text-slate-500 mb-8">
         Add a new peer learning session for students.
       </p>
-
-      {successMessage && (
-        <div className="mb-5 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-green-700">
-          {successMessage}
-        </div>
-      )}
 
       {errors.api && (
         <div className="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -251,7 +286,6 @@ if (!formData.description.trim()) {
       )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {/* Category */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Category *
@@ -276,7 +310,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Topic */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Topic *
@@ -302,7 +335,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Date */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Date *
@@ -322,7 +354,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Time */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Time *
@@ -341,7 +372,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Duration */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Duration (minutes)
@@ -362,7 +392,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Mode */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Mode *
@@ -384,7 +413,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Location (offline only) */}
         {formData.mode === "offline" && (
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -406,7 +434,6 @@ if (!formData.description.trim()) {
           </div>
         )}
 
-        {/* Meeting Link (online only) */}
         {formData.mode === "online" && (
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -428,7 +455,6 @@ if (!formData.description.trim()) {
           </div>
         )}
 
-        {/* Quiz Link */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Quiz Link <span className="text-slate-400 font-normal">(Optional)</span>
@@ -448,7 +474,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Capacity */}
         <div>
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Capacity <span className="text-slate-400 font-normal">(Optional)</span>
@@ -470,7 +495,6 @@ if (!formData.description.trim()) {
           )}
         </div>
 
-        {/* Description */}
         <div className="md:col-span-2">
           <label className="block text-sm font-semibold text-slate-700 mb-2">
             Description
@@ -491,15 +515,18 @@ if (!formData.description.trim()) {
             ) : (
               <span />
             )}
-            <p className={`text-xs ml-auto ${
-              formData.description.length > 1000 ? "text-red-500" : "text-slate-400"
-            }`}>
+            <p
+              className={`text-xs ml-auto ${
+                formData.description.length > 1000
+                  ? "text-red-500"
+                  : "text-slate-400"
+              }`}
+            >
               {formData.description.length} / 1000
             </p>
           </div>
         </div>
 
-        {/* Submit */}
         <div className="md:col-span-2 pt-2">
           <button
             type="submit"

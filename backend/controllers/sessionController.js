@@ -2,6 +2,8 @@ const Session = require("../models/Session");
 const { TOPICS_BY_CATEGORY } = require("../constants/topics");
 const QuizResult = require("../models/QuizResult");
 const SessionRequest = require("../models/SessionRequest");
+const User = require("../models/User");
+const { rankSessions } = require("../utils/recommendationEngine");
 
 const isValidUrl = (value) => {
   return /^https?:\/\/.+/i.test(value);
@@ -321,10 +323,11 @@ const getCompletedSessions = async (req, res) => {
       resultsUploaded: uploadedSet.has(session._id.toString()),
     }));
 
-    res.status(200).json({
-      success: true,
-      sessions: sessionsWithUploadStatus,
-    });
+res.status(200).json({
+  success: true,
+  count: sessionsWithUploadStatus.length,
+  sessions: sessionsWithUploadStatus,
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -339,14 +342,41 @@ const getCancelledSessions = async (req, res) => {
       status: "cancelled",
     }).sort({ updatedAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      sessions,
-    });
+res.status(200).json({
+  success: true,
+  count: sessions.length,
+  sessions,
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({
       message: "Server error while fetching cancelled sessions",
+    });
+  }
+};
+const getStudentFeed = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select("weakTopics");
+    const weakTopics = user.weakTopics || [];
+
+    const allUpcoming = await Session.find({ status: "upcoming" })
+      .populate("tutorId", "name email")
+      .sort({ date: 1 });
+
+    const feed = rankSessions(weakTopics, allUpcoming);
+
+    return res.status(200).json({
+      success: true,
+      totalSessions: feed.length,
+      recommendedCount: feed.filter(s => s.isRecommended).length,
+      weakTopics,
+      feed,
+    });
+  } catch (error) {
+    console.error("getStudentFeed error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching feed",
     });
   }
 };
@@ -360,4 +390,5 @@ module.exports = {
   cancelSession,
   getCompletedSessions,
   getCancelledSessions,
+  getStudentFeed,
 };

@@ -126,12 +126,12 @@ const Register = () => {
       role,
       ...(role === "student"
         ? {
-            studentID: studentID.trim().toUpperCase(),
-            year: Number(year),
-            semester: Number(semester),
-            weakCategories,
-            weakTopics,
-          }
+          studentID: studentID.trim().toUpperCase(),
+          year: Number(year),
+          semester: Number(semester),
+          weakCategories,
+          weakTopics,
+        }
         : {}),
     };
 
@@ -335,11 +335,10 @@ const Register = () => {
                         {(TOPICS_BY_CATEGORY[cat] || []).map((topic) => (
                           <label
                             key={topic}
-                            className={`cursor-pointer select-none px-3 py-1 rounded-full text-sm border ${
-                              weakTopics.includes(topic)
-                                ? "bg-primary-600 text-white border-primary-600"
-                                : "bg-gray-50 text-gray-700 border-gray-200"
-                            }`}
+                            className={`cursor-pointer select-none px-3 py-1 rounded-full text-sm border ${weakTopics.includes(topic)
+                              ? "bg-primary-600 text-white border-primary-600"
+                              : "bg-gray-50 text-gray-700 border-gray-200"
+                              }`}
                           >
                             <input
                               type="checkbox"
