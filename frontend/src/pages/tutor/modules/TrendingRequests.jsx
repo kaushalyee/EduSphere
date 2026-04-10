@@ -21,7 +21,7 @@ export default function TrendingRequests({ setActiveTab, setSelectedTrendingTopi
           "http://localhost:5000/api/session-requests/trending",
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setTrending(res.data.trendingRequests || []);
+        setTrending(res.data || []);
       } catch (err) {
         setError(err.response?.data?.message || "Failed to load trending requests");
       } finally {
