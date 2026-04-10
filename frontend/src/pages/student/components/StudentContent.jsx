@@ -5,6 +5,7 @@ import DashboardOverview from "../modules/DashboardOverview";
 import PeerLearning from "../modules/PeerLearning";
 import StudentMarketplace from "../marketplace/StudentMarketplace";
 import Progress from "../modules/Progress";
+import RewardsDashboard from "../modules/engagement-rewards/RewardsDashboard";
 
 function EmptyView({ title, icon }) {
   return (

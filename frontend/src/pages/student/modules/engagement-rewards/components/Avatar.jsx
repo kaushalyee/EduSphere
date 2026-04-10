@@ -11,17 +11,14 @@ export default function Avatar({ model }) {
   // --- STEP 1: DETECT MODEL NAME ---
   const modelPath = `/avatars/optimized/${model}`;
   const isLesley = modelPath.toLowerCase().includes("lesley");
-  const isHomelander = modelPath.toLowerCase().includes("homelander");
 
   // --- STEP 2: LOAD MODEL SAFELY ---
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, groupRef);
 
-  // --- STEP 3: FIX LESLEY (NOT SHOWING) ---
+  // --- STEP 3: FIX LESLEY VISIBILITY ---
   useEffect(() => {
     if (!scene || !isLesley) return;
-
-    console.log("Fixing Lesley model");
 
     scene.traverse((child) => {
       if (child.isMesh) {
@@ -33,48 +30,15 @@ export default function Avatar({ model }) {
 
   }, [scene, isLesley]);
 
-  // --- STEP 4: COMMON BOUNDING BOX CALCULATION ---
+  // --- STEP 4: APPLY SPECIFIC SCALE AND POSITION ---
   useEffect(() => {
     if (!scene) return;
 
-    const box = new THREE.Box3().setFromObject(scene);
+    scene.scale.set(1.2, 1.2, 1.2);
 
-    if (!box || box.isEmpty()) {
-      console.warn("Invalid bounding box:", modelPath);
-      return;
-    }
+    scene.position.set(0, -0.9, 0);
 
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-
-    box.getSize(size);
-    box.getCenter(center);
-
-    const maxDim = Math.max(size.x, size.y, size.z);
-
-    if (!isFinite(maxDim) || maxDim === 0) return;
-
-    let scale = 2 / maxDim;
-
-    // --- STEP 5: FIX HOMELANDER SCALE ONLY ---
-    if (isHomelander) {
-      scale = scale * 0.75; // make him smaller
-    }
-
-    scene.scale.setScalar(scale);
-
-    // recalculate after scaling
-    box.setFromObject(scene);
-
-    const minY = box.min.y;
-    const newCenter = new THREE.Vector3();
-    box.getCenter(newCenter);
-
-    scene.position.x = -newCenter.x;
-    scene.position.z = -newCenter.z;
-    scene.position.y = -minY;
-
-  }, [scene, isHomelander, modelPath]);
+  }, [scene]);
 
   // Play first animation
   useEffect(() => {
@@ -84,21 +48,12 @@ export default function Avatar({ model }) {
     }
   }, [actions]);
 
-  // --- STEP 6: FALLBACK ONLY FOR LESLEY ---
-  if (!scene && isLesley) {
-    return (
-      <mesh>
-        <boxGeometry />
-        <meshStandardMaterial color="red" />
-      </mesh>
-    );
-  }
+  // Fallback for loading states / failures
+  if (!scene) return null;
 
-  // --- STEP 7: RENDER NORMALLY ---
   return (
     <group ref={groupRef}>
       <primitive object={scene} />
     </group>
   );
 }
-

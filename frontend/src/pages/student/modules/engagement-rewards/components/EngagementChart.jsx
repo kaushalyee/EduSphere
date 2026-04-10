@@ -3,46 +3,30 @@ export default function EngagementChart() {
   const values = [30, 45, 90, 60, 40, 20, 10];
 
   return (
-    <div className="flex h-full flex-col justify-between rounded-[2rem] border border-white/5 bg-[#121629] p-7 shadow-xl">
-      <div className="mb-8 flex items-center justify-between">
-        <h3 className="text-xs font-extrabold tracking-widest text-white uppercase drop-shadow-sm">
+    <div className="flex h-full flex-col justify-between rounded-xl border border-gray-100 bg-white p-6 shadow-md">
+      <div className="mb-6 flex items-center justify-between">
+        <h3 className="text-sm font-bold tracking-wide text-gray-900 uppercase">
           WEEKLY ENGAGEMENT
         </h3>
-        <span className="text-[10px] font-extrabold tracking-widest text-indigo-400 uppercase">
+        <span className="text-xs font-bold text-blue-600 uppercase">
           CONSISTENCY LEVEL 8
         </span>
       </div>
 
-      <div className="mt-auto flex h-32 w-full items-end justify-between gap-3 pt-4">
+      <div className="mt-auto flex h-32 w-full items-end justify-between gap-2 pt-4">
         {days.map((day, index) => {
           const isHighest = values[index] === Math.max(...values);
-
           return (
-            <div
-              key={day}
-              className="group relative flex w-full flex-col items-center gap-4"
-            >
+            <div key={day} className="flex w-full flex-col items-center gap-2">
               <div className="flex h-24 w-full items-end justify-center">
                 <div
-                  className={`w-full max-w-[2.5rem] rounded-t-xl transition-all duration-500 ease-out ${
-                    isHighest
-                      ? "relative z-10 bg-gradient-to-t from-indigo-600 to-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.4)]"
-                      : "bg-white/5 group-hover:bg-white/15 group-hover:shadow-[0_0_10px_rgba(255,255,255,0.1)]"
+                  className={`w-full max-w-[2rem] rounded-t-md transition-all ${
+                    isHighest ? "bg-blue-600" : "bg-blue-100 hover:bg-blue-200"
                   }`}
                   style={{ height: `${values[index]}%` }}
-                >
-                  {isHighest ? (
-                    <div className="absolute -top-1 left-0 right-0 h-1 rounded-full bg-white/50 blur-[2px]"></div>
-                  ) : null}
-                </div>
+                ></div>
               </div>
-              <span
-                className={`text-[9px] font-extrabold tracking-widest transition-colors ${
-                  isHighest
-                    ? "text-gray-200"
-                    : "text-gray-600 group-hover:text-gray-400"
-                }`}
-              >
+              <span className={`text-[10px] font-bold ${isHighest ? "text-blue-600" : "text-gray-500"}`}>
                 {day}
               </span>
             </div>

@@ -1,12 +1,36 @@
+import React, { useEffect } from "react";
+import { useWallet } from "@/context/WalletContext";
+import { useAuth } from "@/context/AuthContext";
+
 export default function GameHero() {
+  const { totalGP } = useWallet();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      // DEBUG LOG (PART 6)
+      console.log("Logged user:", user._id, "GP:", user.totalGP);
+    }
+  }, [user]);
+
   return (
-    <section className="mx-auto max-w-4xl text-center">
-      <h1 className="bg-gradient-to-r from-white via-indigo-100 to-gray-300 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent md:text-4xl">
-        Puzzle Challenge
-      </h1>
-      <p className="mx-auto mt-2 max-w-2xl text-sm text-gray-300/85 md:text-base">
-        Master the logic, unlock the grid, and earn rewards.
-      </p>
+    <section className="w-full pb-4">
+      <div className="header-row relative flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-[28px] font-bold tracking-tight text-gray-900 md:text-4xl" style={{ fontWeight: 700, margin: '0 0 6px' }}>
+            Puzzle Challenge
+          </h1>
+          <p className="mx-auto max-w-2xl text-sm text-gray-500 md:text-base" style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
+            Master the logic, unlock the grid, and earn rewards.
+          </p>
+        </div>
+
+        <div className="gp-container absolute right-0">
+          <div className="coin">GP</div>
+          <span className="value">{totalGP}</span>
+        </div>
+      </div>
     </section>
   );
 }
+

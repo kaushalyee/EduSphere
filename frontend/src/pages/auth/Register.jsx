@@ -379,10 +379,10 @@ const Register = () => {
               </p>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer"
-            >
+<button
+  type="submit"
+  className="w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer"
+>
               Create Account
             </button>
           </form>
