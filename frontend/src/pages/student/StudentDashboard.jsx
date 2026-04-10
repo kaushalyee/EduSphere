@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import {
   Users,
@@ -18,11 +18,21 @@ import ChatbotOverlay from "./components/ChatbotOverlay";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
 
   const [activeTab, setActiveTab] = useState("Dashboard");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+
+  // Handle navigation state from assignment submission
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      // Clear the state to prevent it from persisting
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {

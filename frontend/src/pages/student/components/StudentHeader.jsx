@@ -6,6 +6,7 @@ export default function StudentHeader({
   setIsSidebarOpen,
   activeTab,
   options,
+  handleLogout,
 }) {
   const current = options.find((o) => o.id === activeTab);
 

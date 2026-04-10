@@ -7,6 +7,7 @@ import RedirectIfAuth from "./components/RedirectIfAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import StudentDashboard from "./pages/student/StudentDashboard";
+import LearningTrajectory from "./pages/student/LearningTrajectory";
 import Rewards from "./pages/student/modules/engagement-rewards/Rewards";
 import Game from "./pages/student/modules/engagement-rewards/Game";
 import Leaderboard from "./pages/student/modules/engagement-rewards/Leaderboard";
@@ -44,6 +45,15 @@ export default function App() {
         element={
           <ProtectedRoute role="student">
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/student/learning-trajectory"
+        element={
+          <ProtectedRoute role="student">
+            <LearningTrajectory />
           </ProtectedRoute>
         }
       />
