@@ -49,7 +49,7 @@ export default function CreateSession({
 
     const timer = setTimeout(() => {
       setToast((prev) => ({ ...prev, show: false }));
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [toast.show]);
@@ -248,21 +248,21 @@ export default function CreateSession({
 
   return (
     <div className="relative bg-white rounded-2xl shadow-sm p-8 max-w-5xl">
-      {toast.show && (
-        <div
-          className={`fixed top-5 right-5 z-[100] min-w-[280px] max-w-sm rounded-xl shadow-lg border px-4 py-3 flex items-start gap-3 ${
-            toast.type === "success"
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-              : "bg-red-50 border-red-200 text-red-700"
-          }`}
-        >
+{toast.show && (
+  <div
+    className={`fixed top-6 right-6 z-[100] rounded-2xl px-10 py-6 text-lg font-semibold text-white shadow-2xl flex items-center gap-3 ${
+      toast.type === "success"
+        ? "bg-emerald-500"
+        : "bg-red-500"
+    }`}
+  >
           {toast.type === "success" ? (
-            <CheckCircle2 className="w-5 h-5 mt-0.5 shrink-0" />
+            <CheckCircle2 className="w-6 h-6 text-white shrink-0" />
           ) : (
-            <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+            <AlertCircle className="w-6 h-6 text-white shrink-0" />
           )}
 
-          <div className="flex-1 text-sm font-medium">{toast.message}</div>
+          <div className="flex-1">{toast.message}</div>
 
           <button
             type="button"

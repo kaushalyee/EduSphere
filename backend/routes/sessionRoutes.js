@@ -6,6 +6,7 @@ const {
   getMySessions,
   getAllSessions,
   getSessionById,
+  updateSession,
   markSessionComplete,
   cancelSession,
   getCompletedSessions,
@@ -32,6 +33,8 @@ router.get("/feed", protect, authorize("student"), getStudentFeed);
 
 // Student - View all sessions
 router.get("/", protect, getAllSessions);
+//Edit session (Tutor)   /:id always last
+router.put("/:sessionId", protect, authorize("tutor"), updateSession);
 
 // Get single session   /:id always last
 router.get("/:id", protect, getSessionById);
