@@ -13,14 +13,25 @@ import {
   Calendar,
   Heart,
   Target,
-  ChevronLeft
+  ChevronLeft,
+  Loader,
+  PanelLeft,
+  Menu
 } from "lucide-react";
+import api from "../../../api/api";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function ChatbotOverlay({ onClose }) {
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
+  const [sessionRecommendations, setSessionRecommendations] = useState({});
+  const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef(null);
 
   // Dragging state
@@ -34,7 +45,11 @@ export default function ChatbotOverlay({ onClose }) {
 
   useEffect(() => {
     scrollToBottom();
-  }, [conversations, isTyping]);
+  }, [messages, isTyping]);
+
+  useEffect(() => {
+    console.log('Conversations state updated:', conversations);
+  }, [conversations]);
 
   // Initial Position: Bottom Right
   useEffect(() => {
@@ -89,82 +104,167 @@ export default function ChatbotOverlay({ onClose }) {
     }
   };
 
-  const activeConversation = conversations.find(c => c.id === activeConversationId);
-
-  const startNewChat = (initialMessage = null) => {
-    const newId = Date.now();
-    const newChat = {
-      id: newId,
-      title: initialMessage ? initialMessage.substring(0, 30) : "New Conversation",
-      messages: [],
-      createdAt: new Date()
+  // 1. Load Conversations on Mount
+  useEffect(() => {
+    const fetchConversations = async () => {
+      console.log('Token:', localStorage.getItem('token'));
+      try {
+        setIsLoading(true);
+        setError(null);
+        const res = await api.get('/chat');
+        
+        // Add debugging logs as requested
+        console.log('Conversations loaded:', res?.data?.data);
+        
+        // Safely check properties to prevent TypeErrors (like null pointer) throwing to the catch block on successful requests
+        if (res.data && res.data.success) {
+          setConversations(res.data.data);
+        } else if (res.data && Array.isArray(res.data.data)) {
+          setConversations(res.data.data);
+        } else if (Array.isArray(res.data)) {
+          setConversations(res.data);
+        }
+      } catch (err) {
+        console.error("Fetch conversations error:", err);
+        // Only set error message for actual 5xx backend errors to prevent 'Sorry' UI on 404 (no chats)
+        if (err.response && err.response.status >= 500) {
+          setError("Sorry, something went wrong. Please try again.");
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    setConversations([newChat, ...conversations]);
-    setActiveConversationId(newId);
+    fetchConversations();
+  }, []);
 
-    if (initialMessage) {
-      setTimeout(() => addMessage(newId, initialMessage, "user"), 100);
+  // 2. Load Messages when Conversation is Clicked
+  const handleConversationClick = async (convId) => {
+    setActiveConversationId(convId);
+    try {
+      setIsLoading(true);
+      setError(null);
+      const res = await api.get(`/chat/${convId}/messages`);
+      if (res.data.success) {
+        setMessages(res.data.data);
+      }
+    } catch (err) {
+      setError("Sorry, something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const addMessage = (conversationId, content, role) => {
-    setConversations(prev => prev.map(conv => {
-      if (conv.id === conversationId) {
-        const updatedMessages = [...conv.messages, {
-          id: Date.now(),
-          role,
-          content,
-          timestamp: new Date()
-        }];
+  // 3. Start New Conversation
+  const startNewChat = async (initialMessage = null) => {
+    if (!initialMessage) {
+      setActiveConversationId(null);
+      setMessages([]);
+      return;
+    }
+
+    try {
+      setIsTyping(true);
+      setError(null);
+      
+      const res = await api.post('/chat/start', { message: initialMessage });
+      if (res.data.success) {
+        const { conversationId, title, messages: newMsgs, recommendedSessions, academicTopic } = res.data.data;
         
-        let newTitle = conv.title;
-        if (role === "user" && conv.messages.length === 0) {
-          newTitle = content.substring(0, 30) + (content.length > 30 ? "..." : "");
+        // Store recommended sessions if present
+        if (recommendedSessions && recommendedSessions.length > 0) {
+          setSessionRecommendations(prev => ({
+            ...prev,
+            [conversationId]: { sessions: recommendedSessions, topic: academicTopic }
+          }));
         }
 
-        return { ...conv, messages: updatedMessages, title: newTitle };
+        const newConv = {
+          _id: conversationId,
+          groupName: title,
+          lastMessageAt: new Date().toISOString()
+        };
+        
+        setConversations(prev => [newConv, ...prev]);
+        setActiveConversationId(conversationId);
+        setMessages(newMsgs);
       }
-      return conv;
-    }));
-
-    if (role === "user") {
-      simulateAIResponse(conversationId);
+    } catch (err) {
+      setError("Sorry, something went wrong. Please try again.");
+    } finally {
+      setIsTyping(false);
     }
   };
 
-  const simulateAIResponse = (conversationId) => {
-    setIsTyping(true);
-    setTimeout(() => {
-      addMessage(conversationId, "I'm currently being set up. Please check back soon!", "assistant");
-      setIsTyping(false);
-    }, 1500);
-  };
-
-  const handleSend = () => {
+  // 4. Send Message in Existing Conversation
+  const handleSend = async () => {
     if (!input.trim()) return;
     
-    let targetId = activeConversationId;
-    if (!targetId) {
-      targetId = Date.now();
-      const newChat = {
-        id: targetId,
-        title: input.substring(0, 30),
-        messages: [],
-        createdAt: new Date()
-      };
-      setConversations([newChat, ...conversations]);
-      setActiveConversationId(targetId);
+    const userInput = input;
+    setInput("");
+
+    if (!activeConversationId) {
+      // Start a new chat if no active conversation
+      startNewChat(userInput);
+      return;
     }
 
-    addMessage(targetId, input, "user");
-    setInput("");
+    // Optimistic Update
+    const optimisticMessage = {
+      _id: Date.now().toString(),
+      senderId: "temp-user-id", // anything not null indicates user message
+      content: userInput,
+      createdAt: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      setIsTyping(true);
+      setError(null);
+      
+      const res = await api.post(`/chat/${activeConversationId}/message`, { message: userInput });
+      if (res.data.success) {
+        const { userMessage, aiMessage, recommendedSessions, academicTopic } = res.data.data;
+        
+        // Store recommended sessions if present
+        if (recommendedSessions && recommendedSessions.length > 0) {
+          setSessionRecommendations(prev => ({
+            ...prev,
+            [activeConversationId]: { sessions: recommendedSessions, topic: academicTopic }
+          }));
+        }
+
+        setMessages(prev => {
+          const filtered = prev.filter(m => m._id !== optimisticMessage._id);
+          return [...filtered, userMessage, aiMessage];
+        });
+        
+        setConversations(prev => prev.map(c => 
+          c._id === activeConversationId ? { ...c, lastMessageAt: aiMessage.createdAt || new Date().toISOString() } : c
+        ));
+      }
+    } catch (err) {
+      setError("Sorry, something went wrong. Please try again.");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
-  const deleteConversation = (e, id) => {
+  // 5. Delete Conversation
+  const deleteConversation = async (e, id) => {
     e.stopPropagation();
-    setConversations(conversations.filter(c => c.id !== id));
-    if (activeConversationId === id) setActiveConversationId(null);
+    try {
+      setError(null);
+      const res = await api.delete(`/chat/${id}`);
+      if (res.data.success) {
+        setConversations(prev => prev.filter(c => c._id !== id));
+        if (activeConversationId === id) {
+          setActiveConversationId(null);
+          setMessages([]);
+        }
+      }
+    } catch (err) {
+      setError("Sorry, something went wrong. Please try again.");
+    }
   };
 
   const suggestions = [
@@ -174,6 +274,52 @@ export default function ChatbotOverlay({ onClose }) {
     { text: "Prepare for my exam", icon: <Target className="w-5 h-5 text-amber-500" /> }
   ];
 
+  const SessionCards = ({ sessions, topic }) => (
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center gap-2 mb-2">
+        <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center">
+          <BookOpen className="w-3 h-3 text-indigo-600" />
+        </div>
+        <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+          Recommended Kuppi Sessions for {topic}
+        </p>
+      </div>
+      {sessions.map((session) => (
+        <div key={session._id} className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 hover:border-indigo-300 transition-all">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1">
+              <p className="text-sm font-bold text-gray-800">{session.topic}</p>
+              <p className="text-xs text-indigo-600 font-medium">{session.category}</p>
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  👤 {session.tutorId?.name || 'Tutor'}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  📅 {new Date(session.date).toLocaleDateString()}
+                </span>
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  🕐 {session.time}
+                </span>
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${session.mode === 'online' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'}`}>
+                  {session.mode}
+                </span>
+              </div>
+              {session.mode === 'online' && session.meetingLink && (
+                <a href={session.meetingLink} target="_blank" rel="noopener noreferrer"
+                  className="text-xs text-indigo-500 hover:text-indigo-700 font-medium mt-1 block">
+                  🔗 Join Meeting
+                </a>
+              )}
+              {session.mode === 'offline' && session.location && (
+                <p className="text-xs text-gray-500 mt-1">📍 {session.location}</p>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+
   return (
     <div 
       onMouseDown={handleMouseDown}
@@ -181,13 +327,14 @@ export default function ChatbotOverlay({ onClose }) {
       style={{ 
         left: window.innerWidth < 640 ? 0 : position.x, 
         top: window.innerWidth < 640 ? 0 : position.y,
-        height: window.innerWidth < 640 ? '100%' : '650px'
+        height: window.innerWidth < 640 ? '100%' : '650px',
+        isolation: 'isolate'
       }}
     >
       
       {/* Left Panel: Sidebar */}
-      <div className="w-72 bg-gray-50 border-r border-gray-200 flex flex-col h-full hidden md:flex">
-        <div className="p-6">
+      <div className={`bg-gray-50 border-r border-gray-200 flex flex-col h-full transition-all duration-300 overflow-hidden ${showSidebar ? 'w-72' : 'w-0 border-r-0'}`}>
+        <div className="p-6 min-w-[288px]">
            <div className="flex items-center gap-3 mb-8">
              <div className="p-2 bg-indigo-600 rounded-xl shadow-md shadow-indigo-200">
                <Bot className="w-6 h-6 text-white" />
@@ -209,29 +356,34 @@ export default function ChatbotOverlay({ onClose }) {
 
         {/* Conversation History */}
         <div className="flex-1 overflow-y-auto px-4 space-y-2 thin-scrollbar">
-          {conversations.length === 0 && (
+          {isLoading && !activeConversationId && conversations.length === 0 ? (
+            <div className="flex justify-center my-4"><Loader className="w-5 h-5 text-indigo-500 animate-spin" /></div>
+          ) : conversations.length === 0 ? (
             <p className="text-gray-400 text-xs font-medium px-4 text-center mt-4 italic">No recent chats</p>
-          )}
-          {conversations.map(conv => (
-            <div 
-              key={conv.id}
-              onClick={() => setActiveConversationId(conv.id)}
-              className={`p-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all group ${activeConversationId === conv.id ? 'bg-white border-gray-200 shadow-sm ring-1 ring-indigo-500/10' : 'hover:bg-white border border-transparent'}`}
-            >
-              <div className="flex items-center gap-3 overflow-hidden">
-                <MessageSquare className={`w-4 h-4 flex-shrink-0 ${activeConversationId === conv.id ? 'text-indigo-600' : 'text-gray-400'}`} />
-                <span className={`text-sm font-bold truncate ${activeConversationId === conv.id ? 'text-gray-900' : 'text-gray-500'}`}>
-                  {conv.title}
-                </span>
-              </div>
-              <button 
-                onClick={(e) => deleteConversation(e, conv.id)}
-                className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-500 text-gray-400 transition-all"
+          ) : (
+            conversations.map(conv => (
+              <div 
+                key={conv._id}
+                onClick={() => handleConversationClick(conv._id)}
+                className={`p-4 rounded-2xl flex items-center justify-between cursor-pointer transition-all group ${activeConversationId === conv._id ? 'bg-white border-gray-200 shadow-sm ring-1 ring-indigo-500/10' : 'hover:bg-white border border-transparent'}`}
               >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <MessageSquare className={`w-4 h-4 flex-shrink-0 ${activeConversationId === conv._id ? 'text-indigo-600' : 'text-gray-400'}`} />
+                  <span className={`text-sm font-bold truncate ${activeConversationId === conv._id ? 'text-gray-900' : 'text-gray-500'}`}>
+                    {conv.groupName === 'New Conversation' && conv.lastMessage
+                      ? conv.lastMessage.content.substring(0, 25) + '...'
+                      : (conv.groupName || "New Conversation")}
+                  </span>
+                </div>
+                <button 
+                  onClick={(e) => deleteConversation(e, conv._id)}
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-rose-500 text-gray-400 transition-all"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Categories */}
@@ -248,8 +400,15 @@ export default function ChatbotOverlay({ onClose }) {
       {/* Right Panel: Active Chat */}
       <div className="flex-1 flex flex-col bg-white h-full relative overflow-hidden">
         {/* Header - Drag Handle */}
-        <div className="h-20 border-b border-gray-200 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md sticky top-0 z-10 drag-handle cursor-move select-none">
+        <div className="flex-none h-20 border-b border-gray-200 flex items-center justify-between px-8 bg-white/80 backdrop-blur-md drag-handle cursor-move select-none z-10">
           <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setShowSidebar(!showSidebar)}
+              className="p-2 hover:bg-gray-100 text-gray-400 hover:text-indigo-600 rounded-xl transition-all"
+              title="Toggle History"
+            >
+              <PanelLeft className={`w-6 h-6 ${showSidebar ? 'text-indigo-600' : ''}`} />
+            </button>
             <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-indigo-200">
               <Bot className="w-6 h-6 text-white" />
             </div>
@@ -269,51 +428,62 @@ export default function ChatbotOverlay({ onClose }) {
           </button>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <div className="mx-8 mt-4 p-3 bg-rose-50 border border-rose-100 text-rose-500 rounded-xl text-xs font-medium text-center">
+            {error}
+          </div>
+        )}
+
         {/* Message Area */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth thin-scrollbar bg-white">
-          {!activeConversation ? (
+          {!activeConversationId && messages.length === 0 && !isTyping ? (
             <div className="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto">
-              <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center rotate-12 mb-8 animate-bounce shadow-2xl shadow-indigo-100">
-                <Sparkles className="w-10 h-10 text-white -rotate-12" />
-              </div>
               <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">How can I help you?</h2>
-              <p className="text-gray-500 font-medium mb-12">I'm here to assist with your studies, manage your schedule, or chat about your wellbeing.</p>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                {suggestions.map((s, i) => (
-                  <button 
-                    key={i}
-                    onClick={() => startNewChat(s.text)}
-                    className="p-5 bg-white border border-gray-100 hover:border-indigo-500/30 hover:shadow-md rounded-3xl text-left transition-all group shadow-sm"
-                  >
-                    <div className="mb-3">{s.icon}</div>
-                    <p className="text-gray-700 text-sm font-bold group-hover:text-indigo-600 transition-colors">{s.text}</p>
-                  </button>
-                ))}
-              </div>
             </div>
           ) : (
             <>
-              {activeConversation.messages.map((msg) => (
-                <div 
-                  key={msg.id} 
-                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-300`}
-                >
-                  <div className={`flex gap-4 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                    <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm ${msg.role === 'user' ? 'bg-indigo-600' : 'bg-gray-200'}`}>
-                      {msg.role === 'user' ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-gray-700" />}
-                    </div>
-                    <div>
-                      <div className={`p-4 rounded-3xl text-sm font-medium leading-relaxed ${msg.role === 'user' ? 'bg-gradient-to-br from-indigo-600 to-primary-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'}`}>
-                        {msg.content}
+              {isLoading && messages.length === 0 ? (
+                <div className="flex justify-center my-8"><Loader className="w-6 h-6 text-indigo-500 animate-spin" /></div>
+              ) : (
+                messages.map((msg) => {
+                  const isUser = msg.senderId !== null;
+                  return (
+                    <div 
+                      key={msg._id || Math.random().toString()} 
+                      className={`flex ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-300`}
+                    >
+                      <div className={`flex gap-4 max-w-[85%] ${isUser ? 'flex-row-reverse' : 'flex-row'}`}>
+                        <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center shadow-sm ${isUser ? 'bg-indigo-600' : 'bg-gray-200'}`}>
+                          {isUser ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-gray-700" />}
+                        </div>
+                        <div>
+                          <div className={`p-4 rounded-3xl text-sm font-medium leading-relaxed ${isUser ? 'bg-gradient-to-br from-indigo-600 to-primary-600 text-white rounded-tr-none' : 'bg-gray-100 text-gray-800 rounded-tl-none'}`}>
+                            {isUser ? (
+                               msg.content
+                            ) : (
+                               msg.content.split('\n\n').map((paragraph, idx) => (
+                                 <p key={idx} className={idx > 0 ? "mt-3" : ""}>{paragraph}</p>
+                               ))
+                            )}
+                          </div>
+                          {!isUser && sessionRecommendations[activeConversationId] && 
+                            messages[messages.length - 1]?._id === msg._id && (
+                             <SessionCards
+                               sessions={sessionRecommendations[activeConversationId].sessions}
+                               topic={sessionRecommendations[activeConversationId].topic}
+                             />
+                          )}
+                          <span className="text-[10px] font-bold text-gray-400 mt-2 block px-1 uppercase tracking-tighter">
+                            {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-bold text-gray-400 mt-2 block px-1 uppercase tracking-tighter">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
+              
               {isTyping && (
                 <div className="flex justify-start animate-in fade-in duration-300">
                   <div className="flex gap-4">
@@ -334,7 +504,7 @@ export default function ChatbotOverlay({ onClose }) {
         </div>
 
         {/* Input Area */}
-        <div className="p-8 bg-gray-50/80 backdrop-blur-md border-t border-gray-100">
+        <div className="flex-none p-8 bg-gray-50/80 backdrop-blur-md border-t border-gray-100 z-10">
           <div className="relative group max-w-3xl mx-auto">
             <input 
               type="text" 
@@ -342,11 +512,13 @@ export default function ChatbotOverlay({ onClose }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-              className="w-full bg-white border border-gray-200 text-gray-800 pl-6 pr-16 py-4 rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm transition-all font-medium placeholder:text-gray-400"
+              disabled={isTyping}
+              className="w-full bg-white border border-gray-200 text-gray-800 pl-6 pr-16 py-4 rounded-[1.5rem] focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 shadow-sm transition-all font-medium placeholder:text-gray-400 disabled:opacity-70"
             />
             <button 
               onClick={handleSend}
-              className={`absolute right-3 top-1/2 -translate-y-1/2 p-3 rounded-2xl transition-all ${input.trim() ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+              disabled={isTyping}
+              className={`absolute right-3 top-1/2 -translate-y-1/2 p-3 rounded-2xl transition-all ${input.trim() && !isTyping ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
             >
               <Send className="w-4 h-4" />
             </button>
