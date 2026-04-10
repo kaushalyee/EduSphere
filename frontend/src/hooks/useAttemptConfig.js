@@ -23,7 +23,6 @@ export default function useAttemptConfig() {
     try {
       setLoading(true);
       setError("");
-      console.log("[useAttemptConfig] Fetching config for User:", user?._id);
       const res = await api.get("/rewards/attempt-config");
 
       if (latestRequestRef.current !== requestId) {
@@ -32,7 +31,6 @@ export default function useAttemptConfig() {
 
       setConfig(res.data);
     } catch (err) {
-      console.error("[useAttemptConfig] Load Error:", err);
       if (latestRequestRef.current !== requestId) {
         return;
       }
@@ -45,8 +43,9 @@ export default function useAttemptConfig() {
   }, [token, user?._id]);
 
   useEffect(() => {
+    if (!token || !user?._id) return;
     fetchConfig();
-  }, [fetchConfig]);
+  }, [token, user?._id, fetchConfig]);
 
   return {
     config,

@@ -1,10 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, lazy, Suspense } from "react";
 import RewardsHero from "./components/RewardsHero";
 import RewardWallet from "./components/RewardWallet";
 import GameCard from "./components/GameCard";
-import DailyTargets from "./components/DailyTargets";
-import LeaderboardPreview from "./components/Leaderboard"; 
-import EngagementChart from "./components/EngagementChart";
 import ActivityFeed from "./components/ActivityFeed";
 import CompanionCard from "./components/CompanionCard";
 
@@ -12,62 +9,50 @@ import useWallet from "@/hooks/useWallet";
 import useAttemptConfig from "@/hooks/useAttemptConfig";
 import { useAuth } from "@/context/AuthContext";
 
+// 🧩 LAZY LOAD HEAVY COMPONENTS
+const LeaderboardPreview = lazy(() => import("./components/Leaderboard"));
+const EngagementChart = lazy(() => import("./components/EngagementChart"));
+
 export default function RewardsDashboard() {
   const { user } = useAuth();
 
-  if (!user) {
-    return <div className="p-6">Loading user...</div>;
-  }
-
-  const userId = user?._id;
-  
   const { balance, loading: walletLoading, error: walletError, refresh: refetchWallet } = useWallet();
   const { config: attemptConfig, loading: configLoading, error: configError, refresh: refetchConfig } = useAttemptConfig();
-  
-  const loading = walletLoading || configLoading;
-  const error = walletError || configError;
-  const safeAttemptConfig = attemptConfig ?? {};
 
-  // Force refetch on user change
+  // 🔥 PARALLEL DATA FETCHING (CRITICAL)
   useEffect(() => {
-    if (user?._id) {
-      console.log("User changed -> refetching data");
-      refetchWallet();
-      refetchConfig();
-    }
+    if (!user?._id) return;
+
+    Promise.all([
+      refetchWallet(),
+      refetchConfig()
+    ]);
   }, [user?._id, refetchWallet, refetchConfig]);
 
-  const safeBalance = balance ?? 0;
+  // 🎯 REDUCE RE-RENDERS
+  const safeBalance = useMemo(() => balance ?? 0, [balance]);
+  const safeAttemptConfig = useMemo(() => attemptConfig ?? {}, [attemptConfig]);
+
   const attemptsUsedToday = safeAttemptConfig.attemptsUsedToday ?? 0;
   const maxAttempts = safeAttemptConfig.maxAttempts ?? 3;
   const availableAttempts = safeAttemptConfig.availableAttempts ?? 0;
 
-  // Added debug visibility (TEMP)
-  console.log("User:", user?._id);
-  console.log("Wallet:", balance);
-  console.log("Attempts:", attemptConfig);
+  const error = walletError || configError;
 
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-6">
-        <div className="rewards-glass-card animate-pulse h-48 w-full flex items-center justify-center">
-           <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">Loading rewards...</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="rewards-glass-card animate-pulse h-32" />
-          <div className="rewards-glass-card animate-pulse h-32" />
-        </div>
-      </div>
-    );
+  if (!user) {
+    return <div className="p-6 text-gray-400">Loading profile...</div>;
   }
 
   if (error) {
     return (
-      <div className="text-center p-6">
-        <p>Warning: Failed to load rewards data</p>
-        <p className="mt-2 text-sm text-red-600">{error}</p>
-        <button onClick={() => { refetchWallet(); refetchConfig(); }}>
-          Retry
+      <div className="text-center p-6 bg-red-50/10 rounded-2xl border border-red-500/20">
+        <p className="text-red-400 font-medium">Failed to load rewards data</p>
+        <p className="mt-2 text-xs text-red-400/60">{error}</p>
+        <button 
+          onClick={() => { refetchWallet(); refetchConfig(); }}
+          className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-bold transition-colors"
+        >
+          RETRY
         </button>
       </div>
     );
@@ -75,31 +60,46 @@ export default function RewardsDashboard() {
 
   return (
     <div className="min-h-full bg-transparent">
-      {/* Grid Content */}
-      <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 xl:grid-cols-4 xl:gap-8 pb-10">
-        <div className="h-full lg:col-span-2 xl:col-span-3 rewards-glass-card p-1 transition-all duration-200">
+      {/* 2rd COLUMN RATIO: 2fr 1fr (using lg:grid-cols-3) */}
+      <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 pb-10">
+        
+        {/* ROW 1: HERO (2/3) + WALLET (1/3) */}
+        <div className="h-full lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
           <RewardsHero studentName={user?.name} gameAttempts={availableAttempts} />
         </div>
-        <div className="h-full lg:col-span-1 xl:col-span-1 rewards-glass-card p-1 transition-all duration-200">
-          <RewardWallet points={safeBalance} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
+
+        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+          {walletLoading ? (
+             <div className="h-full w-full bg-slate-800/5 animate-pulse rounded-xl min-h-[200px]" />
+          ) : (
+            <RewardWallet points={safeBalance} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
+          )}
         </div>
-        <div className="h-full lg:col-span-2 xl:col-span-2 rewards-glass-card p-1 transition-all duration-200">
+
+        {/* ROW 2: PUZZLE (2/3) + LEADERBOARD (1/3) */}
+        <div className="h-full lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
           <GameCard gameAttempts={availableAttempts} />
         </div>
-        <div className="h-full lg:col-span-1 xl:col-span-1 xl:col-start-3 rewards-glass-card p-1 transition-all duration-200">
-          <DailyTargets />
+
+        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+          <Suspense fallback={<div className="h-64 bg-slate-800/5 animate-pulse rounded-xl" />}>
+            <LeaderboardPreview loading={walletLoading} />
+          </Suspense>
         </div>
-        <div className="lg:col-span-1 xl:col-span-1 rewards-glass-card p-1 transition-all duration-200">
-          <LeaderboardPreview loading={loading} />
+
+        {/* ROW 3: CHART/FEED (2/3) + COMPANION (1/3) */}
+        <div className="grid h-[420px] grid-cols-1 gap-6 lg:col-span-2 lg:grid-cols-2 lg:gap-8 rewards-glass-card p-1 transition-all duration-200">
+          <Suspense fallback={<div className="h-full bg-slate-800/5 animate-pulse rounded-xl" />}>
+            <EngagementChart />
+          </Suspense>
+          <ActivityFeed balance={safeBalance} loading={walletLoading} />
         </div>
-        <div className="grid h-[420px] grid-cols-1 gap-6 lg:col-span-1 lg:grid-cols-2 xl:col-span-2 xl:gap-8 rewards-glass-card p-1 transition-all duration-200">
-          <EngagementChart />
-          <ActivityFeed balance={safeBalance} loading={loading} />
-        </div>
-        <div className="h-full lg:col-span-1 xl:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+
+        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
           <CompanionCard />
         </div>
       </div>
     </div>
   );
 }
+

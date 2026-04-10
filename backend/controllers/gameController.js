@@ -95,7 +95,7 @@ exports.completeGame = async (req, res) => {
         time: parsedTime,
         score,
       },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updated) {
@@ -148,42 +148,110 @@ exports.resetDailyAttempts = async (req, res) => {
 };
 
 /**
+ * Helper to check if it's a new day for GP reset (Asia/Colombo)
+ */
+function isNewDay(lastReset) {
+  if (!lastReset) return true;
+  const now = new Date();
+
+  // 🇱🇰 SRI LANKA TIMEZONE ENFORCEMENT
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Colombo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(now);
+
+  const last = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Colombo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(lastReset));
+
+  return today !== last;
+}
+
+/**
  * Submits a game score, calculates GP, and saves to database.
  * POST /api/game/submit
  */
 exports.submitScore = async (req, res) => {
   try {
-    const { userId, time, gridSize } = req.body;
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+    const userId = req.user.id; // GUARANTEED AUTHENTICATED USER
+    console.log("User:", req.user.id);
+    const { time, gridSize } = req.body;
 
     // Validate inputs
-    if (!userId || time === undefined || !gridSize) {
+    if (time === undefined || !gridSize) {
       return res.status(400).json({
         success: false,
-        message: "Missing required fields: userId, time, and gridSize are required.",
+        message: "Missing required fields: time and gridSize are required.",
       });
+    }
+
+    // 🧠 GET USER FOR SPECIFIC GP UPDATE
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
     // Calculate GP using utility function
     const gp = calculateGP(time, gridSize);
 
-    // Save record to database
+    // 🧠 ATOMIC UPDATE (PART 2 - PREVENT RACE CONDITIONS)
+    const resetNeeded = isNewDay(user.lastGPReset);
+    let finalUser;
+
+    if (resetNeeded) {
+      console.log(`[GP RESET] Atomic reset for user ${userId}`);
+      finalUser = await User.findOneAndUpdate(
+        { _id: userId, lastGPReset: user.lastGPReset }, // Filter ensures we only reset once
+        { 
+          $set: { 
+            totalGP: gp, 
+            lastGPReset: new Date() 
+          } 
+        },
+        { returnDocument: 'after' }
+      );
+
+      // If update failed (null), someone else already reset it
+      if (!finalUser) {
+        finalUser = await User.findByIdAndUpdate(
+          userId,
+          { $inc: { totalGP: gp } },
+          { returnDocument: 'after' }
+        );
+      }
+    } else {
+      // Normal increment
+      finalUser = await User.findByIdAndUpdate(
+        userId,
+        { $inc: { totalGP: gp } },
+        { returnDocument: 'after' }
+      );
+    }
+
+    // Save actual score record (stats)
     const newScore = new GameScore({
       userId,
       gp,
       time,
       gridSize,
     });
-
     await newScore.save();
 
-    // Update user's total GP
-    await User.findByIdAndUpdate(userId, {
-      $inc: { totalGP: gp },
-    });
+    console.log("GP Earned:", gp);
+    console.log("User:", userId, "GP Earned:", gp, "Total Daily GP:", finalUser.totalGP);
 
     return res.status(201).json({
       success: true,
       gp,
+      totalGP: finalUser.totalGP
     });
   } catch (error) {
     console.error("Error submitting score:", error);

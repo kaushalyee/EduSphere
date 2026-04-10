@@ -4,7 +4,6 @@ import api from '@/api/api';
 import puzzles from '@/data/puzzles';
 import { useAuth } from '@/context/AuthContext';
 import { useWallet } from '@/context/WalletContext';
-import axios from 'axios';
 
 /**
  * Helper to convert "M:SS" string to total seconds.
@@ -168,6 +167,7 @@ const GameBoard = () => {
     const [activePairId, setActivePairId] = useState(null);
     const [history, setHistory] = useState([]);
     const [time, setTime] = useState(0);
+    const [startTime, setStartTime] = useState(null);
     const [isRunning, setIsRunning] = useState(false);
     const [finalTime, setFinalTime] = useState(null);
     const [backtracks, setBacktracks] = useState(0);
@@ -176,12 +176,13 @@ const GameBoard = () => {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const { user } = useAuth();
-    const { fetchWallet, setSessionGP } = useWallet();
+    const { fetchWallet } = useWallet();
 
     useEffect(() => {
         setPaths({});
         setHistory([]);
         setTime(0);
+        setStartTime(Date.now());
         setIsRunning(true);
         setFinalTime(null);
         setBacktracks(0);
@@ -191,9 +192,9 @@ const GameBoard = () => {
     useEffect(() => {
         let intervalId;
 
-        if (isRunning) {
+        if (isRunning && startTime) {
             intervalId = setInterval(() => {
-                setTime((prev) => prev + 1);
+                setTime(Math.floor((Date.now() - startTime) / 1000));
             }, 1000);
         }
 
@@ -250,17 +251,12 @@ const GameBoard = () => {
     }, [completed, level, playerGrid]);
 
     useEffect(() => {
-        if (!isLevelComplete) return;
+        if (!isLevelComplete || !startTime) return;
 
         setIsRunning(false);
-        setFinalTime((prevFinalTime) => {
-            const timeToUse = time;
-            if (prevFinalTime !== null) {
-                return prevFinalTime;
-            }
-            return timeToUse;
-        });
-    }, [isLevelComplete, time]);
+        const calculatedFinalTime = Math.floor((Date.now() - startTime) / 1000);
+        setFinalTime(calculatedFinalTime);
+    }, [isLevelComplete, startTime]);
 
     useEffect(() => {
         if (!isLevelComplete || hasSubmittedCompletion || finalTime == null || !user?._id) return;
@@ -272,8 +268,14 @@ const GameBoard = () => {
             setIsSubmitting(true);
 
             try {
-                // Formatting time for submission logic if needed
-                const timeStr = formatTime(finalTime);
+                // Formatting time for submission logic
+                const formatTimeLocal = (totalSeconds) => {
+                    const minutes = Math.floor(totalSeconds / 60);
+                    const seconds = totalSeconds % 60;
+                    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                };
+
+                const timeStr = formatTimeLocal(finalTime);
                 const timeInSeconds = convertTimeToSeconds(timeStr);
 
                 console.log("Submitting score:", { 
@@ -284,15 +286,13 @@ const GameBoard = () => {
 
                 // 1. Submit to the new GP system
                 const gpRes = await api.post("/game/submit", {
-                    userId: user._id,
                     time: timeInSeconds,
                     gridSize: `${GRID_SIZE}x${GRID_SIZE}`
                 });
 
                 if (gpRes.data.success) {
                     setGpEarned(gpRes.data.gp);
-                    setSessionGP(prev => prev + gpRes.data.gp);
-                    // Refresh total wallet balance from server
+                    // Refresh total wallet balance (includes totalGP) from server
                     await fetchWallet();
                 }
 
@@ -314,14 +314,8 @@ const GameBoard = () => {
             }
         };
 
-        const formatTime = (totalSeconds) => {
-            const minutes = Math.floor(totalSeconds / 60);
-            const seconds = totalSeconds % 60;
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        };
-
         submitScore();
-    }, [isLevelComplete, finalTime, hasSubmittedCompletion, user, isSubmitting]);
+    }, [isLevelComplete, finalTime, hasSubmittedCompletion, user, isSubmitting, fetchWallet]);
 
     const saveHistory = useCallback(() => {
         setHistory(prev => [...prev.slice(-19), { paths: { ...paths } }]);
@@ -412,9 +406,6 @@ const GameBoard = () => {
         setPaths({});
         setHistory([]);
         setActivePairId(null);
-        setTime(0);
-        setIsRunning(false);
-        setFinalTime(null);
         setBacktracks(0);
     };
 

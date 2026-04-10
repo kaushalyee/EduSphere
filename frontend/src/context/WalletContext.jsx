@@ -1,31 +1,37 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import axios from "axios";
+import api from "../api/api";
 import { useAuth } from "./AuthContext";
 
 const WalletContext = createContext();
 
 export const WalletProvider = ({ children }) => {
   const [totalGP, setTotalGP] = useState(0);
-  const [sessionGP, setSessionGP] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const { isAuth, user } = useAuth();
+  const { isAuth, user, setUser } = useAuth();
 
   const fetchWallet = useCallback(async () => {
     if (!isAuth) return;
     
     setIsLoading(true);
     try {
-      // Use the project's default axios configuration or the one set globally
-      const res = await axios.get("/api/users/wallet");
-      if (res.data && res.data.totalGP !== undefined) {
-        setTotalGP(res.data.totalGP);
+      // 🎯 FETCH CORRECT USER GP (PART 4)
+      const res = await api.get("/users/me");
+      
+      if (res.data) {
+        // DEBUG LOG (PART 6)
+        console.log("Logged user:", res.data._id, "GP:", res.data.totalGP);
+        
+        setTotalGP(res.data.totalGP || 0);
+        
+        // SYNC AUTH CONTEXT (PART 4)
+        setUser(res.data);
       }
     } catch (error) {
-      console.error("Error fetching wallet:", error);
+      console.error("Error fetching wallet/user:", error);
     } finally {
       setIsLoading(false);
     }
-  }, [isAuth]);
+  }, [isAuth, setUser]);
 
   // Initial fetch when authenticated
   useEffect(() => {
@@ -37,7 +43,7 @@ export const WalletProvider = ({ children }) => {
   }, [isAuth, fetchWallet]);
 
   return (
-    <WalletContext.Provider value={{ totalGP, setTotalGP, sessionGP, setSessionGP, fetchWallet, isLoading }}>
+    <WalletContext.Provider value={{ totalGP, setTotalGP, fetchWallet, isLoading }}>
       {children}
     </WalletContext.Provider>
   );

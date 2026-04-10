@@ -58,6 +58,21 @@ export default function StudentSidebar({
                       setActiveTab("Companion");
                       return;
                     }
+                    if (opt.id === "Progress") {
+                      navigate("/student/progress-tracking");
+                      setActiveTab("Progress");
+                      return;
+                    }
+                    if (opt.id === "Market") {
+                      navigate("/student/marketplace");
+                      setActiveTab("Market");
+                      return;
+                    }
+                    if (opt.id === "PeerLearning") {
+                      navigate("/student/peer-learning");
+                      setActiveTab("PeerLearning");
+                      return;
+                    }
                     setActiveTab(opt.id);
                   }}
                   className={`sidebar-item w-full flex items-center px-[22px] py-3 transition-all duration-200 ${

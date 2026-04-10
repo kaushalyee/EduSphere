@@ -16,9 +16,9 @@ router.get("/status", protect, getDailyStatus);
 router.post("/reset", protect, resetDailyAttempts);
 router.post("/unlock", protect, unlockGame);
 router.post("/complete", protect, completeGame);
-router.post("/submit", submitScore);
+router.post("/submit", protect, submitScore);
 
 // Leaderboard route
-router.get("/leaderboard", getLeaderboard);
+router.get("/leaderboard", protect, getLeaderboard);
 
 module.exports = router;

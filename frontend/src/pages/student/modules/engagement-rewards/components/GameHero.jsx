@@ -1,8 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useWallet } from "@/context/WalletContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function GameHero() {
-  const { sessionGP } = useWallet();
+  const { totalGP } = useWallet();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      // DEBUG LOG (PART 6)
+      console.log("Logged user:", user._id, "GP:", user.totalGP);
+    }
+  }, [user]);
 
   return (
     <section className="w-full pb-4">
@@ -18,9 +27,10 @@ export default function GameHero() {
 
         <div className="gp-container absolute right-0">
           <div className="coin">GP</div>
-          <span className="value">{sessionGP}</span>
+          <span className="value">{totalGP}</span>
         </div>
       </div>
     </section>
   );
 }
+

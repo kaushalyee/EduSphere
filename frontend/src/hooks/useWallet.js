@@ -20,7 +20,7 @@ export default function useWallet() {
         }
       }
     } catch (e) {
-      console.error("[useWallet] Cache Read Error", e);
+      // Cache Read Error silenced for production
     }
     return 0;
   }, [userId, cacheKey]);
@@ -68,7 +68,6 @@ export default function useWallet() {
         })
       );
     } catch (err) {
-      console.error("[useWallet] Fetch Error:", err);
       if (latestRequestRef.current !== requestId) {
         return;
       }
@@ -81,8 +80,9 @@ export default function useWallet() {
   }, [token, userId, cacheKey]);
 
   useEffect(() => {
+    if (!token || !userId) return;
     fetchWallet();
-  }, [fetchWallet]);
+  }, [token, userId, fetchWallet]);
 
   return {
     balance: Number(balance ?? 0),

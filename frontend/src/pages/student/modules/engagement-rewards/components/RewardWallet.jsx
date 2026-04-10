@@ -1,19 +1,32 @@
+import React, { useState, useEffect, useMemo } from "react";
 import { Wallet } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useWallet as useWalletContext } from "@/context/WalletContext";
 
 function getTimeUntilMidnight() {
   const now = new Date();
-  const midnight = new Date();
-  midnight.setHours(24, 0, 0, 0);
-  const diff = midnight - now;
   
-  const h = Math.floor(diff / (1000 * 60 * 60));
-  const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return { h, m };
+  // SRI LANKA TIMEZONE ENFORCEMENT
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Colombo",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+
+  const parts = formatter.formatToParts(now);
+  const hour = parseInt(parts.find(p => p.type === 'hour').value);
+  const minute = parseInt(parts.find(p => p.type === 'minute').value);
+
+  const remainingHours = 23 - hour;
+  const remainingMinutes = 59 - minute;
+  
+  return { h: remainingHours, m: remainingMinutes };
 }
 
-export default function RewardWallet({ points, attemptsUsedToday, maxAttempts }) {
+const RewardWallet = ({ points, attemptsUsedToday, maxAttempts }) => {
   const [timeLeft, setTimeLeft] = useState(getTimeUntilMidnight());
+  const { totalGP } = useWalletContext();
+  const [shouldPulse, setShouldPulse] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -22,13 +35,18 @@ export default function RewardWallet({ points, attemptsUsedToday, maxAttempts })
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (totalGP > 0) {
+      setShouldPulse(true);
+      const timer = setTimeout(() => setShouldPulse(false), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [totalGP]);
+
   const safePoints = points ?? 0;
   const used = attemptsUsedToday ?? 0;
   const limit = maxAttempts ?? 3;
   const remaining = Math.max(0, limit - used);
-  const weeklyEarn = Math.max(0, Math.round(safePoints * 0.15));
-  
-  // Calculate segments (Max 3 attempts)
   const filledSegments = used;
 
   return (
@@ -46,13 +64,23 @@ export default function RewardWallet({ points, attemptsUsedToday, maxAttempts })
       </div>
 
       <div className="mb-auto">
-        <div className="mb-1 flex items-baseline gap-1 text-6xl font-black text-gray-900 tracking-tight leading-none">
+        <p className="text-[10px] font-black text-slate-400 tracking-widest uppercase mb-1">
+          Reward Points (RP)
+        </p>
+        <div 
+          className="mb-1 flex items-baseline gap-1 text-6xl font-black tracking-tight leading-none"
+          style={{ 
+            transform: 'scale(1.05)',
+            transformOrigin: 'left bottom',
+            background: 'linear-gradient(90deg, #6a5cff, #a855f7)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            display: 'inline-block'
+          }}
+        >
           {safePoints.toLocaleString()}
-          <span className="text-sm font-bold text-gray-400 self-end mb-1 ml-1">
-            R-PTS
-          </span>
         </div>
-        <p className="text-xs text-gray-400 tracking-wide">
+        <p className="text-xs text-gray-400 tracking-wide mt-1">
           Balance ready for redeem
         </p>
       </div>
@@ -84,17 +112,38 @@ export default function RewardWallet({ points, attemptsUsedToday, maxAttempts })
           </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-gray-50 rounded-xl px-3 py-3 border border-gray-100/50">
-            <div className="text-[9px] font-black text-gray-400 tracking-widest uppercase mb-1">WEEKLY EARN</div>
-            <div className="text-lg font-black text-blue-600 leading-tight">+{weeklyEarn.toLocaleString()}</div>
+        {/* GP HIGHLIGHT SECTION (PART 3B & 4) */}
+        <div 
+          className={`bg-amber-50 rounded-xl px-4 py-4 border border-amber-100 transition-all duration-300 transform active:scale-95 ${shouldPulse ? 'animate-gp-pulse' : ''}`}
+          style={{ 
+            boxShadow: '0 0 10px rgba(255, 215, 0, 0.6)',
+          }}
+        >
+          <div className="text-[10px] font-black text-amber-600 tracking-widest uppercase mb-1">
+            Game Points (GP)
           </div>
-          <div className="bg-gray-50 rounded-xl px-3 py-3 border border-gray-100/50">
-            <div className="text-[9px] font-black text-gray-400 tracking-widest uppercase mb-1">NEXT RANK</div>
-            <div className="text-lg font-black text-purple-600 leading-tight">Elite II</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-4xl font-black text-amber-500 tracking-tight transition-all duration-300">
+              {totalGP.toLocaleString()}
+            </span>
           </div>
         </div>
       </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes pulse-gp {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.05); }
+          100% { transform: scale(1); }
+        }
+        .animate-gp-pulse {
+          animation: pulse-gp 0.5s ease-in-out;
+        }
+      `}} />
     </div>
   );
-}
+};
+
+export default React.memo(RewardWallet);
+
+

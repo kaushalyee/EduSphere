@@ -1,7 +1,8 @@
+import React from "react";
 import { Flame } from "lucide-react";
 import targetGif from "@/assets/target.gif";
 
-export default function RewardsHero({ studentName, gameAttempts }) {
+const RewardsHero = ({ studentName, gameAttempts }) => {
   const safeAttempts = gameAttempts ?? 0;
   const formatName = (name) =>
     name ? name.charAt(0).toUpperCase() + name.slice(1) : "Student";
@@ -47,4 +48,7 @@ export default function RewardsHero({ studentName, gameAttempts }) {
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(RewardsHero);
+
