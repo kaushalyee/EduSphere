@@ -1,0 +1,285 @@
+const puzzles = require("../data/puzzles");
+const GameAttempt = require("../models/GameAttempt");
+const GameScore = require("../models/GameScore");
+const User = require("../models/User");
+const { calculateGP } = require("../utils/gpCalculator");
+
+const DAILY_LIMIT = 5;
+
+function getToday() {
+  return new Date().toISOString().split("T")[0];
+}
+
+function isBasicValid(puzzle) {
+  if (!puzzle || puzzle.size !== 5) return false;
+  if (!Array.isArray(puzzle.pairs) || puzzle.pairs.length === 0) return false;
+
+  return puzzle.pairs.every((pair) => {
+    if (!pair?.color || !Array.isArray(pair.a) || !Array.isArray(pair.b)) {
+      return false;
+    }
+
+    const points = [pair.a, pair.b];
+    return points.every(
+      ([row, col]) =>
+        Number.isInteger(row) &&
+        Number.isInteger(col) &&
+        row >= 0 &&
+        col >= 0 &&
+        row < puzzle.size &&
+        col < puzzle.size
+    );
+  });
+}
+
+exports.unlockGame = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const today = getToday();
+
+    const todayAttempts = await GameAttempt.find({ userId, date: today });
+
+    if (todayAttempts.length >= DAILY_LIMIT) {
+      return res.status(400).json({
+        message: `Daily limit reached (${DAILY_LIMIT} games)`,
+      });
+    }
+
+    const activeAttempt = await GameAttempt.findOne({
+      userId,
+      status: "started",
+    });
+
+    if (activeAttempt) {
+      await GameAttempt.findByIdAndUpdate(activeAttempt._id, {
+        status: "abandoned",
+      });
+    }
+
+    const attemptsRemaining = DAILY_LIMIT - todayAttempts.length;
+    if (attemptsRemaining <= 0) {
+      return res.status(400).json({ message: "No attempts left" });
+    }
+
+    const attemptNumber = todayAttempts.length + 1;
+    const selectedPuzzle = puzzles[String(attemptNumber)];
+    if (!selectedPuzzle || !isBasicValid(selectedPuzzle)) {
+      return res.status(500).json({ message: "No valid puzzles configured" });
+    }
+
+    console.log("Selected Puzzle for attempt:", attemptNumber);
+
+    const attempt = await GameAttempt.create({
+      userId,
+      puzzleId: String(attemptNumber),
+      date: today,
+      status: "started",
+    });
+
+    return res.json({ attempt: attemptNumber });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.completeGame = async (req, res) => {
+  try {
+    const { attemptId, time } = req.body;
+    const parsedTime = Number(time) || 0;
+    const score = Math.max(0, 1000 - parsedTime * 2);
+
+    const updated = await GameAttempt.findOneAndUpdate(
+      { _id: attemptId, userId: req.user.id },
+      {
+        status: "completed",
+        time: parsedTime,
+        score,
+      },
+      { returnDocument: 'after' }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: "Attempt not found" });
+    }
+
+    return res.json(updated);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getDailyStatus = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const today = getToday();
+
+    const count = await GameAttempt.countDocuments({
+      userId,
+      date: today,
+    });
+
+    return res.json({
+      used: count,
+      remaining: Math.max(0, DAILY_LIMIT - count),
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.resetDailyAttempts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const today = getToday();
+
+    await GameAttempt.deleteMany({
+      userId,
+      date: today,
+    });
+
+    return res.json({
+      message: "Today's attempts reset",
+      used: 0,
+      remaining: DAILY_LIMIT,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * Helper to check if it's a new day for GP reset (Asia/Colombo)
+ */
+function isNewDay(lastReset) {
+  if (!lastReset) return true;
+  const now = new Date();
+
+  // 🇱🇰 SRI LANKA TIMEZONE ENFORCEMENT
+  const today = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Colombo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(now);
+
+  const last = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Colombo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(new Date(lastReset));
+
+  return today !== last;
+}
+
+/**
+ * Submits a game score, calculates GP, and saves to database.
+ * POST /api/game/submit
+ */
+exports.submitScore = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ success: false, message: "User not authenticated" });
+    }
+    const userId = req.user.id; // GUARANTEED AUTHENTICATED USER
+    console.log("User:", req.user.id);
+    const { time, gridSize } = req.body;
+
+    // Validate inputs
+    if (time === undefined || !gridSize) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields: time and gridSize are required.",
+      });
+    }
+
+    // 🧠 GET USER FOR SPECIFIC GP UPDATE
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Calculate GP using utility function
+    const gp = calculateGP(time, gridSize);
+
+    // 🧠 ATOMIC UPDATE (PART 2 - PREVENT RACE CONDITIONS)
+    const resetNeeded = isNewDay(user.lastGPReset);
+    let finalUser;
+
+    if (resetNeeded) {
+      console.log(`[GP RESET] Atomic reset for user ${userId}`);
+      finalUser = await User.findOneAndUpdate(
+        { _id: userId, lastGPReset: user.lastGPReset }, // Filter ensures we only reset once
+        { 
+          $set: { 
+            totalGP: gp, 
+            lastGPReset: new Date() 
+          } 
+        },
+        { returnDocument: 'after' }
+      );
+
+      // If update failed (null), someone else already reset it
+      if (!finalUser) {
+        finalUser = await User.findByIdAndUpdate(
+          userId,
+          { $inc: { totalGP: gp } },
+          { returnDocument: 'after' }
+        );
+      }
+    } else {
+      // Normal increment
+      finalUser = await User.findByIdAndUpdate(
+        userId,
+        { $inc: { totalGP: gp } },
+        { returnDocument: 'after' }
+      );
+    }
+
+    // Save actual score record (stats)
+    const newScore = new GameScore({
+      userId,
+      gp,
+      time,
+      gridSize,
+    });
+    await newScore.save();
+
+    console.log("GP Earned:", gp);
+    console.log("User:", userId, "GP Earned:", gp, "Total Daily GP:", finalUser.totalGP);
+
+    return res.status(201).json({
+      success: true,
+      gp,
+      totalGP: finalUser.totalGP
+    });
+  } catch (error) {
+    console.error("Error submitting score:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while submitting score.",
+    });
+  }
+};
+
+/**
+ * Returns top players sorted by GP descending.
+ * GET /api/leaderboard
+ */
+exports.getLeaderboard = async (req, res) => {
+  try {
+    const leaderboard = await GameScore.find()
+      .populate("userId", "name email") // Populate user details
+      .sort({ gp: -1 })
+      .limit(10);
+
+    return res.status(200).json(leaderboard);
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching leaderboard.",
+    });
+  }
+};
+

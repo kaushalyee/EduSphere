@@ -1,103 +1,105 @@
-import { useState } from "react";
-import { Bell, Settings } from "lucide-react";
-import RewardsSidebar from "./components/RewardsSidebar";
+import { useEffect, useMemo, lazy, Suspense } from "react";
 import RewardsHero from "./components/RewardsHero";
 import RewardWallet from "./components/RewardWallet";
 import GameCard from "./components/GameCard";
-import DailyTargets from "./components/DailyTargets";
-import Leaderboard from "./components/Leaderboard";
-import EngagementChart from "./components/EngagementChart";
 import ActivityFeed from "./components/ActivityFeed";
 import CompanionCard from "./components/CompanionCard";
-import useWallet from "../../../../hooks/useWallet";
+
+import useWallet from "@/hooks/useWallet";
+import useAttemptConfig from "@/hooks/useAttemptConfig";
+import { useAuth } from "@/context/AuthContext";
+
+// 🧩 LAZY LOAD HEAVY COMPONENTS
+const LeaderboardPreview = lazy(() => import("./components/Leaderboard"));
+const EngagementChart = lazy(() => import("./components/EngagementChart"));
 
 export default function RewardsDashboard() {
-  const [activeTab, setActiveTab] = useState("home");
-  const { balance } = useWallet();
-  const gameAttempts = Math.max(0, Math.min(20, Math.floor(balance / 10)));
+  const { user } = useAuth();
+
+  const { balance, loading: walletLoading, error: walletError, refresh: refetchWallet } = useWallet();
+  const { config: attemptConfig, loading: configLoading, error: configError, refresh: refetchConfig } = useAttemptConfig();
+
+  // 🔥 PARALLEL DATA FETCHING (CRITICAL)
+  useEffect(() => {
+    if (!user?._id) return;
+
+    Promise.all([
+      refetchWallet(),
+      refetchConfig()
+    ]);
+  }, [user?._id, refetchWallet, refetchConfig]);
+
+  // 🎯 REDUCE RE-RENDERS
+  const safeBalance = useMemo(() => balance ?? 0, [balance]);
+  const safeAttemptConfig = useMemo(() => attemptConfig ?? {}, [attemptConfig]);
+
+  const attemptsUsedToday = safeAttemptConfig.attemptsUsedToday ?? 0;
+  const maxAttempts = safeAttemptConfig.maxAttempts ?? 3;
+  const availableAttempts = safeAttemptConfig.availableAttempts ?? 0;
+
+  const error = walletError || configError;
+
+  if (!user) {
+    return <div className="p-6 text-gray-400">Loading profile...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="text-center p-6 bg-red-50/10 rounded-2xl border border-red-500/20">
+        <p className="text-red-400 font-medium">Failed to load rewards data</p>
+        <p className="mt-2 text-xs text-red-400/60">{error}</p>
+        <button 
+          onClick={() => { refetchWallet(); refetchConfig(); }}
+          className="mt-4 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-xs font-bold transition-colors"
+        >
+          RETRY
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="fixed inset-0 z-[100] flex overflow-hidden bg-[#0a0e19] font-sans text-white selection:bg-purple-500/30">
-      <RewardsSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="min-h-full bg-transparent">
+      {/* 2rd COLUMN RATIO: 2fr 1fr (using lg:grid-cols-3) */}
+      <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 pb-10">
+        
+        {/* ROW 1: HERO (2/3) + WALLET (1/3) */}
+        <div className="h-full lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
+          <RewardsHero studentName={user?.name} gameAttempts={availableAttempts} />
+        </div>
 
-      <div className="relative flex h-full flex-grow flex-col overflow-hidden">
-        <div className="pointer-events-none absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-purple-900/10 blur-[150px]"></div>
-        <div className="pointer-events-none absolute -bottom-32 -left-32 h-[600px] w-[600px] rounded-full bg-indigo-900/10 blur-[150px]"></div>
+        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+          {walletLoading ? (
+             <div className="h-full w-full bg-slate-800/5 animate-pulse rounded-xl min-h-[200px]" />
+          ) : (
+            <RewardWallet points={safeBalance} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
+          )}
+        </div>
 
-        <header className="relative z-20 flex h-[90px] shrink-0 items-center border-b border-white/5 bg-[#0a0e19]/80 px-10 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-r from-white via-indigo-100 to-gray-400 bg-clip-text text-3xl font-extrabold tracking-tighter text-transparent drop-shadow-sm">
-              Reward Rush
-            </div>
-          </div>
+        {/* ROW 2: PUZZLE (2/3) + LEADERBOARD (1/3) */}
+        <div className="h-full lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
+          <GameCard gameAttempts={availableAttempts} />
+        </div>
 
-          <div className="ml-auto flex items-center gap-8">
-            <div className="flex items-center gap-5">
-              <button className="group relative text-gray-400 transition-colors hover:text-white">
-                <Bell size={22} className="transition-transform group-hover:scale-110" />
-                <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0a0e19] bg-gradient-to-br from-purple-400 to-indigo-600 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
-              </button>
-              <button className="group text-gray-400 transition-colors hover:text-white">
-                <Settings size={22} className="transition-transform duration-300 group-hover:rotate-45" />
-              </button>
-              <div className="ml-2 h-8 w-8 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-purple-500/50">
-                <img
-                  src="https://ui-avatars.com/api/?name=Alex&background=random"
-                  alt="Profile"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </header>
+        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+          <Suspense fallback={<div className="h-64 bg-slate-800/5 animate-pulse rounded-xl" />}>
+            <LeaderboardPreview loading={walletLoading} />
+          </Suspense>
+        </div>
 
-        <main className="no-scrollbar relative z-10 min-h-0 flex-grow overflow-y-auto p-5 pb-24 scroll-smooth md:p-10">
-          <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 xl:grid-cols-4 xl:gap-8">
-            <div className="h-full lg:col-span-2 xl:col-span-3">
-              <RewardsHero gameAttempts={gameAttempts} />
-            </div>
-            <div className="h-full lg:col-span-1 xl:col-span-1">
-              <RewardWallet points={balance} attempts={gameAttempts} />
-            </div>
-            <div className="h-full lg:col-span-2 xl:col-span-2">
-              <GameCard gameAttempts={gameAttempts} />
-            </div>
-            <div className="h-full lg:col-span-1 xl:col-span-1 xl:col-start-3">
-              <DailyTargets />
-            </div>
-            <div className="lg:col-span-1 xl:col-span-1">
-              <Leaderboard />
-            </div>
-            <div className="grid h-[420px] grid-cols-1 gap-6 lg:col-span-1 lg:grid-cols-2 xl:col-span-2 xl:gap-8">
-              <EngagementChart />
-              <ActivityFeed balance={balance} />
-            </div>
-            <div className="h-full lg:col-span-1 xl:col-span-1">
-              <CompanionCard />
-            </div>
-          </div>
-        </main>
+        {/* ROW 3: CHART/FEED (2/3) + COMPANION (1/3) */}
+        <div className="grid h-[420px] grid-cols-1 gap-6 lg:col-span-2 lg:grid-cols-2 lg:gap-8 rewards-glass-card p-1 transition-all duration-200">
+          <Suspense fallback={<div className="h-full bg-slate-800/5 animate-pulse rounded-xl" />}>
+            <EngagementChart />
+          </Suspense>
+          <ActivityFeed balance={safeBalance} loading={walletLoading} />
+        </div>
+
+        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+          <CompanionCard />
+        </div>
       </div>
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            .no-scrollbar::-webkit-scrollbar {
-              width: 8px;
-            }
-            .no-scrollbar::-webkit-scrollbar-track {
-              background: #0a0e19;
-            }
-            .no-scrollbar::-webkit-scrollbar-thumb {
-              background: #1a1f3c;
-              border-radius: 10px;
-            }
-            .no-scrollbar::-webkit-scrollbar-thumb:hover {
-              background: #2a315c;
-            }
-          `,
-        }}
-      />
     </div>
   );
 }
+

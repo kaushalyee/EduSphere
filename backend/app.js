@@ -12,6 +12,9 @@ const progressRoutes = require("./routes/progressRoutes");
 const assignmentRoutes = require("./routes/assignmentRoutes");
 const comparisonRoutes = require("./routes/comparisonRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const gameRoutes = require("./routes/gameRoutes");
+const rewardRoutes = require("./routes/rewardRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 
@@ -38,5 +41,8 @@ app.use("/api/progress", progressRoutes);
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/comparison", comparisonRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/game", gameRoutes);
+app.use("/api/rewards", rewardRoutes);
+app.use("/api/chat", chatRoutes);
 
 module.exports = app;

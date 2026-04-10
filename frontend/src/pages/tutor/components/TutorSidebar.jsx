@@ -1,113 +1,75 @@
 import React from "react";
-import {
-    GraduationCap,
-    LayoutDashboard,
-    Flame,
-    PlusSquare,
-    CalendarDays,
-    UserCircle2,
-    LogOut,
-} from "lucide-react";
+import { GraduationCap, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 
 export default function TutorSidebar({
-    activeTab,
-    setActiveTab,
-    isSidebarOpen = true,
-    tutorName = "Tutor Name",
-    onLogout,
+  activeTab,
+  setActiveTab,
+  isSidebarOpen = true,
+  tutorName = "Tutor Name",
+  menuItems = [],
 }) {
-    const menuItems = [
-        {
-            id: "dashboard",
-            title: "Dashboard Overview",
-            icon: <LayoutDashboard className="w-5 h-5" />,
-        },
-        {
-            id: "trending",
-            title: "Trending Topics",
-            icon: <Flame className="w-5 h-5" />,
-        },
-        {
-            id: "create-session",
-            title: "Create Session",
-            icon: <PlusSquare className="w-5 h-5" />,
-        },
-        {
-            id: "my-sessions",
-            title: "My Sessions",
-            icon: <CalendarDays className="w-5 h-5" />,
-        },
-    ];
+  const navigate = useNavigate();
+  const { logout } = useAuth();
 
-    return (
-        <aside
-            className={`bg-[#081530] text-white flex flex-col border-r border-slate-800 transition-all duration-300 ${
-                isSidebarOpen ? "w-72" : "w-20"
-            }`}
-            style={{ height: "100vh", position: "sticky", top: 0 }}
-        >
-            {/* Logo */}
-            <div className="h-20 flex items-center px-5 border-b border-slate-800 flex-shrink-0">
-                <GraduationCap className="w-8 h-8 text-white" />
-                {isSidebarOpen && (
-                    <span className="ml-3 text-white font-bold text-3xl leading-none">
-                        EduSphere
-                    </span>
-                )}
-            </div>
+  return (
+    <aside
+      className={`bg-white border-r border-gray-200 h-screen sticky top-0 overflow-y-auto transition-all duration-300 flex flex-col ${
+        isSidebarOpen ? "w-64" : "w-20"
+      }`}
+    >
+      {/* Logo */}
+      <div className="h-16 flex items-center px-4 border-b border-gray-100">
+        <GraduationCap className="w-7 h-7 text-blue-600" />
+        {isSidebarOpen && (
+          <span className="ml-2 text-gray-800 font-bold text-lg">EduSphere</span>
+        )}
+      </div>
 
-            {/* Tutor profile */}
-            <div className="px-4 py-5 border-b border-slate-800 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-blue-600/20 flex items-center justify-center">
-                        <UserCircle2 className="w-7 h-7 text-blue-400" />
-                    </div>
-                    {isSidebarOpen && (
-                        <div>
-                            <p className="text-xs text-slate-400">Tutor</p>
-                            <h3 className="text-sm font-semibold text-white">{tutorName}</h3>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Menu — scrollable if content overflows */}
-            <nav className="flex-1 py-4 overflow-y-auto">
-                <div className="space-y-1 px-2">
-                    {menuItems.map((item) => {
-                        const isActive = activeTab === item.id;
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => setActiveTab(item.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-4 rounded-xl transition-all duration-200 ${
-                                    isActive
-                                        ? "bg-[#2F66E0] text-white"
-                                        : "text-slate-200 hover:bg-slate-800"
-                                }`}
-                            >
-                                <span>{item.icon}</span>
-                                {isSidebarOpen && (
-                                    <span className="text-[18px] font-medium">{item.title}</span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </nav>
-
-            {/* Logout — always pinned to bottom */}
-            <div className="p-3 border-t border-slate-800 flex-shrink-0">
+      {/* Menu */}
+      <nav className="flex-1 py-4">
+        <ul className="space-y-1">
+          {menuItems.map((item) => {
+            const active = activeTab === item.id;
+            return (
+              <li key={item.id}>
                 <button
-                    onClick={onLogout}
-                    className="w-full flex items-center gap-3 px-4 py-4 rounded-xl text-red-300 hover:bg-red-500/10 transition"
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center px-4 py-3 transition-all duration-200 ${
+                    active
+                      ? "bg-blue-50 text-blue-600 font-semibold border-l-4 border-blue-600"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-l-4 border-transparent"
+                  } ${!isSidebarOpen ? "justify-center" : "gap-3"}`}
                 >
-                    <LogOut className="w-5 h-5" />
-                    {isSidebarOpen && (
-                        <span className="text-[17px] font-medium">Logout</span>
-                    )}
+                  <div className={active ? "text-blue-600" : "text-gray-400"}>
+                    {item.icon}
+                  </div>
+                  {isSidebarOpen && <span>{item.title}</span>}
                 </button>
-            </div>
-        </aside>
-    );
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Logout */}
+      <div className="p-4 border-t border-gray-100 mt-auto">
+        <button
+          onClick={() => {
+            if (window.confirm("Are you sure you want to log out?")) {
+              logout();
+              navigate("/");
+            }
+          }}
+          className={`w-full flex items-center px-4 py-3 text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 rounded-xl ${
+            !isSidebarOpen ? "justify-center" : "gap-3"
+          }`}
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          {isSidebarOpen && <span className="font-semibold">Logout</span>}
+        </button>
+      </div>
+    </aside>
+  );
 }

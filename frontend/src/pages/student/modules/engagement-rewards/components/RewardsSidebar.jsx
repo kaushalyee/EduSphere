@@ -1,4 +1,4 @@
-import { Gamepad2, Home, PawPrint, Trophy, Wallet } from "lucide-react";
+import { Gamepad2, GraduationCap, Home, PawPrint, Trophy, Wallet } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function RewardsSidebar({ activeTab, setActiveTab }) {
@@ -17,8 +17,12 @@ export default function RewardsSidebar({ activeTab, setActiveTab }) {
   return (
     <div className="z-10 flex h-full w-24 flex-shrink-0 flex-col items-center border-r border-[#1a1f3c] bg-[#0a0e19] py-6">
       <div className="mb-12">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 text-2xl font-bold shadow-[0_0_20px_rgba(124,58,237,0.4)]">
-          K
+        <div
+          onClick={() => navigate("/student/dashboard")}
+          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-[0_0_20px_rgba(124,58,237,0.4)] transition-all duration-200 hover:scale-105 hover:shadow-[0_0_25px_rgba(168,85,247,0.6)]"
+          title="Back to Dashboard"
+        >
+          <GraduationCap className="h-6 w-6 text-white" />
         </div>
       </div>
 

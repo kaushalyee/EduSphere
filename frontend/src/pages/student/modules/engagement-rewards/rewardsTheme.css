@@ -1,0 +1,408 @@
+.rewards-themed {
+  min-height: 100vh;
+  position: relative;
+}
+
+.rewards-theme-shell {
+  position: relative;
+  min-height: 100vh;
+}
+
+.rewards-theme-shell::before,
+.rewards-theme-shell::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(46px);
+  opacity: 0.45;
+  z-index: 0;
+}
+
+.rewards-theme-shell::before {
+  width: 20rem;
+  height: 20rem;
+  top: -5rem;
+  left: -3rem;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.38), rgba(124, 58, 237, 0));
+}
+
+.rewards-theme-shell::after {
+  width: 22rem;
+  height: 22rem;
+  bottom: -6rem;
+  right: -4rem;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.32), rgba(59, 130, 246, 0));
+}
+
+.rewards-theme-content {
+  position: relative;
+  z-index: 1;
+}
+
+.rewards-variant-default {
+  background: linear-gradient(135deg, #f5edf0, #e0e7ff, #f3e8ff);
+}
+
+.rewards-variant-dashboard {
+  background: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
+}
+
+.rewards-variant-wallet {
+  background: linear-gradient(135deg, #eef2ff, #dbeafe, #e0e7ff);
+}
+
+.rewards-variant-game {
+  background: linear-gradient(135deg, #ede9fe, #c4b5fd, #a78bfa);
+}
+
+.rewards-variant-leaderboard {
+  background: linear-gradient(135deg, #fff7ed, #fde68a, #fca5a5);
+}
+
+.rewards-variant-companion {
+  background: linear-gradient(135deg, #f3e8ff, #e9d5ff, #c084fc);
+}
+
+.rewards-glass-card {
+  background: rgba(255, 255, 255, 0.68);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  will-change: transform;
+}
+
+.rewards-primary-btn {
+  border-radius: 9999px;
+  background: linear-gradient(90deg, #7c3aed, #3b82f6);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
+  transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rewards-primary-btn:hover {
+  transform: scale(1.02);
+  filter: brightness(1.06);
+}
+
+.rewards-heading {
+  color: #1f2937;
+}
+
+.rewards-subtext {
+  color: #6b7280;
+}
+
+/* Welcome Card Fixes */
+.welcome-card {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 0px; /* Parent padding is handled by rewards-glass-card */
+  gap: 20px !important;
+  width: 100%;
+}
+
+.welcome-left {
+  flex: 1 !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+/* Badge (attempts) */
+.welcome-badge {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  padding: 6px 14px !important;
+  border-radius: 999px !important;
+  letter-spacing: 0.3px !important;
+  width: fit-content !important;
+  margin-bottom: 8px !important;
+}
+
+/* Welcome text */
+.welcome-subtitle {
+  font-size: 18px !important;
+  color: #6b7280 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Username (MAIN FOCUS) */
+.welcome-title {
+  font-size: 38px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+  margin: 4px 0 !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1.1 !important;
+  text-transform: uppercase !important;
+  background: linear-gradient(135deg, #7c3aed, #3b82f6) !important;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Game Stats Cards - Distinct Colors */
+.card-balance {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe) !important;
+  border: 1px solid #93c5fd !important;
+  color: #1e3a8a !important;
+}
+.card-balance p { color: #1e40af !important; }
+.card-balance h2 { color: #1e3a8a !important; }
+
+.card-cost {
+  background: linear-gradient(135deg, #f5f3ff, #ede9fe) !important;
+  border: 1px solid #c4b5fd !important;
+  color: #5b21b6 !important;
+}
+.card-cost p { color: #6d28d9 !important; }
+.card-cost h2 { color: #5b21b6 !important; }
+
+.card-attempts {
+  background: linear-gradient(135deg, #fff7ed, #ffedd5) !important;
+  border: 1px solid #fdba74 !important;
+  color: #c2410c !important;
+}
+.card-attempts p { color: #ea580c !important; }
+.card-attempts h2 { color: #c2410c !important; }
+
+/* Description */
+.welcome-desc {
+  font-size: 16px !important;
+  line-height: 1.6 !important;
+  color: #6b7280 !important;
+  max-width: 500px !important;
+  margin-top: 8px !important;
+}
+
+.welcome-left h1,
+.welcome-left h2 {
+  white-space: normal !important;
+}
+
+/* Inline GP Styles for Game Module */
+.header-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 24px !important;
+  width: 100% !important;
+  padding: 0 !important;
+}
+
+.gp-container {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  background: #1f2937 !important;
+  padding: 6px 14px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  transform-origin: right center;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.coin {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 50% !important;
+  background: linear-gradient(145deg, #FFD700, #FFA500) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: bold !important;
+  font-size: 12px !important;
+  color: black !important;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.4) !important;
+}
+
+.value {
+  color: white !important;
+  font-weight: bold !important;
+  font-size: 16px !important;
+  min-width: 20px !important;
+  text-align: center !important;
+}
+
+
+
+/* Companion Page Dark Gaming Design */
+.companion-page {
+  background: linear-gradient(135deg, #0f0c29, #1a1a2e, #16213e);
+  min-height: 100vh;
+  color: white;
+  margin: -24px; /* compensate for parent padding if necessary */
+  padding: 24px;
+}
+
+.reward-badge {
+  background: rgba(139,92,246,0.2);
+  border: 1px solid rgba(167,139,250,0.4);
+  color: #c4b5fd;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-weight: 600;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
+}
+
+.companion-card {
+  background: linear-gradient(160deg, #1e1b4b 0%, #12122a 100%);
+  border: 1px solid rgba(139,92,246,0.35);
+  border-radius: 20px;
+  box-shadow:
+    0 0 30px rgba(139,92,246,0.15),
+    inset 0 1px 0 rgba(255,255,255,0.05);
+  padding: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Glow behind the character */
+.companion-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 280px; height: 280px;
+  background: radial-gradient(ellipse, rgba(139,92,246,0.3) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Character display area — dark stage with glow floor */
+.character-stage {
+  background: linear-gradient(180deg, #0d0d1a 0%, #1a1040 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(139,92,246,0.2);
+  min-height: 380px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Floor glow ring */
+.character-stage::after {
+  content: '';
+  position: absolute;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  width: 200px; height: 30px;
+  background: radial-gradient(ellipse, rgba(139,92,246,0.6) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(8px);
+  pointer-events: none;
+}
+
+/* Make the character image full height and visible */
+.character-img {
+  height: 340px;
+  object-fit: contain;
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 0 20px rgba(139,92,246,0.5));
+}
+
+.nav-arrow {
+  background: rgba(139,92,246,0.2);
+  border: 1px solid rgba(167,139,250,0.4);
+  color: #c4b5fd;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(6px);
+  z-index: 10;
+}
+
+.nav-arrow:hover {
+  background: rgba(139,92,246,0.45);
+  box-shadow: 0 0 16px rgba(139,92,246,0.5);
+  transform: scale(1.1);
+}
+
+.nav-arrow.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.select-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #7c3aed, #4f46e5);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow: 0 0 20px rgba(124,58,237,0.4);
+  transition: box-shadow 0.3s, transform 0.2s;
+}
+
+.select-btn:hover {
+  box-shadow: 0 0 35px rgba(124,58,237,0.7);
+  transform: translateY(-2px);
+}
+
+.select-btn:active {
+  transform: translateY(0);
+}
+
+.companion-name {
+  color: #fff;
+  font-size: 26px;
+  font-weight: 800;
+  text-shadow: 0 0 20px rgba(167,139,250,0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.companion-desc {
+  color: #a78bfa;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.pagination-dots {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(139,92,246,0.2);
+  transition: all 0.3s;
+}
+
+.dot.active {
+  background: #a78bfa;
+  box-shadow: 0 0 10px #a78bfa;
+  transform: scale(1.2);
+}
+
+.companion-tag {
+  background: rgba(139,92,246,0.15);
+  border: 1px solid rgba(139,92,246,0.3);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c4b5fd;
+}

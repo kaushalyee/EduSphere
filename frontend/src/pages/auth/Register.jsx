@@ -2,29 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, UserPlus } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-
-
-const CATEGORIES = [
-  "Programming",
-  "Mathematics",
-  "Networking",
-  "DSA",
-  "DBMS",
-  "OOP",
-  "Web Development",
-  "Cyber Basics",
-];
-const TOPICS_BY_CATEGORY = {
-  Programming: ["C", "Java", "Python", "JavaScript", "Debugging"],
-  Mathematics: ["Calculus", "Probability", "Statistics", "Discrete Math"],
-  Networking: ["OSI Model", "TCP/IP", "Subnetting", "Routing Basics"],
-  DSA: ["Arrays", "Linked Lists", "Stacks & Queues", "Trees", "Sorting"],
-  DBMS: ["SQL", "Normalization", "Joins", "Transactions", "ER Modeling"],
-  OOP: ["Classes & Objects", "Inheritance", "Polymorphism", "Encapsulation"],
-  "Web Development": ["HTML/CSS", "React Basics", "Node/Express", "REST APIs"],
-  "Cyber Basics": ["CIA Triad", "Phishing", "Password Security", "Basic Cryptography"],
-};
-
+import { CATEGORIES, TOPICS_BY_CATEGORY } from "../../constants/constants";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -36,15 +14,27 @@ const Register = () => {
   const [studentID, setStudentID] = useState("");
   const [password, setPassword] = useState("");
 
-  // ✅ add these
   const [year, setYear] = useState("");
   const [semester, setSemester] = useState("");
   const [weakCategories, setWeakCategories] = useState([]);
-
-  // topics
   const [weakTopics, setWeakTopics] = useState([]);
 
   const [error, setError] = useState("");
+
+  const validateStudentID = (id) => {
+    const regex = /^it\d{8}$/i;
+    return regex.test(id.trim());
+  };
+
+  const validatePassword = (value) => {
+    const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/;
+    return regex.test(value);
+  };
+
+  const validateEmail = (value) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(value.trim());
+  };
 
   const toggleCategory = (cat) => {
     setWeakCategories((prevCats) => {
@@ -53,43 +43,90 @@ const Register = () => {
         ? prevCats.filter((c) => c !== cat)
         : [...prevCats, cat];
 
-      // if removing a category, also remove its topics from weakTopics
       if (willRemove) {
         const catTopics = TOPICS_BY_CATEGORY[cat] || [];
-        setWeakTopics((prevTopics) => prevTopics.filter((t) => !catTopics.includes(t)));
+        setWeakTopics((prevTopics) =>
+          prevTopics.filter((topic) => !catTopics.includes(topic))
+        );
       }
 
       return nextCats;
     });
   };
+
   const toggleTopic = (topic) => {
-    setWeakTopics((prev) =>
-      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic]
+    setWeakTopics((prevTopics) =>
+      prevTopics.includes(topic)
+        ? prevTopics.filter((t) => t !== topic)
+        : [...prevTopics, topic]
     );
   };
 
-
   const isStudentValid =
-    year !== "" && semester !== "" && weakCategories.length > 0;
+    year !== "" &&
+    semester !== "" &&
+    weakCategories.length > 0 &&
+    validateStudentID(studentID);
 
   const isFormValid =
     name.trim() !== "" &&
-    email.trim() !== "" &&
-    password.trim() !== "" &&
-    (role !== "student" ? true : studentID.trim() !== "" && isStudentValid);
+    validateEmail(email) &&
+    validatePassword(password) &&
+    (role !== "student" || isStudentValid);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
+    if (name.trim() === "") {
+      setError("Name is required");
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError("Please enter a valid email address");
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setError(
+        "Password must be at least 6 characters and include uppercase, lowercase, and a number"
+      );
+      return;
+    }
+
+    if (role === "student") {
+      if (!validateStudentID(studentID)) {
+        setError(
+          "Student ID must start with IT and contain 8 digits (example: IT21450064)"
+        );
+        return;
+      }
+
+      if (year === "") {
+        setError("Please select academic year");
+        return;
+      }
+
+      if (semester === "") {
+        setError("Please select semester");
+        return;
+      }
+
+      if (weakCategories.length === 0) {
+        setError("Please select at least one weak area");
+        return;
+      }
+    }
+
     const payload = {
-      name,
-      email,
+      name: name.trim(),
+      email: email.trim().toLowerCase(),
       password,
       role,
       ...(role === "student"
         ? {
-          studentID,
+          studentID: studentID.trim().toUpperCase(),
           year: Number(year),
           semester: Number(semester),
           weakCategories,
@@ -101,15 +138,15 @@ const Register = () => {
     const result = await register(payload);
 
     if (result.success) {
-      localStorage.setItem("isNewUser", "true"); 
+      localStorage.setItem("isNewUser", "true");
       navigate(result.redirectTo);
+    } else {
+      setError(result.message || "Registration failed");
     }
-    else setError(result.message);
   };
 
-
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-20">
+    <div className="min-h-screen flex items-center justify-center px-4 py-20 bg-gradient-to-br from-blue-100 via-sky-50 to-blue-200">
       <div className="max-w-md w-full">
         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
@@ -130,7 +167,6 @@ const Register = () => {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Role */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Select Role
@@ -138,12 +174,16 @@ const Register = () => {
               <select
                 value={role}
                 onChange={(e) => {
-                  setRole(e.target.value);
-                  // reset student onboarding fields when switching roles
-                  if (e.target.value !== "student") {
+                  const newRole = e.target.value;
+                  setRole(newRole);
+                  setError("");
+
+                  if (newRole !== "student") {
+                    setStudentID("");
                     setYear("");
                     setSemester("");
                     setWeakCategories([]);
+                    setWeakTopics([]);
                   }
                 }}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all bg-white"
@@ -153,7 +193,6 @@ const Register = () => {
               </select>
             </div>
 
-            {/* Name */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {role === "student" ? "Student Name" : "Tutor Name"}
@@ -161,14 +200,16 @@ const Register = () => {
               <input
                 type="text"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (error) setError("");
+                }}
                 placeholder="John Doe"
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
               />
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {role === "student" ? "Student Email" : "Tutor Email"}
@@ -176,17 +217,18 @@ const Register = () => {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@university.edu"
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="Student@mail.com"
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
               />
             </div>
 
-            {/* Student-only onboarding */}
             {role === "student" && (
               <>
-                {/* Student ID (UI only) */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Student ID
@@ -194,21 +236,29 @@ const Register = () => {
                   <input
                     type="text"
                     value={studentID}
-                    onChange={(e) => setStudentID(e.target.value)}
-                    placeholder="STU123456"
+                    onChange={(e) => {
+                      setStudentID(e.target.value.toUpperCase());
+                      if (error) setError("");
+                    }}
+                    placeholder="IT21450064"
                     required
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Must start with IT and contain 8 digits
+                  </p>
                 </div>
 
-                {/* Year */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Academic Year
                   </label>
                   <select
                     value={year}
-                    onChange={(e) => setYear(e.target.value)}
+                    onChange={(e) => {
+                      setYear(e.target.value);
+                      if (error) setError("");
+                    }}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all bg-white"
                     required
                   >
@@ -220,14 +270,16 @@ const Register = () => {
                   </select>
                 </div>
 
-                {/* Semester */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Semester
                   </label>
                   <select
                     value={semester}
-                    onChange={(e) => setSemester(e.target.value)}
+                    onChange={(e) => {
+                      setSemester(e.target.value);
+                      if (error) setError("");
+                    }}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all bg-white"
                     required
                   >
@@ -237,12 +289,11 @@ const Register = () => {
                   </select>
                 </div>
 
-                {/* Weak Categories */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Weak Areas (Select at least 1)
                   </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {CATEGORIES.map((cat) => (
                       <label
                         key={cat}
@@ -251,7 +302,10 @@ const Register = () => {
                         <input
                           type="checkbox"
                           checked={weakCategories.includes(cat)}
-                          onChange={() => toggleCategory(cat)}
+                          onChange={() => {
+                            toggleCategory(cat);
+                            if (error) setError("");
+                          }}
                         />
                         <span>{cat}</span>
                       </label>
@@ -260,8 +314,8 @@ const Register = () => {
                 </div>
               </>
             )}
-            {/* Weak Topics (based on selected categories) */}
-            {weakCategories.length > 0 && (
+
+            {role === "student" && weakCategories.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Weak Topics (Optional)
@@ -269,8 +323,13 @@ const Register = () => {
 
                 <div className="space-y-3">
                   {weakCategories.map((cat) => (
-                    <div key={cat} className="bg-white rounded-lg border border-gray-200 p-3">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">{cat}</p>
+                    <div
+                      key={cat}
+                      className="bg-white rounded-lg border border-gray-200 p-3"
+                    >
+                      <p className="text-sm font-semibold text-gray-700 mb-2">
+                        {cat}
+                      </p>
 
                       <div className="flex flex-wrap gap-2">
                         {(TOPICS_BY_CATEGORY[cat] || []).map((topic) => (
@@ -285,7 +344,10 @@ const Register = () => {
                               type="checkbox"
                               className="hidden"
                               checked={weakTopics.includes(topic)}
-                              onChange={() => toggleTopic(topic)}
+                              onChange={() => {
+                                toggleTopic(topic);
+                                if (error) setError("");
+                              }}
                             />
                             {topic}
                           </label>
@@ -297,7 +359,6 @@ const Register = () => {
               </div>
             )}
 
-            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Password
@@ -305,21 +366,23 @@ const Register = () => {
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError("");
+                }}
                 placeholder="••••••••"
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Minimum 6 characters with uppercase, lowercase, and a number
+              </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={!isFormValid}
-              className={`w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 ${isFormValid
-                ? "hover:shadow-lg hover:scale-105 cursor-pointer"
-                : "opacity-50 cursor-not-allowed"
-                }`}
-            >
+<button
+  type="submit"
+  className="w-full py-3 bg-gradient-to-r from-primary-600 to-accent-600 text-white rounded-lg font-semibold transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer"
+>
               Create Account
             </button>
           </form>

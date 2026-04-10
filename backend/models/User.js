@@ -61,6 +61,29 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    lastQuizScore: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    attemptsUsedToday: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    lastAttemptDate: {
+      type: Date,
+      default: null,
+    },
+    totalGP: {
+      type: Number,
+      default: 0,
+    },
+    lastGPReset: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

@@ -1,30 +1,54 @@
+import React from "react";
 import { Flame } from "lucide-react";
+import targetGif from "@/assets/target.gif";
 
-export default function RewardsHero({ studentName = "Alex", gameAttempts }) {
+const RewardsHero = ({ studentName, gameAttempts }) => {
+  const safeAttempts = gameAttempts ?? 0;
+  const formatName = (name) =>
+    name ? name.charAt(0).toUpperCase() + name.slice(1) : "Student";
+
   return (
-    <div className="group relative flex min-h-[300px] flex-col justify-center overflow-hidden rounded-[2rem] bg-gradient-to-tr from-indigo-600 via-indigo-500 to-purple-500 p-8 shadow-2xl">
-      <div className="pointer-events-none absolute top-0 right-0 h-full w-3/4 opacity-40 mix-blend-color-dodge transition-transform duration-1000 group-hover:scale-105">
-        <div className="h-full w-full bg-[radial-gradient(circle_at_right,rgba(255,255,255,0.8)_0%,transparent_70%)]"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:30px_30px] [mask-image:radial-gradient(ellipse_60%_100%_at_right_center,black_40%,transparent_100%)]"></div>
-      </div>
+    <div className="relative flex flex-col justify-center rounded-2xl bg-white p-6 shadow-md border border-gray-100 overflow-hidden min-h-[250px] h-full transition-all duration-200">
+      {/* Subtle Gradient Accent */}
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-100/20 to-purple-100/20 pointer-events-none" />
 
-      <div className="relative z-10 flex h-full max-w-xl flex-col justify-center">
-        <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-white/20 bg-white/20 px-4 py-2 text-xs font-bold text-white shadow-sm backdrop-blur-md">
-          <Flame
-            size={16}
-            className="fill-orange-400 text-orange-400 drop-shadow-[0_0_8px_rgba(251,146,60,0.8)]"
-          />
-          <span className="tracking-wide">YOU HAVE {gameAttempts} GAME ATTEMPTS</span>
+      <div className="relative z-10 welcome-card">
+        <div className="welcome-left">
+          <div className={`welcome-badge inline-flex w-fit items-center gap-2 ${
+            safeAttempts === 0 
+              ? "bg-amber-50 border border-amber-200 text-amber-700" 
+              : "bg-green-50 border border-green-200 text-green-700"
+          }`}>
+            <Flame size={14} className={safeAttempts === 0 ? "text-amber-500" : "text-green-500"} />
+            <span>YOU HAVE {safeAttempts} GAME ATTEMPTS</span>
+          </div>
+          
+          <p className="welcome-subtitle">Welcome back,</p>
+          <h1 className="welcome-title">
+            {formatName(studentName)}!
+          </h1>
+
+          <p className="welcome-desc">
+            Every step you take today builds your future success. Stay consistent and keep progressing.
+          </p>
         </div>
 
-        <h1 className="mb-5 text-4xl font-extrabold leading-[1.1] tracking-tight text-white drop-shadow-lg md:text-5xl lg:text-5xl">
-          Welcome back, {studentName}!
-        </h1>
-
-        <p className="max-w-sm text-sm font-medium leading-relaxed text-indigo-100/90">
-          Every step you take today builds your future success. Stay consistent and keep progressing.
-        </p>
+        <img
+          src={targetGif}
+          alt="target"
+          loading="lazy"
+          decoding="async"
+          style={{
+            width: '320px',
+            height: '320px',
+            objectFit: 'contain',
+            display: 'block',
+          }}
+        />
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(RewardsHero);
+

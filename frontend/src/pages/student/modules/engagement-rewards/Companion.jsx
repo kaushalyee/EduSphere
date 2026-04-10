@@ -1,99 +1,135 @@
-import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
-import RewardsSidebar from "./components/RewardsSidebar";
+import { useAuth } from "@/context/AuthContext";
+import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
+
 import AvatarViewer from "./components/AvatarViewer";
 import CompanionSelector from "./components/CompanionSelector";
-import useWallet from "../../../../hooks/useWallet";
+import useWallet from "@/hooks/useWallet";
 
 export default function Companion() {
-  const [activeTab, setActiveTab] = useState("companion");
+  const { user } = useAuth();
   const { balance } = useWallet();
 
+  const safeBalance = balance ?? 0;
+
   return (
-    <div className="fixed inset-0 z-[100] flex overflow-hidden bg-[#0a0e19] font-sans text-white selection:bg-purple-500/30">
-      <RewardsSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="companion-page">
+      {/* Title & Reward Points Badge */}
+      <div className="flex w-full items-center justify-between mb-8 px-4">
+        <div>
+          <h1 className="text-[28px] font-bold text-white mb-0 leading-tight">Your Companions</h1>
+          <p className="text-[#a78bfa] text-sm mt-1">Unlock and select your study companions</p>
+        </div>
+        <div className="reward-badge flex items-center gap-2">
+          <Zap size={14} className="text-amber-400 fill-amber-400" />
+          Reward Points: {safeBalance.toLocaleString()}
+        </div>
+      </div>
+      
+      <CompanionSelector>
+        {({ currentCompanion, next, prev, index, companions }) => {
+          if (!currentCompanion) return null;
 
-      <div className="relative flex h-full flex-grow flex-col overflow-hidden">
-        <div className="pointer-events-none absolute top-0 right-0 h-[500px] w-[500px] rounded-full bg-purple-900/10 blur-[150px]"></div>
-        <div className="pointer-events-none absolute -bottom-32 -left-32 h-[600px] w-[600px] rounded-full bg-indigo-900/10 blur-[150px]"></div>
-
-        <header className="relative z-20 flex h-[90px] shrink-0 items-center border-b border-white/5 bg-[#0a0e19]/80 px-10 backdrop-blur-xl">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-r from-white via-indigo-100 to-gray-400 bg-clip-text text-3xl font-extrabold tracking-tighter text-transparent drop-shadow-sm">
-              Reward Rush
-            </div>
-          </div>
-
-          <div className="ml-auto flex flex-col items-end gap-2">
-            <div className="flex items-center gap-4">
-              <button className="group relative text-gray-400 transition-colors hover:text-white">
-                <Bell size={22} className="transition-transform group-hover:scale-110" />
-                <div className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#0a0e19] bg-gradient-to-br from-purple-400 to-indigo-600 shadow-[0_0_8px_rgba(168,85,247,0.8)]"></div>
-              </button>
-              <div className="h-8 w-8 cursor-pointer overflow-hidden rounded-full border border-white/10 transition-colors hover:border-purple-500/50">
-                <img
-                  src="https://ui-avatars.com/api/?name=Alex&background=random"
-                  alt="Profile"
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            </div>
-            <div className="rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold text-white shadow-[0_0_18px_rgba(168,85,247,0.25)] backdrop-blur-md">
-              Reward Points: {balance.toLocaleString()}
-            </div>
-          </div>
-        </header>
-
-        <main className="relative z-10 min-h-0 flex-grow overflow-y-auto p-6 md:p-10">
-          <CompanionSelector>
-            {({ currentCompanion, next, prev }) => (
-              <div className="mx-auto flex h-full w-full max-w-[1280px] items-center justify-center">
-                <div className="grid w-full grid-cols-[64px_minmax(0,1fr)_64px] items-center gap-4 md:gap-8">
-                  <button
-                    type="button"
+          return (
+            <div className="mx-auto flex w-full max-w-4xl items-center justify-center pb-10 px-4">
+              <div 
+                className="companion-card w-full"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  height: 'calc(100vh - 220px)',
+                  overflow: 'hidden',
+                  padding: 0
+                }}
+              >
+                {/* Character Display Area — Dark stage (Takes flex space) */}
+                <div 
+                  className="character-stage w-full relative"
+                  style={{ 
+                    flex: 1, 
+                    minHeight: 0, 
+                    borderRadius: '20px 20px 0 0',
+                    overflow: 'hidden',
+                    paddingTop: '50px',
+                    boxSizing: 'border-box'
+                  }}
+                >
+                   <div className="w-full h-full flex items-center justify-center">
+                    <AvatarViewer modelPath={currentCompanion.model} />
+                   </div>
+                   
+                   {/* Navigation Arrows */}
+                   <button 
                     onClick={prev}
-                    className="group flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
-                    aria-label="Previous companion"
-                  >
-                    <ChevronLeft className="h-7 w-7 transition-transform group-hover:-translate-x-0.5" />
-                  </button>
+                    disabled={index === 0}
+                    className={`nav-arrow absolute left-6 top-1/2 -translate-y-1/2 ${index === 0 ? 'disabled' : ''}`}
+                   >
+                     <ChevronLeft size={24} />
+                   </button>
+                   
+                   <button 
+                    onClick={next}
+                    disabled={index === companions.length - 1}
+                    className={`nav-arrow absolute right-6 top-1/2 -translate-y-1/2 ${index === companions.length - 1 ? 'disabled' : ''}`}
+                   >
+                     <ChevronRight size={24} />
+                   </button>
+                </div>
 
-                  <div className="flex flex-col items-center">
-                    <AvatarViewer
-                      modelPath={currentCompanion.model}
-                      cameraOffset={currentCompanion.cameraOffset}
-                      heightOffset={currentCompanion.heightOffset}
-                    />
-                    <h1 className="mt-8 text-5xl font-extrabold uppercase tracking-[0.08em] text-white">
-                      {currentCompanion.name}
-                    </h1>
-                    <p className="mt-2 text-center text-sm text-cyan-100/70">
-                      {currentCompanion.unlocked
-                        ? "Unlocked Companion"
-                        : "Locked - Complete more challenges to unlock"}
+                {/* Info section — Fixed at bottom, no scroll */}
+                <div style={{ padding: '1.5rem 2rem', flexShrink: 0, background: 'rgba(0,0,0,0.2)' }}>
+                  <div className="text-center">
+                    <h2 className="companion-name mb-1" style={{ fontSize: '24px' }}>{currentCompanion.name}</h2>
+                    <p className="companion-desc mb-6 max-w-lg mx-auto leading-relaxed overflow-hidden text-ellipsis whitespace-nowrap">
+                      {currentCompanion.name === "Dr Strange" 
+                        ? "Master of the mystic arts, providing mystical focus during long study sessions."
+                        : currentCompanion.name === "Invincible"
+                        ? "Provides indomitable will and stamina for conquering difficult academic modules."
+                        : "A loyal study partner to help you achieve your unique learning goals."}
                     </p>
+                    
+                    {/* SELECT BUTTON — Above dots */}
                     <button
                       type="button"
-                      className="mt-6 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 px-8 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_0_25px_rgba(124,58,237,0.45)] transition hover:brightness-110"
+                      className="select-btn flex items-center justify-center gap-2 group transition-all mb-4"
                     >
-                      View Companion
+                      <Zap size={18} className="fill-white group-hover:scale-110 transition-transform" />
+                      SELECT COMPANION
                     </button>
-                  </div>
 
-                  <button
-                    type="button"
-                    onClick={next}
-                    className="group flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
-                    aria-label="Next companion"
-                  >
-                    <ChevronRight className="h-7 w-7 transition-transform group-hover:translate-x-0.5" />
-                  </button>
+                    {/* Pagination dots — At very bottom */}
+                    <div className="pagination-dots mt-0">
+                      {companions.map((_, i) => (
+                        <div 
+                          key={i} 
+                          className={`dot ${i === index ? 'active' : ''}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
-            )}
-          </CompanionSelector>
-        </main>
-      </div>
+            </div>
+          );
+        }}
+      </CompanionSelector>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .character-stage {
+          min-height: 380px;
+          max-height: 420px;
+          overflow: hidden !important;
+          padding-top: 50px !important;
+          box-sizing: border-box !important;
+        }
+        .companion-card {
+          overflow: hidden !important;
+        }
+        .avatar-viewer,
+        .avatar-viewer canvas {
+          width: 100% !important;
+          height: 420px !important;
+        }
+      `}} />
     </div>
   );
 }

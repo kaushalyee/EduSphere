@@ -2,12 +2,10 @@ const mongoose = require("mongoose");
 
 const walletSchema = new mongoose.Schema(
   {
-    // User -> Wallet relationship
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true, // A user should only have one wallet
     },
     balance: {
       type: Number,
@@ -23,5 +21,6 @@ const walletSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+walletSchema.index({ userId: 1 }, { unique: true });
 
 module.exports = mongoose.model("Wallet", walletSchema);

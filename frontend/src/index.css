@@ -17,3 +17,293 @@
     transform: translateY(-4px);
   }
 }
+
+.button {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  background: transparent;
+  cursor: pointer;
+  border: none;
+}
+
+.button:before,
+.button:after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  inset: 7px;
+}
+
+.button:before {
+  border: 4px solid #f0eeef;
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+.button:after {
+  border: 4px solid #96daf0;
+  transform: scale(1.3);
+  opacity: 0;
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+.button:hover:before {
+  opacity: 0;
+  transform: scale(0.7);
+}
+
+.button:hover:after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.button-box {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.button-elem {
+  width: 20px;
+  height: 20px;
+  margin: 17px 18px;
+  transform: rotate(180deg);
+  fill: #f0eeef;
+}
+
+.button:hover .button-box {
+  transform: translateX(-56px);
+  transition: 0.4s;
+}
+
+/* Gaming UI Arrows */
+.game-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+
+.game-arrow.left {
+  left: -70px;
+}
+
+.game-arrow.right {
+  right: -70px;
+}
+
+.arrow {
+  cursor: pointer;
+  height: 60px;
+  width: 50px;
+  position: relative;
+  transition: transform 0.15s ease;
+}
+
+.arrow-top,
+.arrow-bottom {
+  background-color: rgba(255, 255, 255, 0.15);
+  height: 4px;
+  position: absolute;
+  top: 50%;
+  width: 100%;
+}
+
+.arrow-top:after,
+.arrow-bottom:after {
+  background: linear-gradient(90deg, #7c3aed, #00ffff);
+  content: "";
+  height: 100%;
+  position: absolute;
+  top: 0;
+  transition: all 0.2s ease;
+}
+
+.arrow-top {
+  transform: rotate(45deg);
+  transform-origin: bottom right;
+}
+
+.arrow-bottom {
+  transform: rotate(-45deg);
+  transform-origin: top right;
+}
+
+.arrow-top:after {
+  left: 100%;
+  right: 0;
+}
+
+.arrow-bottom:after {
+  left: 0;
+  right: 100%;
+}
+
+.arrow:hover .arrow-top:after {
+  left: 0;
+}
+
+.arrow:hover .arrow-bottom:after {
+  right: 0;
+}
+
+/* Fix Left Direction */
+.game-arrow.left .arrow {
+  transform: scaleX(-1);
+}
+
+/* Game-like Interactions */
+.game-arrow:hover .arrow {
+  transform: scale(1.15);
+}
+
+.game-arrow.left:hover .arrow {
+  transform: scaleX(-1) scale(1.15);
+}
+
+.arrow:active {
+  transform: scale(0.9);
+}
+
+.game-arrow.disabled {
+  opacity: 0.25;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+/* Default sidebar (unchanged) */
+.sidebar-item {
+  padding: 10px 14px;
+  border-radius: 8px;
+}
+
+/* ONLY for Rewards module */
+.rewards-sidebar .sidebar-item {
+  transition: all 0.2s ease;
+}
+
+/* Hover effect */
+.rewards-sidebar .sidebar-item:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.12),
+    rgba(59, 130, 246, 0.12)
+  );
+  transform: translateX(4px);
+}
+
+/* Active item */
+.rewards-sidebar .sidebar-item.active {
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.2),
+    rgba(59, 130, 246, 0.2)
+  );
+  border-left: 3px solid #7c3aed;
+}
+
+/* Glowing Nav Tabs */
+.nav-tab {
+  padding: 10px 20px;
+  border: none;
+  font-size: 12px; 
+  color: #6b7280;
+  border-radius: 7px;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transition: 0.5s;
+  transition-property: box-shadow, background, color;
+  background: transparent;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-tab.active {
+  background: rgb(0, 140, 255);
+  color: #fff;
+  box-shadow: none;
+}
+
+.nav-tab:hover {
+  background: rgb(0, 140, 255);
+  color: #fff;
+  box-shadow: 0 0 5px rgb(0, 140, 255),
+              0 0 25px rgb(0, 140, 255),
+              0 0 50px rgb(0, 140, 255),
+              0 0 100px rgb(0, 140, 255);
+}
+
+/* Nav Brand Styling */
+.nav-brand {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #111827; /* Matching text-gray-900 */
+}
+
+/* Sidebar & Layout Synchronization */
+.sidebar {
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 64px !important;
+  overflow: hidden;
+  transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 200;
+  background: white;
+  box-shadow: none;
+}
+
+.sidebar:hover {
+  width: 220px !important;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.10) !important;
+}
+
+.sidebar .nav-text {
+  opacity: 0;
+  width: 0;
+  white-space: nowrap;
+  transition: opacity 0.2s ease 0.08s;
+  overflow: hidden;
+}
+
+.sidebar:hover .nav-text {
+  opacity: 1;
+  width: auto;
+}
+
+.sidebar-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  transition: background 0.2s ease;
+}
+
+.sidebar-item svg {
+  flex-shrink: 0 !important;
+}
+
+.sidebar-item:hover {
+  background: rgba(124, 58, 237, 0.08) !important;
+  border-radius: 8px !important;
+}
+
+/* Main layout wrapper — fixed offset, expands in sync with sidebar */
+.main-content {
+  margin-left: 64px;
+  width: calc(100% - 64px); /* Optional: ensure width calculation is clear */
+  transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* When sidebar expands, push content right */
+.sidebar:hover ~ .main-content,
+.sidebar:hover + .main-content {
+  margin-left: 220px !important;
+}
+
+

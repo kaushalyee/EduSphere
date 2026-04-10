@@ -19,9 +19,17 @@ import ChatbotOverlay from "./components/ChatbotOverlay";
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { pathname } = location;
   const { logout } = useAuth();
 
-  const [activeTab, setActiveTab] = useState("Dashboard");
+  const getInitialTab = (path) => {
+    if (path.includes("progress-tracking")) return "Progress";
+    if (path.includes("marketplace")) return "Market";
+    if (path.includes("peer-learning") || path.includes("kuppi")) return "PeerLearning";
+    return "Dashboard";
+  };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab(pathname));
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
@@ -29,10 +37,11 @@ export default function StudentDashboard() {
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
-      // Clear the state to prevent it from persisting
       window.history.replaceState({}, document.title);
+    } else {
+      setActiveTab(getInitialTab(pathname));
     }
-  }, [location.state]);
+  }, [location.state, pathname]);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {
@@ -78,9 +87,8 @@ export default function StudentDashboard() {
         options={options}
       />
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="main-content flex-1 min-w-0 flex flex-col">
         <StudentHeader
-          isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           activeTab={activeTab}
           options={options}
