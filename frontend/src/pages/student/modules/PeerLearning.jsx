@@ -56,7 +56,7 @@ export default function PeerLearning() {
         "http://localhost:5000/api/session-requests/my-requests",
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setMyRequests(res.data.requests || []);
+      setMyRequests(res.data || []);
     } catch (err) {
       console.error("Failed to fetch requests", err);
     } finally {
