@@ -23,7 +23,7 @@ export default function TrendingRequests({
                     }
                 );
 
-                setTrending(res.data.trendingRequests || []);
+                setTrending(res.data || []);
             } catch (err) {
                 setError(
                     err.response?.data?.message || "Failed to load trending requests"
@@ -73,11 +73,37 @@ export default function TrendingRequests({
                             className="flex items-center justify-between border border-slate-200 rounded-xl p-4"
                         >
                             <div>
-                                <p className="font-semibold text-slate-900">
-                                    {index + 1}. {item.topic}
+                                {/* Topic — blue highlight pill */}
+                                <p className="font-semibold text-slate-900 mb-1">
+                                    {index + 1}.{" "}
+                                    <span style={{
+                                        background: "#EFF6FF",
+                                        color: "#1D4ED8",
+                                        border: "1px solid #BFDBFE",
+                                        borderRadius: 6,
+                                        padding: "2px 8px",
+                                        fontWeight: 700,
+                                        fontSize: "0.95em",
+                                    }}>
+                                        {item.topic}
+                                    </span>
                                 </p>
-                                <p className="text-sm text-slate-500">{item.category}</p>
-                                <p className="text-sm text-slate-600 mt-1">
+
+                                {/* Category — green highlight pill */}
+                                <span style={{
+                                    display: "inline-block",
+                                    background: "#F0FDF4",
+                                    color: "#15803D",
+                                    border: "1px solid #BBF7D0",
+                                    borderRadius: 6,
+                                    padding: "2px 8px",
+                                    fontSize: "0.78em",
+                                    fontWeight: 600,
+                                }}>
+                                    {item.category}
+                                </span>
+
+                                <p className="text-sm text-slate-600 mt-2">
                                     Preferred Time: {item.preferredTime || "Not specified"}
                                 </p>
                             </div>
