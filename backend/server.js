@@ -18,7 +18,24 @@ const PORT = process.env.PORT || 5000;
     require("./models");
     console.log("✅ DB connected. Starting server...");
 
-    app.listen(PORT, () => console.log(` Server running on port ${PORT}`));
+    const server = require("http").createServer(app);
+    const io = require("socket.io")(server, {
+      cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+      }
+    });
+
+    global.io = io;
+
+    io.on("connection", (socket) => {
+      console.log("New client connected:", socket.id);
+      socket.on("disconnect", () => {
+        console.log("Client disconnected:", socket.id);
+      });
+    });
+
+    server.listen(PORT, () => console.log(` Server running on port ${PORT}`));
   } catch (err) {
     console.error("❌ Startup failed:", err.message);
     process.exit(1);

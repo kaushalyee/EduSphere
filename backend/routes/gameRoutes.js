@@ -7,6 +7,7 @@ const {
   resetDailyAttempts,
   submitScore,
   getLeaderboard,
+  getWeeklyAttempts,
 } = require("../controllers/gameController");
 
 const router = express.Router();
@@ -20,5 +21,6 @@ router.post("/submit", protect, submitScore);
 
 // Leaderboard route
 router.get("/leaderboard", protect, getLeaderboard);
+router.get("/weekly-attempts", protect, getWeeklyAttempts);
 
 module.exports = router;

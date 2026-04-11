@@ -27,6 +27,10 @@ const gameAttemptSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    moves: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
