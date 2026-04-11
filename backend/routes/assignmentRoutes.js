@@ -11,25 +11,37 @@ const {
   createAssignment,
   updateAssignment,
   deleteAssignment,
-  getTutorAssignments
+  getTutorAssignments,
+  submitAssignmentWithRubric,
+  getSubmissionAnalysis,
+  overrideGrade
 } = require('../controllers/assignmentController');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/');
+    // Ensure uploads directory exists
+    const fs = require('fs');
+    const uploadPath = 'uploads/';
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + file.originalname);
+    // Generate unique filename with timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 20 * 1024 * 1024 // 20MB limit
   },
   fileFilter: function (req, file, cb) {
+    // Define allowed file types
     const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
     const ext = path.extname(file.originalname).toLowerCase();
     if (allowedTypes.includes(ext)) {
@@ -74,8 +86,18 @@ router.post('/analyze-submission', upload.fields([
   { name: 'draftFile', maxCount: 1 }
 ]), analyzeSubmission);
 
+// Enhanced submission with rubric analysis
+router.post('/submit-with-rubric', upload.fields([
+  { name: 'rubricFile', maxCount: 1 },
+  { name: 'draftFile', maxCount: 1 }
+]), submitAssignmentWithRubric);
+
 // Route to submit assignment
 router.post('/submit', submitAssignment);
+
+// Analysis and override operations
+router.get('/:submissionId/analysis', getSubmissionAnalysis);
+router.post('/:submissionId/override-grade', overrideGrade);
 
 console.log(">>> REGISTERED ASSIGNMENT ROUTES:", router.stack.map(r => r.route.path));
 

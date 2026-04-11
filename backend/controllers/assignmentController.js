@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const AssignmentRequirement = require('../models/AssignmentRequirement');
 const AssignmentSubmission = require('../models/AssignmentSubmission');
 const PredictionResult = require('../models/PredictionResult');
+const assignmentAnalyzer = require('../services/assignmentAnalyzerFinal');
 
 /**
  * GET /api/assignments/student/:studentId
@@ -1012,6 +1013,289 @@ exports.getTutorAssignments = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error while fetching assignments.",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * POST /api/assignments/submit-with-rubric
+ * Enhanced submission with rubric analysis
+ * This endpoint handles dual file upload and automated analysis
+ */
+exports.submitAssignmentWithRubric = async (req, res) => {
+  try {
+    // Log incoming request for debugging
+    console.log('=== SUBMISSION REQUEST START ===');
+    console.log('Request body:', req.body);
+    console.log('Request files:', req.files);
+    
+    // Check if files are present
+    if (!req.files || !req.files.rubricFile || !req.files.draftFile) {
+      console.log('ERROR: Missing files');
+      return res.status(400).json({
+        success: false,
+        message: "Both rubric and draft files are required"
+      });
+    }
+
+    // Extract request body data from the incoming request
+    const { requirementId, studentId } = req.body;
+    // Get uploaded files from multer middleware
+    const files = req.files;
+    
+    console.log('Submission data:', { requirementId, studentId });
+    console.log('Files received:', {
+      rubricFile: files.rubricFile[0]?.originalname,
+      draftFile: files.draftFile[0]?.originalname,
+      rubricSize: files.rubricFile[0]?.size,
+      draftSize: files.draftFile[0]?.size
+    });
+
+    // Validate file sizes
+    const maxSize = 20 * 1024 * 1024; // 20MB
+    if (files.rubricFile[0].size > maxSize || files.draftFile[0].size > maxSize) {
+      console.log('ERROR: File too large');
+      return res.status(400).json({
+        success: false,
+        message: "File size exceeds 20MB limit"
+      });
+    }
+
+    // Validate file types
+    const path = require('path');
+    const allowedTypes = ['.pdf', '.doc', '.docx', '.txt'];
+    const rubricExt = path.extname(files.rubricFile[0].originalname).toLowerCase();
+    const draftExt = path.extname(files.draftFile[0].originalname).toLowerCase();
+    
+    if (!allowedTypes.includes(rubricExt) || !allowedTypes.includes(draftExt)) {
+      console.log('ERROR: Invalid file type');
+      return res.status(400).json({
+        success: false,
+        message: "Invalid file type. Only PDF, DOC, DOCX, and TXT files are allowed."
+      });
+    }
+
+    if (!files.rubricFile || !files.draftFile) {
+      console.log('ERROR: Missing files - rubricFile:', !!files.rubricFile, 'draftFile:', !!files.draftFile);
+      return res.status(400).json({
+        success: false,
+        message: "Both rubric and draft files are required",
+        details: {
+          hasRubricFile: !!files.rubricFile,
+          hasDraftFile: !!files.draftFile
+        }
+      });
+    }
+
+    // Validate that both files have proper names
+    if (!files.rubricFile[0] || !files.draftFile[0]) {
+      console.log('ERROR: Files array is empty');
+      return res.status(400).json({
+        success: false,
+        message: "File upload failed. Please try again."
+      });
+    }
+
+    console.log('Files validated successfully');
+    console.log('Rubric file:', files.rubricFile[0].originalname);
+    console.log('Draft file:', files.draftFile[0].originalname);
+
+    // For demo purposes, create a mock assignment if requirementId is default
+    let validRequirementId = requirementId;
+    let validStudentId = studentId;
+    
+    if (requirementId === 'default-assignment-id') {
+      console.log('Using demo assignment - creating mock requirement');
+      // For demo, we'll skip the requirement validation
+      validRequirementId = new mongoose.Types.ObjectId(); // Generate a valid ObjectId
+    } else if (mongoose.Types.ObjectId.isValid(requirementId)) {
+      // Validate that the assignment requirement exists
+      const requirement = await AssignmentRequirement.findById(requirementId);
+      if (!requirement) {
+        console.log('ERROR: Assignment requirement not found:', requirementId);
+        return res.status(404).json({
+          success: false,
+          message: "Assignment requirement not found"
+        });
+      }
+      validRequirementId = new mongoose.Types.ObjectId(requirementId);
+    } else {
+      // Generate a new ObjectId for invalid requirementId
+      console.log('Invalid requirementId, generating new ObjectId:', requirementId);
+      validRequirementId = new mongoose.Types.ObjectId();
+    }
+    
+    // Validate studentId and convert to ObjectId if needed
+    if (!studentId || studentId === 'undefined' || studentId === 'null' || !mongoose.Types.ObjectId.isValid(studentId)) {
+      console.log('Using demo student ID or invalid ID provided');
+      validStudentId = new mongoose.Types.ObjectId(); // Generate a valid ObjectId for demo
+    } else {
+      validStudentId = new mongoose.Types.ObjectId(studentId);
+    }
+
+    // Create new submission record with initial status
+    const submission = new AssignmentSubmission({
+      requirementId: validRequirementId,  // Link to the assignment requirement
+      studentId: validStudentId,  // Link to the student user
+      rubricFileUrl: `/uploads/${files.rubricFile[0].filename}`,  // Store rubric file path
+      draftFileUrl: `/uploads/${files.draftFile[0].filename}`,  // Store draft file path
+      status: 'analyzing'  // Set initial status for analysis workflow
+    });
+
+    console.log('Creating submission record...');
+    console.log('Submission data before save:', {
+      requirementId: validRequirementId,
+      studentId: validStudentId,
+      rubricFileUrl: `/uploads/${files.rubricFile[0].filename}`,
+      draftFileUrl: `/uploads/${files.draftFile[0].filename}`
+    });
+    
+    // Save the initial submission record to database
+    await submission.save();
+    console.log('Submission record created with ID:', submission._id);
+
+    // Perform analysis asynchronously to avoid blocking the response
+    setImmediate(async () => {
+      try {
+        console.log('Starting analysis process...');
+        // Construct full file paths for the uploaded files
+        const rubricPath = path.join(process.cwd(), 'uploads', files.rubricFile[0].filename);
+        const draftPath = path.join(process.cwd(), 'uploads', files.draftFile[0].filename);
+        
+        console.log('File paths:', { rubricPath, draftPath });
+        
+        // Verify files exist before analysis
+        const fs = require('fs');
+        if (!fs.existsSync(rubricPath)) {
+          throw new Error('Rubric file not found on server: ' + rubricPath);
+        }
+        if (!fs.existsSync(draftPath)) {
+          throw new Error('Draft file not found on server: ' + draftPath);
+        }
+        
+        console.log('Files verified, starting analysis...');
+        
+        // Call the analysis service to process both files
+        const analysis = await assignmentAnalyzer.analyzeSubmission(rubricPath, draftPath);
+        console.log('Analysis completed successfully:', analysis);
+        
+        // Update submission record with analysis results
+        await AssignmentSubmission.findByIdAndUpdate(submission._id, {
+          rubricAnalysis: analysis.rubricAnalysis,  // Store extracted criteria
+          gradingBreakdown: analysis.gradingBreakdown,  // Store detailed breakdown
+          predictedGrade: analysis.predictedGrade,  // Store grade prediction
+          status: 'graded',  // Update status to completed
+          analysisCompletedAt: new Date()  // Record completion timestamp
+        });
+        console.log('Submission updated with analysis results');
+      } catch (error) {
+        // Handle analysis failure gracefully
+        console.error('Analysis failed:', error);
+        console.error('Error details:', error.message);
+        console.error('Error stack:', error.stack);
+        
+        await AssignmentSubmission.findByIdAndUpdate(submission._id, {
+          status: 'submitted',  // Revert to submitted status
+          tutorFeedback: 'Analysis failed: ' + error.message  // Add detailed error message
+        });
+        console.log('Submission marked as failed analysis');
+      }
+    });
+
+    // Return immediate response to client
+    return res.status(201).json({
+      success: true,
+      submission: submission,  // Return submission without populate to avoid ObjectId errors
+      message: "Assignment submitted successfully. Analysis in progress..."
+    });
+  } catch (error) {
+    // Handle any errors during the submission process
+    console.error("Error submitting assignment:", error);
+    console.error("Error stack:", error.stack);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while submitting assignment.",
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+/**
+ * GET /api/assignments/:submissionId/analysis
+ * Get detailed analysis of a submission
+ */
+exports.getSubmissionAnalysis = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+
+    const submission = await AssignmentSubmission.findById(submissionId)
+      .populate('requirementId')
+      .populate('studentId', 'name email');
+
+    if (!submission) {
+      return res.status(404).json({
+        success: false,
+        message: "Submission not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      submission,
+      analysis: {
+        rubricAnalysis: submission.rubricAnalysis,
+        gradingBreakdown: submission.gradingBreakdown,
+        predictedGrade: submission.predictedGrade
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching analysis:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching analysis.",
+      error: error.message
+    });
+  }
+};
+
+/**
+ * POST /api/assignments/:submissionId/override-grade
+ * Allow tutor to override automated grade
+ */
+exports.overrideGrade = async (req, res) => {
+  try {
+    const { submissionId } = req.params;
+    const { grade, feedback } = req.body;
+
+    if (grade === undefined || grade < 0 || grade > 100) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid grade (0-100) is required"
+      });
+    }
+
+    const submission = await AssignmentSubmission.findByIdAndUpdate(
+      submissionId,
+      {
+        grade,
+        tutorFeedback: feedback,
+        status: 'graded'
+      },
+      { new: true }
+    ).populate(['requirementId', 'studentId']);
+
+    return res.status(200).json({
+      success: true,
+      submission,
+      message: "Grade overridden successfully"
+    });
+  } catch (error) {
+    console.error("Error overriding grade:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while overriding grade.",
       error: error.message
     });
   }
