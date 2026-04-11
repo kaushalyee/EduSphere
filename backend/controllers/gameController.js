@@ -2,9 +2,14 @@ const puzzles = require("../data/puzzles");
 const GameAttempt = require("../models/GameAttempt");
 const GameScore = require("../models/GameScore");
 const User = require("../models/User");
+const Wallet = require("../models/Wallet");
+const { toUserObjectId } = require("../services/walletService");
+const { createRewardEvent, triggerWalletUpdate } = require("../services/eventService");
 const { calculateGP } = require("../utils/gpCalculator");
 
 const DAILY_LIMIT = 5;
+const MAX_ATTEMPTS_PER_WEEK = 5;
+const COST_PER_ATTEMPT = 10;
 
 function getToday() {
   return new Date().toISOString().split("T")[0];
@@ -34,11 +39,32 @@ function isBasicValid(puzzle) {
 
 exports.unlockGame = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?._id || req.user?.id;
+    const uid = toUserObjectId(userId);
     const today = getToday();
 
-    const todayAttempts = await GameAttempt.find({ userId, date: today });
+    // 1. Weekly Attempt Limit
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const count = await GameAttempt.countDocuments({
+      userId: uid,
+      createdAt: { $gte: sevenDaysAgo },
+    });
 
+    if (count >= MAX_ATTEMPTS_PER_WEEK) {
+      return res.status(403).json({
+        message: "Weekly attempt limit reached. Earn more rewards to continue next week.",
+      });
+    }
+
+    // 2. Point Check
+    const wallet = await Wallet.findOne({ userId: uid });
+    if (!wallet || wallet.balance < COST_PER_ATTEMPT) {
+      return res.status(400).json({ message: "Not enough reward points to play" });
+    }
+
+    const todayAttempts = await GameAttempt.find({ userId: uid, date: today });
     if (todayAttempts.length >= DAILY_LIMIT) {
       return res.status(400).json({
         message: `Daily limit reached (${DAILY_LIMIT} games)`,
@@ -46,7 +72,7 @@ exports.unlockGame = async (req, res) => {
     }
 
     const activeAttempt = await GameAttempt.findOne({
-      userId,
+      userId: uid,
       status: "started",
     });
 
@@ -56,25 +82,37 @@ exports.unlockGame = async (req, res) => {
       });
     }
 
-    const attemptsRemaining = DAILY_LIMIT - todayAttempts.length;
-    if (attemptsRemaining <= 0) {
-      return res.status(400).json({ message: "No attempts left" });
-    }
-
     const attemptNumber = todayAttempts.length + 1;
     const selectedPuzzle = puzzles[String(attemptNumber)];
     if (!selectedPuzzle || !isBasicValid(selectedPuzzle)) {
       return res.status(500).json({ message: "No valid puzzles configured" });
     }
 
+    // 3. Deduct Points (Atomic Update)
+    const updatedWallet = await Wallet.findOneAndUpdate(
+      { userId: uid, balance: { $gte: COST_PER_ATTEMPT } },
+      { $inc: { balance: -COST_PER_ATTEMPT } },
+      { new: true }
+    );
+
+    if (!updatedWallet) {
+      return res.status(400).json({ message: "Not enough reward points to play" });
+    }
+
+    // 🎯 CREATE REWARD EVENT FOR ACTIVITY FEED (COST)
+    await createRewardEvent(uid, "GAME_START", -COST_PER_ATTEMPT, "Game Entry Fee");
+
     console.log("Selected Puzzle for attempt:", attemptNumber);
 
     const attempt = await GameAttempt.create({
-      userId,
+      userId: uid,
       puzzleId: String(attemptNumber),
       date: today,
       status: "started",
     });
+
+    // Real-time update emit
+    await triggerWalletUpdate(uid);
 
     return res.json({ attempt: attemptNumber });
   } catch (error) {
@@ -84,7 +122,7 @@ exports.unlockGame = async (req, res) => {
 
 exports.completeGame = async (req, res) => {
   try {
-    const { attemptId, time } = req.body;
+    const { attemptId, time, moves } = req.body;
     const parsedTime = Number(time) || 0;
     const score = Math.max(0, 1000 - parsedTime * 2);
 
@@ -94,6 +132,7 @@ exports.completeGame = async (req, res) => {
         status: "completed",
         time: parsedTime,
         score,
+        moves: Number(moves) || 0,
       },
       { returnDocument: 'after' }
     );
@@ -245,6 +284,9 @@ exports.submitScore = async (req, res) => {
     });
     await newScore.save();
 
+    // 🎯 CREATE REWARD EVENT FOR ACTIVITY FEED
+    await createRewardEvent(userId, "GAME_WIN", gp, `Completed ${gridSize} puzzle in ${time}s`);
+
     console.log("GP Earned:", gp);
     console.log("User:", userId, "GP Earned:", gp, "Total Daily GP:", finalUser.totalGP);
 
@@ -282,4 +324,27 @@ exports.getLeaderboard = async (req, res) => {
     });
   }
 };
+/**
+ * Count number of game attempts in the last 7 days for the logged-in user.
+ * GET /api/game/weekly-attempts
+ */
+exports.getWeeklyAttempts = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
+    const count = await GameAttempt.countDocuments({
+      userId,
+      createdAt: { $gte: sevenDaysAgo },
+    });
+
+    res.json({
+      currentAttempts: count,
+      maxAttempts: 20, // Assuming 20 is the max attempts for the week as per UI
+    });
+  } catch (error) {
+    console.error("Error fetching weekly attempts:", error);
+    res.status(500).json({ message: "Error fetching weekly attempts" });
+  }
+};

@@ -44,5 +44,6 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/rewards", rewardRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/activity", require("./routes/activityRoutes"));
 
 module.exports = app;
