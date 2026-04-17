@@ -90,13 +90,15 @@ export default function Wallet() {
     // In production, the URL would come from env
     const socket = io(window.location.origin === 'http://localhost:5173' ? 'http://localhost:5000' : window.location.origin);
 
+    if (user?._id) {
+      socket.emit("join", user._id);
+    }
+
     socket.on("wallet:update", (payload) => {
       console.log("Real-time wallet update received:", payload);
-      // Only refetch if the update is for this user
-      if (payload.userId === user?._id) {
-        fetchWalletData();
-        refreshWallet();
-      }
+      // Room-based delivery ensures this is only received by the correct user
+      fetchWalletData();
+      refreshWallet();
     });
 
     return () => {

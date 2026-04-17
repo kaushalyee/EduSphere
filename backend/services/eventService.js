@@ -41,9 +41,8 @@ async function triggerWalletUpdate(userId) {
       createdAt: { $gte: sevenDaysAgo },
     });
 
-    // Emit to specific user if possible, or broadcast (here broadcasting for simplicity as per common task patterns)
-    // In a real production app, you'd use socket rooms based on userId.
-    global.io.emit("wallet:update", {
+    // Emit ONLY to the specific user's room for privacy and scalability
+    global.io.to(userId.toString()).emit("wallet:update", {
       userId,
       todayPoints,
       weeklyAttempts

@@ -8,7 +8,7 @@ const { createRewardEvent, triggerWalletUpdate } = require("../services/eventSer
 const { calculateGP } = require("../utils/gpCalculator");
 
 const DAILY_LIMIT = 5;
-const MAX_ATTEMPTS_PER_WEEK = 5;
+const MAX_ATTEMPTS_PER_WEEK = 20; // Increased to match UI and requirements
 const COST_PER_ATTEMPT = 10;
 
 function getToday() {
@@ -290,6 +290,11 @@ exports.submitScore = async (req, res) => {
     console.log("GP Earned:", gp);
     console.log("User:", userId, "GP Earned:", gp, "Total Daily GP:", finalUser.totalGP);
 
+    // 🎯 TRIGGER REAL-TIME LEADERBOARD UPDATE
+    if (global.io) {
+      global.io.emit("leaderboard:update");
+    }
+
     return res.status(201).json({
       success: true,
       gp,
@@ -305,17 +310,24 @@ exports.submitScore = async (req, res) => {
 };
 
 /**
- * Returns top players sorted by GP descending.
- * GET /api/leaderboard
+ * Returns top players sorted by their Daily GP descending.
+ * Aggregates performance across the current day.
+ * GET /api/game/leaderboard
  */
 exports.getLeaderboard = async (req, res) => {
   try {
-    const leaderboard = await GameScore.find()
-      .populate("userId", "name email") // Populate user details
-      .sort({ gp: -1 })
-      .limit(10);
+    const leaderboard = await User.find({ 
+      totalGP: { $gt: 0 },
+      role: 'student'
+    })
+    .select("name email totalGP studentID")
+    .sort({ totalGP: -1 })
+    .limit(10);
 
-    return res.status(200).json(leaderboard);
+    return res.status(200).json({
+      success: true,
+      leaderboard
+    });
   } catch (error) {
     console.error("Error fetching leaderboard:", error);
     return res.status(500).json({
