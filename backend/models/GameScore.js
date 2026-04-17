@@ -19,6 +19,12 @@ const gameScoreSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    attemptId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GameAttempt",
+      required: true,
+      unique: true,
+    },
     createdAt: {
       type: Date,
       default: Date.now,
@@ -31,5 +37,6 @@ const gameScoreSchema = new mongoose.Schema(
 
 // Index for leaderboard performance
 gameScoreSchema.index({ gp: -1 });
+gameScoreSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model("GameScore", gameScoreSchema);

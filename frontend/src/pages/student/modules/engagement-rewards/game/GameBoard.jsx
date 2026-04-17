@@ -286,7 +286,7 @@ const GameBoard = () => {
 
                 // 1. Submit to the new GP system
                 const gpRes = await api.post("/game/submit", {
-                    time: timeInSeconds,
+                    attemptId,
                     gridSize: `${GRID_SIZE}x${GRID_SIZE}`
                 });
 
@@ -294,14 +294,6 @@ const GameBoard = () => {
                     setGpEarned(gpRes.data.gp);
                     // Refresh total wallet balance (includes totalGP) from server
                     await fetchWallet();
-                }
-
-                // 2. Original system completion (if attemptId exists)
-                if (attemptId) {
-                    await api.post('/game/complete', {
-                        attemptId,
-                        time: finalTime,
-                    });
                 }
 
                 setHasSubmittedCompletion(true);

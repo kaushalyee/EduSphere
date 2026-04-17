@@ -16,19 +16,26 @@ export default function Avatar({ model }) {
   const { scene, animations } = useGLTF(modelPath);
   const { actions } = useAnimations(animations, groupRef);
 
-  // --- STEP 3: FIX LESLEY VISIBILITY ---
+  const isSpecial = isLesley || modelPath.toLowerCase().includes("gwen") || modelPath.toLowerCase().includes("spider") || modelPath.toLowerCase().includes("robot");
+
+  // --- STEP 3: FIX VISIBILITY & MATERIALS ---
   useEffect(() => {
-    if (!scene || !isLesley) return;
+    if (!scene) return;
 
     scene.traverse((child) => {
       if (child.isMesh) {
         child.visible = true;
-        child.material = child.material.clone();
-        child.material.side = THREE.DoubleSide;
+        // Apply double side to special cases or all if troubleshooting
+        if (isSpecial) {
+          child.material = child.material.clone();
+          child.material.side = THREE.DoubleSide;
+          child.material.transparent = false;
+          child.material.opacity = 1;
+        }
       }
     });
 
-  }, [scene, isLesley]);
+  }, [scene, isSpecial]);
 
   // --- STEP 4: APPLY SPECIFIC SCALE AND POSITION ---
   useEffect(() => {
@@ -57,3 +64,13 @@ export default function Avatar({ model }) {
     </group>
   );
 }
+
+// Preload large companion models to improve first-view performance
+useGLTF.preload('/assets/avatars/optimized/robot.glb');
+useGLTF.preload('/assets/avatars/optimized/layla.glb');
+useGLTF.preload('/assets/avatars/optimized/batman.glb');
+useGLTF.preload('/assets/avatars/optimized/gwen.glb');
+useGLTF.preload('/assets/avatars/optimized/superman.glb');
+useGLTF.preload('/assets/avatars/optimized/hulk.glb');
+useGLTF.preload('/assets/avatars/optimized/lesley.glb');
+useGLTF.preload('/assets/avatars/optimized/iron_spider.glb');

@@ -70,11 +70,7 @@ export default function Companion() {
                     </h2>
                     
                     <p className="text-gray-300 mb-8 leading-relaxed text-lg">
-                      {currentCompanion.name === "Dr Strange" 
-                        ? "Master of the mystic arts, providing mystical focus during long study sessions."
-                        : currentCompanion.name === "Invincible"
-                        ? "Provides indomitable will and stamina for conquering difficult academic modules."
-                        : "A loyal study partner to help you achieve your unique learning goals."}
+                      {currentCompanion.description || "A loyal study partner to help you achieve your unique learning goals."}
                     </p>
                     
                     {/* SELECT BUTTON */}

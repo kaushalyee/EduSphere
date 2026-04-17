@@ -4,13 +4,17 @@ import api from "@/api/api";
 import { useAuth } from "@/context/AuthContext";
 import { io } from "socket.io-client";
 
-const NEXT_RESET_DISPLAY = "Ends at Midnight";
+
 
 function formatGP(gp) {
   return `${gp} GP`;
 }
 
-function PodiumAvatar({ tier, rank, name, avatar, totalGP, elevated }) {
+function formatTime(s) {
+  return `${s}s`;
+}
+
+function PodiumAvatar({ tier, rank, name, avatar, totalGP, totalTime, elevated }) {
   const styles = {
     gold: {
       gradient: "bg-gradient-to-br from-yellow-400 to-yellow-600",
@@ -44,6 +48,11 @@ function PodiumAvatar({ tier, rank, name, avatar, totalGP, elevated }) {
       <span className="text-sm font-medium opacity-90 mb-1">#{rank}</span>
       <h3 className="text-lg font-semibold truncate max-w-[120px] text-center">{displayName}</h3>
       <p className="text-2xl font-bold mt-1 drop-shadow-sm">{formatGP(totalGP)}</p>
+      {totalTime > 0 && (
+        <span className="text-[10px] px-2 py-0.5 bg-black/10 rounded-full font-medium opacity-80 mt-1">
+          Time: {formatTime(totalTime)}
+        </span>
+      )}
     </div>
   );
 }
@@ -52,7 +61,39 @@ export default function Leaderboard() {
   const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [timeLeft, setTimeLeft] = useState("");
+
+  // Countdown timer logic for Asia/Colombo midnight
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Colombo',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(now);
+      const p = {}; parts.forEach(pt => p[pt.type] = pt.value);
+      
+      const h_c = parseInt(p.hour);
+      const m_c = parseInt(p.minute);
+      const s_c = parseInt(p.second);
+      
+      const secondsSinceMidnight = h_c * 3600 + m_c * 60 + s_c;
+      const remainingSeconds = Math.max(0, (24 * 3600) - secondsSinceMidnight);
+      
+      const h = Math.floor(remainingSeconds / 3600);
+      const m = Math.floor((remainingSeconds % 3600) / 60);
+      const s = remainingSeconds % 60;
+      
+      const pad = (n) => n.toString().padStart(2, "0");
+      setTimeLeft(`${pad(h)}h : ${pad(m)}m : ${pad(s)}s`);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchLeaderboard = useCallback(async () => {
     try {
@@ -101,17 +142,14 @@ export default function Leaderboard() {
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold rewards-heading">
-              Daily GP Leaderboard
+              Leaderboard
             </h1>
-            <p className="rewards-subtext text-sm mt-1">
-              Top students ranked by daily academic-earned Game Points
-            </p>
           </div>
           <div className="rewards-glass-card flex items-center gap-2 rounded-full px-5 py-2">
             <Timer className="h-5 w-5 text-gray-400" />
             <div>
               <p className="text-xs font-semibold rewards-subtext uppercase tracking-wider">Status</p>
-              <p className="text-sm font-bold rewards-heading">{NEXT_RESET_DISPLAY}</p>
+              <p className="text-sm font-bold rewards-heading">Ends in {timeLeft}</p>
             </div>
           </div>
         </header>
@@ -161,7 +199,10 @@ export default function Leaderboard() {
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="text-xs font-semibold rewards-subtext uppercase">Today's Score</p>
-                      <p className="font-bold rewards-heading">{formatGP(yourEntry.totalGP)}</p>
+                      <div className="flex flex-col items-end">
+                        <p className="font-bold rewards-heading">{formatGP(yourEntry.totalGP)}</p>
+                        <p className="text-[10px] rewards-subtext font-medium italic opacity-75">Time: {formatTime(yourEntry.totalTime)}</p>
+                      </div>
                     </div>
                     <button type="button" className="rewards-primary-btn px-5 py-2 text-sm font-bold">
                       Boost Score
@@ -184,11 +225,14 @@ export default function Leaderboard() {
                     />
                     <span className="font-medium rewards-heading">{row.name}</span>
                   </div>
-                  <div>
-                    <span className="px-3 py-1 bg-white/70 text-[#3b82f6] rounded-full text-sm font-semibold border border-white/60">
-                      {formatGP(row.totalGP)}
-                    </span>
-                  </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-white/70 text-[#3b82f6] rounded-full text-sm font-semibold border border-white/60">
+                        {formatGP(row.totalGP)}
+                      </span>
+                      <span className="text-[11px] font-medium rewards-subtext italic">
+                        {formatTime(row.totalTime)}
+                      </span>
+                    </div>
                 </div>
               ))}
             </section>
