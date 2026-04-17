@@ -4,6 +4,7 @@ import { Navigate } from "react-router-dom";
 import DashboardOverview from "../modules/DashboardOverview";
 import PeerLearning from "../modules/PeerLearning";
 import StudentMarketplace from "../marketplace/StudentMarketplace";
+import ProgressSimple from "../modules/ProgressSimple";
 import Progress from "../modules/Progress";
 import RewardsDashboard from "../modules/engagement-rewards/RewardsDashboard";
 
@@ -28,7 +29,7 @@ export default function StudentContent({ activeTab, options, setActiveTab }) {
     case "Market":
       return <StudentMarketplace />;
     case "Progress":
-      return <Progress />;
+      return <ProgressSimple />;
     case "Rewards":
       return <Navigate to="/student/rewards" replace />;
     default:

@@ -1,8 +1,5 @@
 const SessionRequest = require("../models/SessionRequest");
 
-// @desc    Create a new session request
-// @route   POST /api/session-requests
-// @access  Private (Student)
 const createSessionRequest = async (req, res) => {
   try {
     const { category, topic, preferredMode, preferredTime, preferredDate } = req.body;

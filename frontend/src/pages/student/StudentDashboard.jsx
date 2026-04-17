@@ -18,7 +18,8 @@ import ChatbotOverlay from "./components/ChatbotOverlay";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname } = location;
   const { logout } = useAuth();
 
   const getInitialTab = (path) => {
@@ -32,9 +33,15 @@ export default function StudentDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  // Handle navigation state from assignment submission
   useEffect(() => {
-    setActiveTab(getInitialTab(pathname));
-  }, [pathname]);
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+      window.history.replaceState({}, document.title);
+    } else {
+      setActiveTab(getInitialTab(pathname));
+    }
+  }, [location.state, pathname]);
 
   const handleLogout = () => {
     if (window.confirm("Are you sure you want to log out?")) {

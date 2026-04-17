@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import LearningTrajectoryGraph from '../../../components/progress/LearningTrajectoryGraph';
-import SmartComparison from '../../../components/progress/SmartComparison';
-import AssignmentSubmission from '../../../components/progress/AssignmentSubmission';
+import LearningTrajectoryGraph from '../../../components/progress/LearningTrajectoryGraphSimple';
+import SmartComparison from '../../../components/progress/SmartComparisonSimple';
+import AssignmentSubmission from '../../../components/assignments/AssignmentSubmissionWithRubric';
 import { 
   TrendingUp, 
   BarChart3, 
@@ -30,18 +30,19 @@ const Progress = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
       {/* Header */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Student Progress Management</h1>
-          <p className="text-gray-600">Track your academic growth, compare performance, and improve your assignments</p>
+        <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 p-8 rounded-xl shadow-lg border border-transparent relative overflow-hidden">
+          <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+          <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Student Progress Management</h1>
+          <p className="text-indigo-100 text-lg font-medium">Track your academic growth, compare performance, and improve your assignments</p>
         </div>
       </div>
 
       {/* Tab Navigation */}
       <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-6">
+        <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-sm border border-indigo-100/50 mb-6">
           <div className="flex flex-wrap p-2 gap-2">
             {[
               { id: 'overview', label: 'Overview', icon: Info },
@@ -66,7 +67,7 @@ const Progress = () => {
         </div>
 
         {/* Tab Content */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        <div className="bg-white/80 backdrop-blur-md rounded-xl shadow-xl border border-white p-6">
           {renderTabContent()}
         </div>
       </div>
@@ -125,9 +126,9 @@ const OverviewTab = ({ onNavigate }) => {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div className="text-center mb-12">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Student Progress Management System</h2>
-        <p className="text-xl font-semibold text-gray-700 mb-2">Track. Compare. Improve.</p>
-        <p className="text-gray-600 max-w-2xl mx-auto">
+        <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4">Student Progress Management System</h2>
+        <p className="text-xl font-bold text-gray-700 mb-2">Track. Compare. Improve.</p>
+        <p className="text-gray-600 max-w-2xl mx-auto font-medium">
           Three intelligent modules that turn raw academic data into meaningful insights helping every student understand where they stand, how far they've come, and where to focus next.
         </p>
       </div>
@@ -137,7 +138,7 @@ const OverviewTab = ({ onNavigate }) => {
         {features.map((feature) => (
           <div 
             key={feature.id}
-            className="bg-gradient-to-br from-white to-gray-50 rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+            className="bg-white/90 backdrop-blur-sm rounded-xl border border-indigo-50 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
