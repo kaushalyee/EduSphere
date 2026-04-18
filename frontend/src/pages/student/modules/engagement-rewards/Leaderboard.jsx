@@ -1,56 +1,20 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { Timer, TrendingDown, TrendingUp, Star, Loader2 } from "lucide-react";
+import api from "@/api/api";
+import { useAuth } from "@/context/AuthContext";
+import { io } from "socket.io-client";
 
-import { Timer, TrendingDown, TrendingUp, Star } from "lucide-react";
 
-const NEXT_RESET_DISPLAY = "05h : 22m";
 
-const topThreeDisplay = [
-  {
-    rank: 2,
-    name: "Nightfall_X",
-    timeSec: 20,
-    avatar: "https://ui-avatars.com/api/?name=Nightfall+X&background=0f172a&color=fff",
-    tier: "silver",
-  },
-  {
-    rank: 1,
-    name: "CyberViper",
-    timeSec: 15,
-    avatar: "https://ui-avatars.com/api/?name=Cyber+Viper&background=1e1b4b&color=fff",
-    tier: "gold",
-  },
-  {
-    rank: 3,
-    name: "Ethereal_01",
-    timeSec: 45,
-    avatar: "https://ui-avatars.com/api/?name=Ethereal&background=7c2d12&color=fff",
-    tier: "bronze",
-  },
-];
-
-const yourRank = {
-  rank: 42,
-  name: "Neon Prestige",
-  bestTimeSec: 38,
-  movement: 5,
-  avatar: "https://ui-avatars.com/api/?name=Neon+Prestige&background=a855f7&color=fff",
-};
-
-const fullRankings = [
-  { rank: 4, name: "Zero_Gravity", trend: 1, timeSec: 22, avatar: "https://ui-avatars.com/api/?name=Zero&background=475569&color=fff" },
-  { rank: 5, name: "PulseRunner", trend: -1, timeSec: 30, avatar: "https://ui-avatars.com/api/?name=PR&background=475569&color=fff" },
-  { rank: 6, name: "Voxel_Shift", trend: 0, timeSec: 35, avatar: "https://ui-avatars.com/api/?name=VS&background=475569&color=fff" },
-  { rank: 7, name: "GlitchFox", trend: 2, timeSec: 41, avatar: "https://ui-avatars.com/api/?name=GF&background=475569&color=fff" },
-  { rank: 8, name: "NovaTrace", trend: -2, timeSec: 48, avatar: "https://ui-avatars.com/api/?name=NT&background=475569&color=fff" },
-  { rank: 9, name: "Synth_Wave", trend: 0, timeSec: 52, avatar: "https://ui-avatars.com/api/?name=SW&background=475569&color=fff" },
-  { rank: 10, name: "DataDrift", trend: 1, timeSec: 58, avatar: "https://ui-avatars.com/api/?name=DD&background=475569&color=fff" },
-];
-
-function formatTime(sec) {
-  return `${sec}s`;
+function formatGP(gp) {
+  return `${gp} GP`;
 }
 
-function PodiumAvatar({ tier, rank, name, avatar, timeSec, elevated }) {
+function formatTime(s) {
+  return `${s}s`;
+}
+
+function PodiumAvatar({ tier, rank, name, avatar, totalGP, totalTime, elevated }) {
   const styles = {
     gold: {
       gradient: "bg-gradient-to-br from-yellow-400 to-yellow-600",
@@ -69,6 +33,9 @@ function PodiumAvatar({ tier, rank, name, avatar, timeSec, elevated }) {
     },
   };
   const s = styles[tier];
+  
+  const displayName = name || "Unknown Student";
+  const displayAvatar = avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
 
   return (
     <div className={`flex flex-col items-center justify-center p-6 rounded-2xl text-white ${s.gradient} ${s.ring} relative ${elevated ? '-translate-y-4 shadow-xl' : ''}`}>
@@ -77,111 +44,200 @@ function PodiumAvatar({ tier, rank, name, avatar, timeSec, elevated }) {
           <Star className="h-5 w-5 fill-current" />
         </div>
       )}
-      <img src={avatar} alt="" className={`rounded-full object-cover border-2 border-white ${s.size} shadow-md`} />
+      <img src={displayAvatar} alt="" className={`rounded-full object-cover border-2 border-white ${s.size} shadow-md`} />
       <span className="text-sm font-medium opacity-90 mb-1">#{rank}</span>
-      <h3 className="text-lg font-semibold truncate max-w-[120px] text-center">{name}</h3>
-      <p className="text-2xl font-bold mt-1 drop-shadow-sm">{formatTime(timeSec)}</p>
+      <h3 className="text-lg font-semibold truncate max-w-[120px] text-center">{displayName}</h3>
+      <p className="text-2xl font-bold mt-1 drop-shadow-sm">{formatGP(totalGP)}</p>
+      {totalTime > 0 && (
+        <span className="text-[10px] px-2 py-0.5 bg-black/10 rounded-full font-medium opacity-80 mt-1">
+          Time: {formatTime(totalTime)}
+        </span>
+      )}
     </div>
   );
 }
 
-function TrendCell({ delta }) {
-  if (delta === 0) {
-    return <span className="text-gray-400 text-sm font-bold">-</span>;
-  }
-  const up = delta > 0;
-  return (
-    <span className={`inline-flex items-center gap-1 text-sm font-bold ${up ? "text-emerald-500" : "text-rose-500"}`}>
-      {up ? <TrendingUp className="h-3 w-3" strokeWidth={2} /> : <TrendingDown className="h-3 w-3" strokeWidth={2} />}
-      {Math.abs(delta)}
-    </span>
-  );
-}
-
 export default function Leaderboard() {
+  const { user } = useAuth();
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [timeLeft, setTimeLeft] = useState("");
+
+  // Countdown timer logic for Asia/Colombo midnight
+  useEffect(() => {
+    const updateCountdown = () => {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Colombo',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(now);
+      const p = {}; parts.forEach(pt => p[pt.type] = pt.value);
+      
+      const h_c = parseInt(p.hour);
+      const m_c = parseInt(p.minute);
+      const s_c = parseInt(p.second);
+      
+      const secondsSinceMidnight = h_c * 3600 + m_c * 60 + s_c;
+      const remainingSeconds = Math.max(0, (24 * 3600) - secondsSinceMidnight);
+      
+      const h = Math.floor(remainingSeconds / 3600);
+      const m = Math.floor((remainingSeconds % 3600) / 60);
+      const s = remainingSeconds % 60;
+      
+      const pad = (n) => n.toString().padStart(2, "0");
+      setTimeLeft(`${pad(h)}h : ${pad(m)}m : ${pad(s)}s`);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const fetchLeaderboard = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get("/game/leaderboard");
+      if (data.success) {
+        setLeaderboard(data.leaderboard);
+      }
+    } catch (err) {
+      console.error("Error fetching leaderboard:", err);
+      setError("Failed to load rankings.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLeaderboard();
+
+    const socket = io(window.location.origin === 'http://localhost:5173' ? 'http://localhost:5000' : window.location.origin);
+    
+    // Listen for score updates to refresh leaderboard in real-time
+    socket.on("leaderboard:update", () => {
+      fetchLeaderboard();
+    });
+
+    return () => socket.disconnect();
+  }, [fetchLeaderboard]);
+
+  const topThree = leaderboard.slice(0, 3);
+  const remaining = leaderboard.slice(3);
+  
+  const yourEntry = leaderboard.find(entry => entry._id === user?._id);
+  const yourRank = leaderboard.findIndex(entry => entry._id === user?._id) + 1;
+
+  if (loading && leaderboard.length === 0) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-[#7c3aed]" />
+      </div>
+    );
+  }
+
   return (
       <div className="mx-auto max-w-4xl pb-12">
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold rewards-heading">
-              Daily Challenge Leaderboard
+              Leaderboard
             </h1>
-            <p className="rewards-subtext text-sm mt-1">
-              Ranked by fastest completion time
-            </p>
           </div>
           <div className="rewards-glass-card flex items-center gap-2 rounded-full px-5 py-2">
             <Timer className="h-5 w-5 text-gray-400" />
             <div>
-              <p className="text-xs font-semibold rewards-subtext uppercase tracking-wider">Next Reset In</p>
-              <p className="text-sm font-bold rewards-heading">{NEXT_RESET_DISPLAY}</p>
+              <p className="text-xs font-semibold rewards-subtext uppercase tracking-wider">Status</p>
+              <p className="text-sm font-bold rewards-heading">Ends in {timeLeft}</p>
             </div>
           </div>
         </header>
 
-        {/* Podium Section */}
-        <section className="mb-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-            <div className="order-2 md:order-1 pt-4">
-              <PodiumAvatar {...topThreeDisplay[0]} />
-            </div>
-            <div className="order-1 md:order-2 z-10">
-              <PodiumAvatar {...topThreeDisplay[1]} elevated />
-            </div>
-            <div className="order-3 md:order-3 pt-4">
-              <PodiumAvatar {...topThreeDisplay[2]} />
-            </div>
+        {leaderboard.length === 0 ? (
+          <div className="rewards-glass-card p-12 text-center">
+            <p className="text-gray-400">No scores recorded yet for today. Be the first!</p>
           </div>
-        </section>
-
-        {/* Highlight Your Rank */}
-        <section className="mb-8">
-          <div className="rewards-glass-card border-2 border-[#3b82f6] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="text-center w-12">
-                <span className="text-xl font-bold text-[#3b82f6]">#{yourRank.rank}</span>
-              </div>
-              <img src={yourRank.avatar} alt="You" className="h-10 w-10 rounded-full border border-blue-200 shadow-sm" />
-              <div>
-                <p className="font-semibold rewards-heading">{yourRank.name} (You)</p>
-                <div className="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-600">
-                  <TrendingUp className="h-3 w-3" />
-                  Up {yourRank.movement} spots
+        ) : (
+          <>
+            {/* Podium Section */}
+            <section className="mb-10">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                <div className="order-2 md:order-1 pt-4">
+                  {topThree[1] && <PodiumAvatar {...topThree[1]} tier="silver" rank={2} elevated={false} />}
+                </div>
+                <div className="order-1 md:order-2 z-10">
+                  {topThree[0] && <PodiumAvatar {...topThree[0]} tier="gold" rank={1} elevated={true} />}
+                </div>
+                <div className="order-3 md:order-3 pt-4">
+                  {topThree[2] && <PodiumAvatar {...topThree[2]} tier="bronze" rank={3} elevated={false} />}
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-6">
-              <div className="text-right">
-                <p className="text-xs font-semibold rewards-subtext uppercase">Your Best</p>
-                <p className="font-bold rewards-heading">{formatTime(yourRank.bestTimeSec)}</p>
-              </div>
-              <button type="button" className="rewards-primary-btn px-5 py-2 text-sm font-bold">
-                Play Now
-              </button>
-            </div>
-          </div>
-        </section>
+            </section>
 
-        {/* Other Players List */}
-        <section className="space-y-3">
-          {fullRankings.map((row) => (
-            <div key={row.rank} className="rewards-glass-card rounded-lg p-4 flex justify-between items-center hover:bg-white/80 transition-colors">
-              <div className="flex items-center gap-4">
-                <div className="w-8 text-center rewards-subtext font-semibold text-sm">#{row.rank}</div>
-                <img src={row.avatar} alt={row.name} className="h-9 w-9 rounded-full object-cover border border-gray-100" />
-                <span className="font-medium rewards-heading">{row.name}</span>
-                <div className="ml-2">
-                  <TrendCell delta={row.trend} />
+            {/* Highlight Your Rank if not in top 3 */}
+            {yourEntry && yourRank > 3 && (
+              <section className="mb-8">
+                <div className="rewards-glass-card border-2 border-[#3b82f6] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center w-12">
+                      <span className="text-xl font-bold text-[#3b82f6]">#{yourRank}</span>
+                    </div>
+                    <img 
+                      src={yourEntry.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(yourEntry.name)}&background=a855f7&color=fff`} 
+                      alt="You" 
+                      className="h-10 w-10 rounded-full border border-blue-200 shadow-sm" 
+                    />
+                    <div>
+                      <p className="font-semibold rewards-heading">{yourEntry.name} (You)</p>
+                      <div className="mt-0.5 flex items-center gap-1 text-xs font-medium text-emerald-600">
+                        <TrendingUp className="h-3 w-3" />
+                        Daily Participant
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-xs font-semibold rewards-subtext uppercase">Today's Score</p>
+                      <div className="flex flex-col items-end">
+                        <p className="font-bold rewards-heading">{formatGP(yourEntry.totalGP)}</p>
+                        <p className="text-[10px] rewards-subtext font-medium italic opacity-75">Time: {formatTime(yourEntry.totalTime)}</p>
+                      </div>
+                    </div>
+                    <button type="button" className="rewards-primary-btn px-5 py-2 text-sm font-bold">
+                      Boost Score
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <span className="px-3 py-1 bg-white/70 text-[#3b82f6] rounded-full text-sm font-semibold border border-white/60">
-                  {formatTime(row.timeSec)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </section>
+              </section>
+            )}
+
+            {/* Other Players List */}
+            <section className="space-y-3">
+              {remaining.map((row, idx) => (
+                <div key={row._id} className="rewards-glass-card rounded-lg p-4 flex justify-between items-center hover:bg-white/80 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-8 text-center rewards-subtext font-semibold text-sm">#{idx + 4}</div>
+                    <img 
+                      src={row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=475569&color=fff`} 
+                      alt={row.name} 
+                      className="h-9 w-9 rounded-full object-cover border border-gray-100" 
+                    />
+                    <span className="font-medium rewards-heading">{row.name}</span>
+                  </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-3 py-1 bg-white/70 text-[#3b82f6] rounded-full text-sm font-semibold border border-white/60">
+                        {formatGP(row.totalGP)}
+                      </span>
+                      <span className="text-[11px] font-medium rewards-subtext italic">
+                        {formatTime(row.totalTime)}
+                      </span>
+                    </div>
+                </div>
+              ))}
+            </section>
+          </>
+        )}
       </div>
   );
 }
