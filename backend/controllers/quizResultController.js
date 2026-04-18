@@ -1,4 +1,10 @@
-const xlsx = require("xlsx");
+// Optional dependency handled gracefully
+let xlsx;
+try {
+  xlsx = require("xlsx");
+} catch (error) {
+  console.warn('WARNING: xlsx library not found. Excel imports will be disabled.');
+}
 const fs = require("fs");
 const mongoose = require("mongoose");
 
@@ -58,6 +64,15 @@ const importQuizResults = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: "Not authorized to upload results for this session",
+      });
+    }
+
+    // Check if xlsx library is available
+    if (!xlsx) {
+      deleteFileIfExists(req.file.path);
+      return res.status(503).json({
+        success: false,
+        message: "Excel processing service is currently unavailable. Please contact the administrator.",
       });
     }
 

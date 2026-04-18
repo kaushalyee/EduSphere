@@ -1,8 +1,6 @@
 const express = require("express");
 const { protect } = require("../middlewares/authMiddleware");
 const {
-  unlockGame,
-  completeGame,
   getDailyStatus,
   resetDailyAttempts,
   submitScore,
@@ -15,8 +13,6 @@ const router = express.Router();
 // Game module routes (prefixed with /game)
 router.get("/status", protect, getDailyStatus);
 router.post("/reset", protect, resetDailyAttempts);
-router.post("/unlock", protect, unlockGame);
-router.post("/complete", protect, completeGame);
 router.post("/submit", protect, submitScore);
 
 // Leaderboard route
