@@ -14,7 +14,7 @@ function useCountdown(targetDate, targetTime, durationMins = 60) {
       dt.setHours(hours, minutes, 0, 0);
       return dt;
     };
-
+    
     const getEnd = () => {
       const end = getStart();
       end.setMinutes(end.getMinutes() + durationMins);

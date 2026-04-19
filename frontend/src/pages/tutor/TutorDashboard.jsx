@@ -11,7 +11,9 @@ import {
 import TutorSidebar from "./components/TutorSidebar";
 import TutorHeader from "./components/TutorHeader";
 import TutorContent from "./components/TutorContent";
-import NextSessionBanner from "./components/NextSessionBanner"; // ← add this
+import NextSessionBanner from "./components/NextSessionBanner";
+import PendingResultsBanner from "./components/PendingResultsBanner";
+
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
@@ -25,6 +27,8 @@ export default function TutorDashboard() {
   const [selectedTrendingTopic, setSelectedTrendingTopic] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+  const [mySessionsDefaultTab, setMySessionsDefaultTab] = useState("upcoming");
+
 
   const menuItems = [
     {
@@ -88,13 +92,19 @@ export default function TutorDashboard() {
         />
 
         <main className="flex-1 p-6 overflow-auto min-w-0">
-          {/* ── Next Session Banner — only visible on the dashboard tab ── */}
           {activeTab === "dashboard" && (
             <div className="mb-6">
               <NextSessionBanner
                 onGoToSessions={() => setActiveTab("my-sessions")}
               />
+              <PendingResultsBanner
+                onGoToSessions={() => {
+                  setMySessionsDefaultTab("completed");
+                  setActiveTab("my-sessions");
+                }}
+              />
             </div>
+
           )}
 
           <TutorContent
@@ -102,6 +112,8 @@ export default function TutorDashboard() {
             setActiveTab={setActiveTab}
             selectedTrendingTopic={selectedTrendingTopic}
             setSelectedTrendingTopic={setSelectedTrendingTopic}
+            mySessionsDefaultTab={mySessionsDefaultTab}
+            setMySessionsDefaultTab={setMySessionsDefaultTab}
           />
         </main>
       </div>

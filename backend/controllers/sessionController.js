@@ -519,6 +519,102 @@ const updateSession = async (req, res) => {
   }
 };
 
+
+// ARCHIVE SESSION
+const archiveSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (session.status === "upcoming") {
+      return res.status(400).json({
+        message: "Cannot archive an upcoming session. Cancel it first.",
+      });
+    }
+
+    if (session.isArchived) {
+      return res.status(400).json({ message: "Session is already archived" });
+    }
+
+    session.isArchived = true;
+    session.archivedAt = new Date();
+    await session.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Session archived successfully",
+      session,
+    });
+  } catch (error) {
+    console.error("archiveSession error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// RESTORE SESSION
+const restoreSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (!session.isArchived) {
+      return res.status(400).json({ message: "Session is not archived" });
+    }
+
+    session.isArchived = false;
+    session.archivedAt = null;
+    await session.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Session restored successfully",
+      session,
+    });
+  } catch (error) {
+    console.error("restoreSession error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET ARCHIVED SESSIONS
+const getArchivedSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      isArchived: true,
+    }).sort({ archivedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: sessions.length,
+      sessions,
+    });
+  } catch (error) {
+    console.error("getArchivedSessions error:", error);
+    return res.status(500).json({
+      message: "Server error while fetching archived sessions",
+    });
+  }
+};
+
 module.exports = {
   createSession,
   getMySessions,
@@ -530,4 +626,7 @@ module.exports = {
   getCancelledSessions,
   getStudentFeed,
   updateSession,
+  getArchivedSessions,
+  archiveSession,
+  restoreSession,
 };

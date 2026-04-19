@@ -11,6 +11,9 @@ const {
   cancelSession,
   getCompletedSessions,
   getCancelledSessions,
+  getArchivedSessions,
+  archiveSession,
+  restoreSession,
   getStudentFeed,
 } = require("../controllers/sessionController");
 
@@ -28,6 +31,10 @@ router.get("/completed", protect, authorize("tutor"), getCompletedSessions);
 // Tutor - Cancelled sessions
 router.get("/cancelled", protect, authorize("tutor"), getCancelledSessions);
 
+// Tutor - Archived sessions
+router.get("/archived", protect, authorize("tutor"), getArchivedSessions);
+ 
+
 // Student - Recommended feed   BEFORE /:id
 router.get("/feed", protect, authorize("student"), getStudentFeed);
 
@@ -44,5 +51,10 @@ router.put("/:sessionId/complete", protect, authorize("tutor"), markSessionCompl
 
 // Cancel session
 router.put("/:sessionId/cancel", protect, authorize("tutor"), cancelSession);
+// Archive session (completed or cancelled only)
+router.put("/:sessionId/archive", protect, authorize("tutor"), archiveSession);
+ 
+// Restore archived session
+router.put("/:sessionId/restore", protect, authorize("tutor"), restoreSession);
 
 module.exports = router;
