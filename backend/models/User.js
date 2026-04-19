@@ -84,6 +84,18 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    rewardPoints: {
+      type: Number,
+      default: 0,
+    },
+    companionsOwned: {
+      type: [String],
+      default: ["robot"],
+    },
+    activeCompanion: {
+      type: String,
+      default: "robot",
+    },
   },
   { timestamps: true }
 );

@@ -8,95 +8,50 @@ import Avatar from "./Avatar";
 function AvatarLoadingFallback() {
   return (
     <Html center>
-      <div className="rounded bg-black/40 px-3 py-2 text-xs text-white shadow-sm border border-purple-500/30 backdrop-blur-md">
-        Loading companion...
+      <div className="rounded bg-black/40 px-3 py-1 text-[10px] text-white backdrop-blur-md">
+        Loading...
       </div>
     </Html>
   );
-}
-
-function AvatarErrorFallback({ error, model }) {
-  return (
-    <Html center>
-      <div className="max-w-[220px] rounded bg-red-900/40 px-3 py-2 text-center text-xs text-red-200 shadow-sm border border-red-500/30 backdrop-blur-md">
-        Failed to load companion{model ? `: ${model}` : ""}.
-        {error?.message ? ` ${error.message}` : ""}
-      </div>
-    </Html>
-  );
-}
-
-class AvatarErrorBoundary extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error) {
-    console.error("Avatar failed to load:", this.props.model, error);
-  }
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.model !== this.props.model && this.state.hasError) {
-      this.setState({ hasError: false, error: null });
-    }
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <AvatarErrorFallback error={this.state.error} model={this.props.model} />;
-    }
-
-    return this.props.children;
-  }
 }
 
 function CameraSetup() {
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(0, 1.0, 3.5);
-    camera.fov = 50;
-    camera.lookAt(0, 0.4, 0);
+    // Zoomed out to ensure full model visibility
+    camera.position.set(0, 1.2, 5.5);
+    camera.fov = 40;
+    camera.lookAt(0, 0, 0);
     camera.updateProjectionMatrix();
   }, [camera]);
 
   return null;
 }
 
-/**
- * AvatarViewer Component - Zoomed Framing
- */
 export default function AvatarViewer({ modelPath: model }) {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center avatar-viewer">
+    <div className="w-full h-full flex items-center justify-center overflow-visible">
       <Canvas 
-        camera={{ position: [0, 1.0, 3.5], fov: 50 }} 
-        shadows
-        gl={{ alpha: true, antialias: true }}
-        style={{ width: '100%', height: '100%', background: 'transparent' }}
+        camera={{ position: [0, 1.2, 5.5], fov: 40 }} 
+        gl={{ alpha: true, antialias: true, preserveDrawingBuffer: true }}
+        style={{ width: '100%', height: '100%', pointerEvents: 'none' }}
       >
         <CameraSetup />
-        <ambientLight intensity={1.5} />
-        <spotLight position={[5, 10, 5]} angle={0.15} penumbra={1} intensity={2} />
-        <pointLight position={[-5, 5, -5]} intensity={1} color="#a78bfa" />
+        <ambientLight intensity={1.2} />
+        <pointLight position={[10, 10, 10]} intensity={1.5} />
+        <pointLight position={[-10, 5, 5]} intensity={0.8} color="#a78bfa" />
+        <directionalLight position={[0, 5, 5]} intensity={1.0} />
 
-        <AvatarErrorBoundary model={model}>
-          <Suspense fallback={<AvatarLoadingFallback />}>
-            <Avatar key={model} model={model} />
-          </Suspense>
-        </AvatarErrorBoundary>
+        <Suspense fallback={<AvatarLoadingFallback />}>
+          <Avatar key={model} model={model} />
+        </Suspense>
 
         <OrbitControls 
           enableZoom={false} 
-          target={[0, 0.4, 0]} 
-          minPolarAngle={Math.PI / 3}
-          maxPolarAngle={Math.PI / 1.5}
+          enableRotate={false}
           enablePan={false}
+          target={[0, 0, 0]} 
         />
       </Canvas>
     </div>

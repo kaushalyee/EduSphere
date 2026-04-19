@@ -45,7 +45,8 @@ app.use("/api/game", gameRoutes);
 app.use("/api/rewards", rewardRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/activity", require("./routes/activityRoutes"));
-
+app.use("/api/companions", require("./routes/companionRoutes"));
+app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err);

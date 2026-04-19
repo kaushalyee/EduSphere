@@ -72,7 +72,7 @@ export default function RewardsDashboard() {
           {walletLoading ? (
              <div className="h-full w-full bg-slate-800/5 animate-pulse rounded-xl min-h-[200px]" />
           ) : (
-            <RewardWallet points={safeBalance} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
+            <RewardWallet points={user?.rewardPoints || 0} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
           )}
         </div>
 
@@ -92,7 +92,7 @@ export default function RewardsDashboard() {
           <Suspense fallback={<div className="h-full bg-slate-800/5 animate-pulse rounded-xl" />}>
             <EngagementChart />
           </Suspense>
-          <ActivityFeed balance={safeBalance} loading={walletLoading} />
+          <ActivityFeed balance={user?.rewardPoints || 0} loading={walletLoading} />
         </div>
 
         <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">

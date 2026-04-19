@@ -3,6 +3,7 @@ import { Timer, TrendingDown, TrendingUp, Star, Loader2 } from "lucide-react";
 import api from "@/api/api";
 import { useAuth } from "@/context/AuthContext";
 import { io } from "socket.io-client";
+import TopThreeLeaderboard from "./components/TopThreeLeaderboard";
 
 
 
@@ -14,52 +15,10 @@ function formatTime(s) {
   return `${s}s`;
 }
 
-function PodiumAvatar({ tier, rank, name, avatar, totalGP, totalTime, elevated }) {
-  const styles = {
-    gold: {
-      gradient: "bg-gradient-to-br from-yellow-400 to-yellow-600",
-      ring: "ring-2 ring-yellow-300 shadow-lg",
-      size: elevated ? "h-[5rem] w-[5rem] mb-2" : "h-16 w-16 mb-2",
-    },
-    silver: {
-      gradient: "bg-gradient-to-br from-gray-300 to-gray-500",
-      ring: "shadow-md",
-      size: "h-14 w-14 mb-2",
-    },
-    bronze: {
-      gradient: "bg-gradient-to-br from-orange-400 to-orange-600",
-      ring: "shadow-md",
-      size: "h-14 w-14 mb-2",
-    },
-  };
-  const s = styles[tier];
-  
-  const displayName = name || "Unknown Student";
-  const displayAvatar = avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=random`;
-
-  return (
-    <div className={`flex flex-col items-center justify-center p-6 rounded-2xl text-white ${s.gradient} ${s.ring} relative ${elevated ? '-translate-y-4 shadow-xl' : ''}`}>
-      {tier === "gold" && (
-        <div className="absolute -top-4 bg-white rounded-full p-1 shadow-md text-yellow-500">
-          <Star className="h-5 w-5 fill-current" />
-        </div>
-      )}
-      <img src={displayAvatar} alt="" className={`rounded-full object-cover border-2 border-white ${s.size} shadow-md`} />
-      <span className="text-sm font-medium opacity-90 mb-1">#{rank}</span>
-      <h3 className="text-lg font-semibold truncate max-w-[120px] text-center">{displayName}</h3>
-      <p className="text-2xl font-bold mt-1 drop-shadow-sm">{formatGP(totalGP)}</p>
-      {totalTime > 0 && (
-        <span className="text-[10px] px-2 py-0.5 bg-black/10 rounded-full font-medium opacity-80 mt-1">
-          Time: {formatTime(totalTime)}
-        </span>
-      )}
-    </div>
-  );
-}
-
 export default function Leaderboard() {
   const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
+  const [top3Players, setTop3Players] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeLeft, setTimeLeft] = useState("");
 
@@ -98,13 +57,18 @@ export default function Leaderboard() {
   const fetchLeaderboard = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await api.get("/game/leaderboard");
-      if (data.success) {
-        setLeaderboard(data.leaderboard);
+      // Fetch separatedly
+      const [{ data: fullRes }, { data: top3Res }] = await Promise.all([
+        api.get("/game/leaderboard"),
+        api.get("/leaderboard/top3")
+      ]);
+
+      if (fullRes.success) {
+        setLeaderboard(fullRes.leaderboard);
       }
+      setTop3Players(top3Res.topPlayers);
     } catch (err) {
       console.error("Error fetching leaderboard:", err);
-      setError("Failed to load rankings.");
     } finally {
       setLoading(false);
     }
@@ -123,7 +87,6 @@ export default function Leaderboard() {
     return () => socket.disconnect();
   }, [fetchLeaderboard]);
 
-  const topThree = leaderboard.slice(0, 3);
   const remaining = leaderboard.slice(3);
   
   const yourEntry = leaderboard.find(entry => entry._id === user?._id);
@@ -138,21 +101,29 @@ export default function Leaderboard() {
   }
 
   return (
-      <div className="mx-auto max-w-4xl pb-12">
-        <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="mb-6">
-            <h1 className="text-2xl font-semibold rewards-heading">
+    <div className="w-full pb-12">
+      {/* Header with wider container to match Navbar padding */}
+      <div className="mx-auto max-w-7xl px-6">
+        <header className="mb-10 flex items-center justify-between w-full pt-4">
+          <div>
+            <h1 className="text-4xl font-black text-white leaderboard-title-glow tracking-tight">
               Leaderboard
             </h1>
           </div>
-          <div className="rewards-glass-card flex items-center gap-2 rounded-full px-5 py-2">
-            <Timer className="h-5 w-5 text-gray-400" />
-            <div>
-              <p className="text-xs font-semibold rewards-subtext uppercase tracking-wider">Status</p>
-              <p className="text-sm font-bold rewards-heading">Ends in {timeLeft}</p>
+          <div className="status-timer-glass flex items-center gap-4 border-white/10 shadow-2xl">
+            <div className="p-2 bg-blue-500/10 rounded-lg">
+              <Timer className="h-5 w-5 text-blue-400 animate-pulse" />
+            </div>
+            <div className="flex flex-col items-start justify-center">
+              <p className="timer-label">Status</p>
+              <p className="timer-value">Ends in {timeLeft}</p>
             </div>
           </div>
         </header>
+      </div>
+
+      <div className="mx-auto max-w-4xl px-6">
+
 
         {leaderboard.length === 0 ? (
           <div className="rewards-glass-card p-12 text-center">
@@ -162,17 +133,7 @@ export default function Leaderboard() {
           <>
             {/* Podium Section */}
             <section className="mb-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                <div className="order-2 md:order-1 pt-4">
-                  {topThree[1] && <PodiumAvatar {...topThree[1]} tier="silver" rank={2} elevated={false} />}
-                </div>
-                <div className="order-1 md:order-2 z-10">
-                  {topThree[0] && <PodiumAvatar {...topThree[0]} tier="gold" rank={1} elevated={true} />}
-                </div>
-                <div className="order-3 md:order-3 pt-4">
-                  {topThree[2] && <PodiumAvatar {...topThree[2]} tier="bronze" rank={3} elevated={false} />}
-                </div>
-              </div>
+               <TopThreeLeaderboard topPlayers={top3Players} />
             </section>
 
             {/* Highlight Your Rank if not in top 3 */}
@@ -239,5 +200,6 @@ export default function Leaderboard() {
           </>
         )}
       </div>
+    </div>
   );
 }

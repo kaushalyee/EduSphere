@@ -102,15 +102,26 @@ exports.getMe = async (req, res) => {
         { new: true }
       );
       if (updated) {
+        // Sync Reward Points from Wallet if they exist
+        const Wallet = require("../models/Wallet");
+        const wallet = await Wallet.findOne({ userId: updated._id });
+        if (wallet) {
+          updated.rewardPoints = wallet.balance;
+        }
         return res.status(200).json(updated);
       }
-      // If someone else reset it, we just re-fetch to get current state
-      const refreshed = await User.findById(req.user.id);
-      return res.status(200).json(refreshed);
     }
     
+    // Sync Reward Points from Wallet
+    const Wallet = require("../models/Wallet");
+    const wallet = await Wallet.findOne({ userId: user._id });
+    if (wallet) {
+      user.rewardPoints = wallet.balance;
+      // We don't necessarily need to save it to DB every time if we just want it in the response
+    }
+
     // DEBUG LOG (PART 6)
-    console.log("User:", user._id, "GP:", user.totalGP);
+    console.log("User:", user._id, "GP:", user.totalGP, "RP:", user.rewardPoints);
     
     res.status(200).json(user);
   } catch (error) {
