@@ -1,4 +1,4 @@
-// Optional dependency handled gracefully
+
 let xlsx;
 try {
   xlsx = require("xlsx");

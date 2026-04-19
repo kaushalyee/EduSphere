@@ -11,6 +11,7 @@ import {
 import TutorSidebar from "./components/TutorSidebar";
 import TutorHeader from "./components/TutorHeader";
 import TutorContent from "./components/TutorContent";
+import NextSessionBanner from "./components/NextSessionBanner"; // ← add this
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
@@ -87,6 +88,15 @@ export default function TutorDashboard() {
         />
 
         <main className="flex-1 p-6 overflow-auto min-w-0">
+          {/* ── Next Session Banner — only visible on the dashboard tab ── */}
+          {activeTab === "dashboard" && (
+            <div className="mb-6">
+              <NextSessionBanner
+                onGoToSessions={() => setActiveTab("my-sessions")}
+              />
+            </div>
+          )}
+
           <TutorContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
