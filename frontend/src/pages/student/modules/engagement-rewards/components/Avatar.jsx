@@ -50,11 +50,16 @@ export default function Avatar({ model }) {
   useEffect(() => {
     if (!scene) return;
 
-    // Normalized scale for podium visibility
-    scene.scale.set(1.6, 1.6, 1.6);
+    // Detect oversized models (Hulk & Superman)
+    const isOversized = modelPath.toLowerCase().includes("hulk") || modelPath.toLowerCase().includes("superman");
+    
+    // Apply conditional scale (Reduce oversized models by ~12.5%)
+    const modelScale = isOversized ? 1.4 : 1.6;
+
+    scene.scale.set(modelScale, modelScale, modelScale);
     scene.position.set(0, -1.3, 0);
 
-  }, [scene]);
+  }, [scene, modelPath]);
 
   // Play first animation
   useEffect(() => {

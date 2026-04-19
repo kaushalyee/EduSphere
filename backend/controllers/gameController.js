@@ -306,7 +306,8 @@ exports.getLeaderboard = async (req, res) => {
           totalTime: 1,
           name: "$userDetails.name",
           studentID: "$userDetails.studentID",
-          avatar: "$userDetails.avatar"
+          avatar: "$userDetails.avatar",
+          activeCompanion: "$userDetails.activeCompanion"
         }
       }
     ]);

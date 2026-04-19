@@ -6,6 +6,8 @@ import avatarConfig from "@/assets/avatars/avatarConfig";
 
 import AvatarViewer from "./components/AvatarViewer";
 import CompanionSelector from "./components/CompanionSelector";
+import CompanionRarityBadge from "./components/CompanionRarityBadge";
+
 export default function Companion() {
   const { user, setUser, token } = useAuth();
   
@@ -119,7 +121,17 @@ export default function Companion() {
                 {/* LEFT: Character Display Area */}
                 <div className="flex-1 flex justify-center items-center relative w-full h-[400px] lg:h-[500px]">
                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="character-glow" />
+                      <div 
+                        className="character-glow" 
+                        style={{
+                          background: `radial-gradient(circle, ${
+                            currentCompanion.id === 'robot' ? 'rgba(139, 92, 246, 0.25)' : 
+                            ['superman', 'hulk', 'batman'].includes(currentCompanion.id.toLowerCase()) ? 'rgba(251, 191, 36, 0.35)' :
+                            ['gwen', 'layla', 'lesley', 'iron_spider'].includes(currentCompanion.id.toLowerCase()) ? 'rgba(239, 68, 68, 0.35)' :
+                            'rgba(139, 92, 246, 0.25)'
+                          } 0%, transparent 70%)`
+                        }}
+                      />
                    </div>
 
                    <div className="w-full h-full flex items-center justify-center relative z-10 drop-shadow-[0_0_40px_rgba(139,92,246,0.5)]">
@@ -151,6 +163,7 @@ export default function Companion() {
                 {/* RIGHT: Info Box */}
                 <div className="flex-1 w-full max-w-md">
                   <div className="bg-white/5 backdrop-blur-lg border border-white/10 rounded-3xl p-8 shadow-2xl relative z-20">
+                    <CompanionRarityBadge companionId={currentCompanion.id} />
                     <h2 className="text-4xl font-extrabold text-white mb-3 tracking-tight uppercase">
                       {currentCompanion.name}
                     </h2>

@@ -4,6 +4,7 @@ import api from "@/api/api";
 import { useAuth } from "@/context/AuthContext";
 import { io } from "socket.io-client";
 import TopThreeLeaderboard from "./components/TopThreeLeaderboard";
+import LeaderboardRow from "./components/LeaderboardRow";
 
 
 
@@ -176,25 +177,11 @@ export default function Leaderboard() {
             {/* Other Players List */}
             <section className="space-y-3">
               {remaining.map((row, idx) => (
-                <div key={row._id} className="rewards-glass-card rounded-lg p-4 flex justify-between items-center hover:bg-white/80 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className="w-8 text-center rewards-subtext font-semibold text-sm">#{idx + 4}</div>
-                    <img 
-                      src={row.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(row.name)}&background=475569&color=fff`} 
-                      alt={row.name} 
-                      className="h-9 w-9 rounded-full object-cover border border-gray-100" 
-                    />
-                    <span className="font-medium rewards-heading">{row.name}</span>
-                  </div>
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 bg-white/70 text-[#3b82f6] rounded-full text-sm font-semibold border border-white/60">
-                        {formatGP(row.totalGP)}
-                      </span>
-                      <span className="text-[11px] font-medium rewards-subtext italic">
-                        {formatTime(row.totalTime)}
-                      </span>
-                    </div>
-                </div>
+                <LeaderboardRow 
+                  key={row._id} 
+                  row={row} 
+                  rank={idx + 4} 
+                />
               ))}
             </section>
           </>
