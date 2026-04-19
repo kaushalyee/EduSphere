@@ -63,7 +63,7 @@ export default function RewardsLayout({ children, variant = "dashboard" }) {
         <RewardNavbar />
 
         {/* Dynamic Page Content */}
-        <main className="flex-1 overflow-auto rewards-theme-shell">
+        <main className="flex-1 rewards-theme-shell">
           <div className="rewards-theme-content p-6">
             {children ?? <Outlet />}
           </div>

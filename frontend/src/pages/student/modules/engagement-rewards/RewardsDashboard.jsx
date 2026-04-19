@@ -30,7 +30,6 @@ export default function RewardsDashboard() {
   }, [user?._id, refetchWallet, refetchConfig]);
 
   // 🎯 REDUCE RE-RENDERS
-  const safeBalance = useMemo(() => balance ?? 0, [balance]);
   const safeAttemptConfig = useMemo(() => attemptConfig ?? {}, [attemptConfig]);
 
   const attemptsUsedToday = safeAttemptConfig.attemptsUsedToday ?? 0;
@@ -60,46 +59,33 @@ export default function RewardsDashboard() {
 
   return (
     <div className="min-h-full bg-transparent">
-      {/* 2rd COLUMN RATIO: 2fr 1fr (using lg:grid-cols-3) */}
-      <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 pb-10">
+      {/* Optimized Layout: High Focus Design */}
+      <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 pb-10 items-start">
         
         {/* ROW 1: HERO (2/3) + WALLET (1/3) */}
-        <div className="h-full lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
+        <div className="lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
           <RewardsHero studentName={user?.name} gameAttempts={availableAttempts} />
         </div>
 
-        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+        <div className="lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
           {walletLoading ? (
-             <div className="h-full w-full bg-slate-800/5 animate-pulse rounded-xl min-h-[200px]" />
+             <div className="w-full bg-slate-800/5 animate-pulse rounded-xl min-h-[200px]" />
           ) : (
             <RewardWallet points={user?.rewardPoints || 0} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
           )}
         </div>
 
-        {/* ROW 2: PUZZLE (2/3) + LEADERBOARD (1/3) */}
-        <div className="h-full lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
+        {/* ROW 2: PUZZLE CHALLENGE (2/3) + TOP PERFORMERS (1/3) */}
+        <div className="lg:col-span-2 rewards-glass-card p-1 transition-all duration-200">
           <GameCard gameAttempts={availableAttempts} />
         </div>
 
-        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
+        <div className="lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
           <Suspense fallback={<div className="h-64 bg-slate-800/5 animate-pulse rounded-xl" />}>
             <LeaderboardPreview loading={walletLoading} />
           </Suspense>
-        </div>
-
-        {/* ROW 3: CHART/FEED (2/3) + COMPANION (1/3) */}
-        <div className="grid h-[420px] grid-cols-1 gap-6 lg:col-span-2 lg:grid-cols-2 lg:gap-8 rewards-glass-card p-1 transition-all duration-200">
-          <Suspense fallback={<div className="h-full bg-slate-800/5 animate-pulse rounded-xl" />}>
-            <EngagementChart />
-          </Suspense>
-          <ActivityFeed balance={user?.rewardPoints || 0} loading={walletLoading} />
-        </div>
-
-        <div className="h-full lg:col-span-1 rewards-glass-card p-1 transition-all duration-200">
-          <CompanionCard />
         </div>
       </div>
     </div>
   );
 }
-

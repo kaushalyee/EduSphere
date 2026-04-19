@@ -99,23 +99,23 @@ const GameCard = ({ gameAttempts = 0, mode = "featured" }) => {
 
   return (
     <div className="rounded-2xl p-[1px] bg-gradient-to-r from-blue-400 to-purple-400 shadow-xl">
-      <div className="relative flex h-full flex-col overflow-hidden rounded-2xl bg-white lg:flex-row transition-all duration-300">
+      <div className="relative flex flex-col overflow-hidden rounded-2xl bg-white lg:flex-row transition-all duration-300">
         
         {/* LEFT CONTENT */}
-        <div className="flex flex-col p-8 lg:w-[55%]">
-          <div className="mb-6 w-fit rounded-full bg-blue-50/50 px-4 py-1.5 text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] border border-blue-100/50">
+        <div className="flex flex-col p-6 lg:w-[55%]">
+          <div className="mb-4 w-fit rounded-full bg-blue-50/50 px-4 py-1.5 text-[11px] font-black text-blue-600 uppercase tracking-[0.2em] border border-blue-100/50">
             FEATURED CHALLENGE
           </div>
           
-          <h2 className="mb-3 text-3xl font-black text-slate-900 uppercase tracking-tight">
+          <h2 className="mb-2 text-3xl font-black text-slate-900 uppercase tracking-tight">
             PUZZLE CHALLENGE
           </h2>
           
-          <p className="mb-8 text-sm font-semibold text-slate-500 leading-relaxed max-w-[90%]">
+          <p className="mb-4 text-sm font-semibold text-slate-500 leading-relaxed max-w-[90%]">
             Connect matching colors, complete the grid, and earn Game Points (GP) to climb the leaderboard.
           </p>
 
-          <div className="space-y-6 mb-10">
+          <div className="space-y-4 mb-6">
             <div className="flex items-start gap-4">
               <div className="p-2 rounded-xl bg-blue-50 text-blue-500">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>

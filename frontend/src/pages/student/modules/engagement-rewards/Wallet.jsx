@@ -198,7 +198,7 @@ export default function Wallet() {
         })}
       </section>
 
-      <section className="rewards-glass-card p-7 xl:col-span-2">
+      <section className="rewards-glass-card p-7 xl:col-span-3">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold rewards-heading">Recent Activity</h2>
           <Clock size={16} className="text-gray-400" />
@@ -242,37 +242,6 @@ export default function Wallet() {
           ) : (
             <div className="py-10 text-center text-gray-400">No recent activity</div>
           )}
-        </div>
-      </section>
-
-      <section className="rewards-glass-card p-7">
-        <h2 className="text-xl font-bold rewards-heading">Your Achievement</h2>
-        <div className="mt-5 p-6 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-           <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <Target size={20} />
-              </div>
-              <span className="font-bold">Next Milestone</span>
-           </div>
-           <p className="text-sm opacity-90 mb-2">Reach 5,000 points to unlock Elite Avatar</p>
-           <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-              <div 
-                className="bg-white h-full" 
-                style={{ width: `${Math.min(100, (walletPoints / 5000) * 100)}%` }}
-              ></div>
-           </div>
-           <p className="text-xs mt-3 text-right font-medium">
-              {Math.max(0, 5000 - walletPoints)} points remaining
-           </p>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3">
-           <button className="rewards-primary-btn w-full px-5 py-3 text-sm font-bold">
-              Explore Missions
-           </button>
-           <button className="w-full px-5 py-3 text-sm font-bold text-gray-600 hover:text-gray-800 transition-colors">
-              How it works?
-           </button>
         </div>
       </section>
     </div>

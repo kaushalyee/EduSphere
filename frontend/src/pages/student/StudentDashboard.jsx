@@ -95,7 +95,7 @@ export default function StudentDashboard() {
           handleLogout={handleLogout}
         />
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6">
           <StudentContent activeTab={activeTab} options={options} setActiveTab={setActiveTab} />
         </main>
       </div>

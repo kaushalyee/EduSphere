@@ -67,11 +67,13 @@ const CompanionHoverCard = ({ companionId, visible }) => {
 
         <div className="chc-info-container">
           <h4 className="chc-name">{companion.name}</h4>
-          <p className="chc-rarity">
-            Equipped <span className={rarityColors[companion.rarity] || 'text-gray-400'}>
-              {companion.rarity}
-            </span>
-          </p>
+          {companion.id !== 'robot' && (
+            <p className="chc-rarity">
+              Equipped <span className={rarityColors[companion.rarity] || 'text-gray-400'}>
+                {companion.rarity}
+              </span>
+            </p>
+          )}
         </div>
       </div>
     </div>

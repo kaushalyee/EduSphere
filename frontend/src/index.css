@@ -172,6 +172,18 @@
   cursor: not-allowed;
 }
 
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* Default sidebar (unchanged) */
 .sidebar-item {
   padding: 10px 14px;
@@ -252,7 +264,8 @@
   left: 0;
   height: 100vh;
   width: 64px !important;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
   z-index: 200;
   background: white;
@@ -296,7 +309,9 @@
 /* Main layout wrapper — fixed offset, expands in sync with sidebar */
 .main-content {
   margin-left: 64px;
-  width: calc(100% - 64px); /* Optional: ensure width calculation is clear */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   transition: margin-left 0.28s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 

@@ -1,6 +1,8 @@
 .rewards-themed {
   min-height: 100vh;
   position: relative;
+  /* Shared Theme Source of Truth */
+  --dashboard-gradient: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
 }
 
 .rewards-theme-shell {
@@ -45,11 +47,11 @@
 }
 
 .rewards-variant-dashboard {
-  background: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
+  background: var(--dashboard-gradient);
 }
 
 .rewards-variant-wallet {
-  background: linear-gradient(135deg, #eef2ff, #dbeafe, #e0e7ff);
+  background: var(--dashboard-gradient);
 }
 
 .rewards-variant-game {

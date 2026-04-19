@@ -158,17 +158,12 @@ export default function Leaderboard() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-6">
-                    <div className="text-right">
-                      <p className="text-xs font-semibold rewards-subtext uppercase">Today's Score</p>
-                      <div className="flex flex-col items-end">
-                        <p className="font-bold rewards-heading">{formatGP(yourEntry.totalGP)}</p>
-                        <p className="text-[10px] rewards-subtext font-medium italic opacity-75">Time: {formatTime(yourEntry.totalTime)}</p>
-                      </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-xs font-semibold rewards-subtext uppercase">Today's Score</p>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <p className="font-bold rewards-heading text-lg">{formatGP(yourEntry.totalGP)}</p>
+                      <p className="text-[10px] rewards-subtext font-medium italic opacity-75">Time: {formatTime(yourEntry.totalTime)}</p>
                     </div>
-                    <button type="button" className="rewards-primary-btn px-5 py-2 text-sm font-bold">
-                      Boost Score
-                    </button>
                   </div>
                 </div>
               </section>
