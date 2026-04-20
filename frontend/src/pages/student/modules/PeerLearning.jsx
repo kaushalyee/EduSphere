@@ -182,25 +182,25 @@ export default function PeerLearning() {
     }
   };
 
-useEffect(() => {
-  if (successMessage) {
-    const timer = setTimeout(() => {
-      setSuccessMessage("");
-    }, 5000);
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
 
-    return () => clearTimeout(timer);
-  }
-}, [successMessage]);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
-useEffect(() => {
-  if (errorMessage) {
-    const timer = setTimeout(() => {
-      setErrorMessage("");
-    }, 5000);
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage("");
+      }, 5000);
 
-    return () => clearTimeout(timer);
-  }
-}, [errorMessage]);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const formatDate = (value) => {
     if (!value) return "No preferred date";
@@ -646,8 +646,8 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
   return (
     <div
       className={`rounded-2xl p-5 transition-all flex gap-4 ${isHighlighted
-          ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
-          : "bg-white border border-slate-200"
+        ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
+        : "bg-white border border-slate-200"
         }`}
     >
       {/* DATE BOX */}
@@ -671,6 +671,13 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
             Matched Session
           </span>
         )}
+        {/* Match % badge  */}
+        {session.isRecommended && (
+          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">
+            {Math.round(session.recommendationScore * 100)}% match
+          </span>
+        )}
+
 
         {/* Title */}
         <h3 className="text-lg font-bold text-slate-900 mt-1">
@@ -681,7 +688,7 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
           {session.category}
         </p>
 
-        {/* ⏰ TIME BIG */}
+        {/* TIME BIG */}
         <div className="flex items-center gap-4 mt-3">
           <p className="text-xl font-bold text-[#2F66E0]">
             {session.time}
