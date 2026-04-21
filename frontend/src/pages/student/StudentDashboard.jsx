@@ -15,6 +15,7 @@ import StudentHeader from "./components/StudentHeader";
 import StudentContent from "./components/StudentContent";
 import ChatbotButton from "./components/ChatbotButton";
 import ChatbotOverlay from "./components/ChatbotOverlay";
+import StudentProfile from "./modules/StudentProfile"; // ← add this import
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -32,11 +33,12 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState(getInitialTab(pathname));
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false); // ← add this
 
-  // Handle navigation state from assignment submission
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
+      setShowProfile(false);
       window.history.replaceState({}, document.title);
     } else {
       setActiveTab(getInitialTab(pathname));
@@ -50,6 +52,12 @@ export default function StudentDashboard() {
     }
   };
 
+  // When switching tabs, close profile
+  const handleTabChange = (tab) => {
+    setShowProfile(false);
+    setActiveTab(tab);
+  };
+
   const options = [
     {
       id: "Dashboard",
@@ -61,11 +69,11 @@ export default function StudentDashboard() {
       title: "Peer Learning & Kuppi",
       icon: <Users className="w-5 h-5" />,
     },
-{
-  id: "Market",
-  title: "Market Place",
-  icon: <ShoppingBag className="w-5 h-5" />,
-},
+    {
+      id: "Market",
+      title: "Market Place",
+      icon: <ShoppingBag className="w-5 h-5" />,
+    },
     {
       id: "Progress",
       title: "Progress Tracking",
@@ -83,7 +91,7 @@ export default function StudentDashboard() {
       <StudentSidebar
         isSidebarOpen={isSidebarOpen}
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         options={options}
       />
 
@@ -93,10 +101,20 @@ export default function StudentDashboard() {
           activeTab={activeTab}
           options={options}
           handleLogout={handleLogout}
+          onProfileClick={() => setShowProfile(true)} // ← pass this
         />
 
         <main className="flex-1 p-6 overflow-auto">
-          <StudentContent activeTab={activeTab} options={options} setActiveTab={setActiveTab} />
+          {/* ── Show profile page when triggered from header ── */}
+          {showProfile ? (
+            <StudentProfile />
+          ) : (
+            <StudentContent
+              activeTab={activeTab}
+              options={options}
+              setActiveTab={handleTabChange}
+            />
+          )}
         </main>
       </div>
 

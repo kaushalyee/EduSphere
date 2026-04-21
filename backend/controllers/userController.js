@@ -117,3 +117,41 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+/**
+ * Update student profile (year, semester, weakCategories, weakTopics)
+ * PUT /api/users/profile
+ */
+exports.updateProfile = async (req, res) => {
+  try {
+    const { year, semester, weakCategories, weakTopics } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "student") {
+      return res.status(403).json({ message: "Only students can update profile" });
+    }
+
+    // Only update fields that were provided
+    if (year !== undefined) user.year = year;
+    if (semester !== undefined) user.semester = semester;
+    if (weakCategories !== undefined) user.weakCategories = weakCategories;
+    if (weakTopics !== undefined) user.weakTopics = weakTopics;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
