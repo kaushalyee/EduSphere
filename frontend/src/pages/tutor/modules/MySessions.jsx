@@ -37,6 +37,7 @@ export default function MySessions() {
   const [actionLoading, setActionLoading] = useState(null);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [uploadingSessionId, setUploadingSessionId] = useState(null);
 
   // ── Archive undo state ─────────────────────────────────────────────────────
   const [undoToast, setUndoToast] = useState(null);
@@ -282,9 +283,10 @@ export default function MySessions() {
     if (!file || !selectedSessionId) return;
     const formData = new FormData();
     formData.append("file", file);
-    try {
-      setError("");
-      setSuccessMessage("");
+ try {
+  setError("");
+  setSuccessMessage("");
+  setUploadingSessionId(selectedSessionId);
       const res = await axios.post(
         `http://localhost:5000/api/quiz-results/import/${selectedSessionId}`,
         formData,
@@ -295,9 +297,10 @@ export default function MySessions() {
     } catch (err) {
       setError(err.response?.data?.message || "Upload failed");
     } finally {
-      e.target.value = "";
-      setSelectedSessionId(null);
-    }
+  e.target.value = "";
+  setSelectedSessionId(null);
+  setUploadingSessionId(null);
+}
   };
 
   const [editingSession, setEditingSession] = useState(null);
@@ -870,9 +873,23 @@ export default function MySessions() {
                             </div>
                           ) : (
                             <>
-                              <button onClick={() => handleUploadClick(session._id)} className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition">
-                                <BookOpen className="w-4 h-4" /> Upload Quiz Results
-                              </button>
+<button
+  disabled={uploadingSessionId === session._id}
+  onClick={() => handleUploadClick(session._id)}
+  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition disabled:opacity-60"
+>
+  {uploadingSessionId === session._id ? (
+    <>
+      <Loader2 className="w-4 h-4 animate-spin" />
+      Uploading...
+    </>
+  ) : (
+    <>
+      <BookOpen className="w-4 h-4" />
+      Upload Quiz Results
+    </>
+  )}
+</button>
                               <p className="text-xs text-slate-400">Format: Email | Marks | Total</p>
                             </>
                           )}

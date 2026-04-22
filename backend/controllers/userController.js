@@ -42,7 +42,9 @@ exports.completeOnboarding = async (req, res) => {
     user.year = year;
     user.semester = semester;
     user.weakCategories = weakCategories;
-    user.weakTopics = weakTopics;
+    user.weakTopics = (weakTopics || []).map((topic) =>
+  typeof topic === "string" ? { topic, weight: 0.5 } : topic
+);
 
     await user.save();
 
@@ -139,10 +141,13 @@ exports.updateProfile = async (req, res) => {
     if (year !== undefined) user.year = year;
     if (semester !== undefined) user.semester = semester;
     if (weakCategories !== undefined) user.weakCategories = weakCategories;
-    if (weakTopics !== undefined) user.weakTopics = weakTopics;
-
+if (weakTopics !== undefined) {
+  user.weakTopics = (weakTopics || []).map((topic) =>
+    typeof topic === "string" ? { topic, weight: 0.5 } : topic
+  );
+}
     await user.save();
-
+why 
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",

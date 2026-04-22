@@ -389,6 +389,10 @@ const getCancelledSessions = async (req, res) => {
     });
   }
 };
+// ── REPLACE only getStudentFeed in sessionController.js ──────────────────
+// rankSessions is now async (it queries LearningPattern)
+// Everything else in sessionController stays the same
+
 const getStudentFeed = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("weakTopics");
@@ -398,12 +402,13 @@ const getStudentFeed = async (req, res) => {
       .populate("tutorId", "name email")
       .sort({ date: 1 });
 
-    const feed = rankSessions(weakTopics, allUpcoming);
+    // rankSessions is now async — must await it
+    const feed = await rankSessions(weakTopics, allUpcoming);
 
     return res.status(200).json({
       success: true,
       totalSessions: feed.length,
-      recommendedCount: feed.filter(s => s.isRecommended).length,
+      recommendedCount: feed.filter((s) => s.isRecommended).length,
       weakTopics,
       feed,
     });
