@@ -10,7 +10,7 @@ export default function TutorHeader({
 }) {
   const titles = {
     dashboard: "Dashboard Overview",
-    trending: "Trending Topics",
+    trending: "Trending Requests",
     "create-session": "Create Session",
     "my-sessions": "My Sessions",
     profile: "Profile",
@@ -22,12 +22,6 @@ export default function TutorHeader({
 
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
-      <button
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className="text-slate-600 hover:text-slate-900"
-      >
-        <Menu className="w-7 h-7" />
-      </button>
 
       <div>
         <h1 className="text-3xl font-bold text-slate-900">

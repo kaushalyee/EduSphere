@@ -113,6 +113,15 @@ const sessionSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+        isArchived: {
+      type: Boolean,
+      default: false,
+    },
+ 
+    archivedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

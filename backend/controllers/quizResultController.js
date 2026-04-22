@@ -1,4 +1,3 @@
-// Optional dependency handled gracefully
 let xlsx;
 try {
   xlsx = require("xlsx");
@@ -105,6 +104,7 @@ const importQuizResults = async (req, res) => {
 
     const savedResults = [];
     const skippedDetails = [];
+    const sessionTopic = session.topic;
 
     for (const row of rows) {
       const normalizedRow = {};
@@ -214,6 +214,26 @@ const importQuizResults = async (req, res) => {
       }
 
       savedResults.push(saved);
+      // ── Auto weak topic update ──────────────────────────────────────────
+try {
+  const MASTERY_THRESHOLD = 70;
+
+  if (percentage >= MASTERY_THRESHOLD) {
+    await User.findByIdAndUpdate(student._id, {
+      $pull: { weakTopics: sessionTopic },
+    });
+  } else {
+    await User.findByIdAndUpdate(student._id, {
+      $addToSet: { weakTopics: sessionTopic },
+    });
+  }
+} catch (weakTopicError) {
+  console.error(
+    `[weak-topic-update] Failed for student ${student.email}:`,
+    weakTopicError.message
+  );
+}
+// ───────────────────────────────────────────────────────────────────
     }
 
 

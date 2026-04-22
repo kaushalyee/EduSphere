@@ -11,6 +11,9 @@ import {
 import TutorSidebar from "./components/TutorSidebar";
 import TutorHeader from "./components/TutorHeader";
 import TutorContent from "./components/TutorContent";
+import NextSessionBanner from "./components/NextSessionBanner";
+import PendingResultsBanner from "./components/PendingResultsBanner";
+
 
 export default function TutorDashboard() {
   const navigate = useNavigate();
@@ -19,11 +22,13 @@ export default function TutorDashboard() {
   const [activeTab, setActiveTab] = useState(
     localStorage.getItem("tutorActiveTab") || "dashboard"
   );
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
   const [selectedTrendingTopic, setSelectedTrendingTopic] = useState(null);
 
   const storedUser = JSON.parse(localStorage.getItem("user")) || {};
+  const [mySessionsDefaultTab, setMySessionsDefaultTab] = useState("upcoming");
+
 
   const menuItems = [
     {
@@ -33,7 +38,7 @@ export default function TutorDashboard() {
     },
     {
       id: "trending",
-      title: "Trending Topics",
+      title: "Trending Requests",
       icon: <Flame className="w-5 h-5" />,
     },
     {
@@ -73,7 +78,7 @@ export default function TutorDashboard() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         isSidebarOpen={isSidebarOpen}
-        tutorName={storedUser?.name || "Tutor Name"}
+        setIsSidebarOpen={setIsSidebarOpen}
         menuItems={menuItems}
       />
 
@@ -86,12 +91,29 @@ export default function TutorDashboard() {
           tutorName={storedUser?.name || ""}
         />
 
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-auto min-w-0">
+          {activeTab === "dashboard" && (
+            <div className="mb-6">
+              <NextSessionBanner
+                onGoToSessions={() => setActiveTab("my-sessions")}
+              />
+              <PendingResultsBanner
+                onGoToSessions={() => {
+                  setMySessionsDefaultTab("completed");
+                  setActiveTab("my-sessions");
+                }}
+              />
+            </div>
+
+          )}
+
           <TutorContent
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             selectedTrendingTopic={selectedTrendingTopic}
             setSelectedTrendingTopic={setSelectedTrendingTopic}
+            mySessionsDefaultTab={mySessionsDefaultTab}
+            setMySessionsDefaultTab={setMySessionsDefaultTab}
           />
         </main>
       </div>
