@@ -8,6 +8,22 @@ const { rankSessions } = require("../utils/recommendationEngine");
 const isValidUrl = (value) => {
   return /^https?:\/\/.+/i.test(value);
 };
+const parseDateTime = (date, time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const dt = new Date(date);
+  dt.setHours(hours, minutes, 0, 0);
+  return dt;
+};
+
+const hasTimeConflict = (existingSessions, newStart, newDuration, excludeId = null) => {
+  const newEnd = new Date(newStart.getTime() + newDuration * 60000);
+  return existingSessions.some((s) => {
+    if (excludeId && s._id.toString() === excludeId.toString()) return false;
+    const existStart = parseDateTime(s.date, s.time);
+    const existEnd = new Date(existStart.getTime() + s.duration * 60000);
+    return newStart < existEnd && newEnd > existStart;
+  });
+};
 
 const createSession = async (req, res) => {
   try {
@@ -107,6 +123,25 @@ const createSession = async (req, res) => {
         message: "Capacity must be at least 1",
       });
     }
+    // ── Overlap check ──────────────────────────────────────────────
+    const newStart = parseDateTime(date, time);
+    const newDuration = duration ? Number(duration) : 60;
+
+    const sameDaySessions = await Session.find({
+      tutorId: req.user._id,
+      status: "upcoming",
+      date: {
+        $gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date(date).setHours(23, 59, 59, 999)),
+      },
+    });
+
+    if (hasTimeConflict(sameDaySessions, newStart, newDuration)) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have a session during this time slot.",
+      });
+    }
 
     const session = await Session.create({
       tutorId: req.user._id,
@@ -123,21 +158,21 @@ const createSession = async (req, res) => {
       description: description ? description.trim() : "",
     });
 
-const updatedRequests = await SessionRequest.updateMany(
-  {
-    category: category.trim(),
-    topic: topic.trim(),
-    status: "pending",
-  },
-  {
-    $set: {
-      status: "fulfilled",
-      matchedSessionId: session._id,
-    },
-  }
-);
+    const updatedRequests = await SessionRequest.updateMany(
+      {
+        category: category.trim(),
+        topic: topic.trim(),
+        status: "pending",
+      },
+      {
+        $set: {
+          status: "fulfilled",
+          matchedSessionId: session._id,
+        },
+      }
+    );
 
-console.log("Updated requests result:", updatedRequests);
+    console.log("Updated requests result:", updatedRequests);
 
     return res.status(201).json({
       success: true,
@@ -323,11 +358,11 @@ const getCompletedSessions = async (req, res) => {
       resultsUploaded: uploadedSet.has(session._id.toString()),
     }));
 
-res.status(200).json({
-  success: true,
-  count: sessionsWithUploadStatus.length,
-  sessions: sessionsWithUploadStatus,
-});
+    res.status(200).json({
+      success: true,
+      count: sessionsWithUploadStatus.length,
+      sessions: sessionsWithUploadStatus,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -342,11 +377,11 @@ const getCancelledSessions = async (req, res) => {
       status: "cancelled",
     }).sort({ updatedAt: -1 });
 
-res.status(200).json({
-  success: true,
-  count: sessions.length,
-  sessions,
-});
+    res.status(200).json({
+      success: true,
+      count: sessions.length,
+      sessions,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -383,7 +418,7 @@ const getStudentFeed = async (req, res) => {
 const updateSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
 
     const session = await Session.findById(sessionId);
 
@@ -495,6 +530,26 @@ const updateSession = async (req, res) => {
         message: `Capacity cannot be less than registered count (${session.registeredCount})`,
       });
     }
+    // ── Overlap check ──────────────────────────────────────────────
+    const newStart = parseDateTime(date, time);
+    const newDuration = duration ? Number(duration) : session.duration;
+
+    const sameDaySessions = await Session.find({
+      tutorId: req.user._id,
+      status: "upcoming",
+      date: {
+        $gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date(date).setHours(23, 59, 59, 999)),
+      },
+    });
+
+    if (hasTimeConflict(sameDaySessions, newStart, newDuration, sessionId)) {
+      return res.status(409).json({
+        success: false,
+        message: "This time slot conflicts with another session you have.",
+      });
+    }
+    // ───────────────────────────────────────────────────────────────
 
     session.date = date;
     session.time = time;
