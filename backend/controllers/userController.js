@@ -147,7 +147,6 @@ if (weakTopics !== undefined) {
   );
 }
     await user.save();
-why 
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",

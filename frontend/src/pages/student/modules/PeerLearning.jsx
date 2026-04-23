@@ -217,13 +217,17 @@ export default function PeerLearning() {
     (request) => request.status === "pending" || !request.status
   );
 
-  const fulfilledRequests = myRequests.filter(
-    (request) => request.status === "fulfilled"
-  );
-  const handleViewMatchedSession = (matchedSessionId) => {
-    setHighlightedSessionId(matchedSessionId);
-    setActiveTab("sessions");
-  };
+const fulfilledRequests = myRequests.filter(
+  (request) =>
+    request.status === "fulfilled" &&
+    request.matchedSessionId?.status !== "completed" &&
+    request.matchedSessionId?.status !== "cancelled"
+);
+const handleViewMatchedSession = (matchedSessionId) => {
+  const id = matchedSessionId?._id || matchedSessionId;
+  setHighlightedSessionId(id);
+  setActiveTab("sessions");
+};
 
   return (
     <div className="space-y-6">
@@ -740,11 +744,14 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
 
         {/* Details */}
         <div className="mt-3 text-sm text-slate-600 space-y-1">
-          <p>👨‍🏫 {session.tutorId?.name || "N/A"}</p>
+          <p>🧑🏿‍🏫 {session.tutorId?.name || "N/A"}</p>
           <p>📍 {session.mode}</p>
           {session.mode === "offline" && session.location && (
             <p>📌 {session.location}</p>
           )}
+           {session.capacity && (
+    <p>👥 Capacity: {session.capacity}</p>
+  )}
         </div>
 
         {/* Links */}

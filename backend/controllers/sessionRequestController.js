@@ -26,7 +26,10 @@ const createSessionRequest = async (req, res) => {
 // @access  Private (Student)
 const getMySessionRequests = async (req, res) => {
   try {
-    const requests = await SessionRequest.find({ studentId: req.user._id }).sort({ createdAt: -1 });
+    const requests = await SessionRequest.find({ studentId: req.user._id })
+    .populate("matchedSessionId", "status")
+    .sort({ createdAt: -1 });
+
     res.status(200).json(requests);
   } catch (error) {
     console.error("Get my session requests error:", error);

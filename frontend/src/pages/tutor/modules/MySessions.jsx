@@ -73,10 +73,10 @@ export default function MySessions() {
         status === "completed"
           ? "http://localhost:5000/api/sessions/completed"
           : status === "cancelled"
-          ? "http://localhost:5000/api/sessions/cancelled"
-          : status === "archived"
-          ? "http://localhost:5000/api/sessions/archived"
-          : "http://localhost:5000/api/sessions/my-sessions";
+            ? "http://localhost:5000/api/sessions/cancelled"
+            : status === "archived"
+              ? "http://localhost:5000/api/sessions/archived"
+              : "http://localhost:5000/api/sessions/my-sessions";
 
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -283,10 +283,10 @@ export default function MySessions() {
     if (!file || !selectedSessionId) return;
     const formData = new FormData();
     formData.append("file", file);
- try {
-  setError("");
-  setSuccessMessage("");
-  setUploadingSessionId(selectedSessionId);
+    try {
+      setError("");
+      setSuccessMessage("");
+      setUploadingSessionId(selectedSessionId);
       const res = await axios.post(
         `http://localhost:5000/api/quiz-results/import/${selectedSessionId}`,
         formData,
@@ -297,10 +297,10 @@ export default function MySessions() {
     } catch (err) {
       setError(err.response?.data?.message || "Upload failed");
     } finally {
-  e.target.value = "";
-  setSelectedSessionId(null);
-  setUploadingSessionId(null);
-}
+      e.target.value = "";
+      setSelectedSessionId(null);
+      setUploadingSessionId(null);
+    }
   };
 
   const [editingSession, setEditingSession] = useState(null);
@@ -538,11 +538,10 @@ export default function MySessions() {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition border-b-2 -mb-px ${
-              statusFilter === status
+            className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition border-b-2 -mb-px ${statusFilter === status
                 ? "border-[#2F66E0] text-[#2F66E0]"
                 : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+              }`}
           >
             {status === "archived" ? (
               <span className="inline-flex items-center gap-1.5">
@@ -573,11 +572,10 @@ export default function MySessions() {
               <button
                 key={value}
                 onClick={() => setCompletedDateFilter(value)}
-                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${
-                  completedDateFilter === value
+                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${completedDateFilter === value
                     ? "bg-[#2F66E0] text-white"
                     : "text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {label}
               </button>
@@ -587,11 +585,10 @@ export default function MySessions() {
           {/* Pending Results toggle */}
           <button
             onClick={() => setCompletedPendingOnly((prev) => !prev)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-xl border transition ${
-              completedPendingOnly
+            className={`px-3 py-1.5 text-sm font-medium rounded-xl border transition ${completedPendingOnly
                 ? "bg-amber-500 text-white border-amber-500"
                 : "border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`}
+              }`}
           >
             ⏳ Pending Results
           </button>
@@ -626,11 +623,10 @@ export default function MySessions() {
               <button
                 key={value}
                 onClick={() => setCancelledDateFilter(value)}
-                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${
-                  cancelledDateFilter === value
+                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${cancelledDateFilter === value
                     ? "bg-[#2F66E0] text-white"
                     : "text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {label}
               </button>
@@ -666,11 +662,10 @@ export default function MySessions() {
               <button
                 key={value}
                 onClick={() => setArchivedStatusFilter(value)}
-                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${
-                  archivedStatusFilter === value
+                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${archivedStatusFilter === value
                     ? "bg-[#2F66E0] text-white"
                     : "text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {label}
               </button>
@@ -687,11 +682,10 @@ export default function MySessions() {
               <button
                 key={value}
                 onClick={() => setArchivedDateFilter(value)}
-                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${
-                  archivedDateFilter === value
+                className={`px-3 py-1.5 text-sm font-medium transition border-r last:border-r-0 border-slate-200 ${archivedDateFilter === value
                     ? "bg-[#2F66E0] text-white"
                     : "text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 {label}
               </button>
@@ -701,11 +695,10 @@ export default function MySessions() {
           {/* Option 2: Pending Results toggle in archived tab */}
           <button
             onClick={() => setArchivedPendingOnly((prev) => !prev)}
-            className={`px-3 py-1.5 text-sm font-medium rounded-xl border transition ${
-              archivedPendingOnly
+            className={`px-3 py-1.5 text-sm font-medium rounded-xl border transition ${archivedPendingOnly
                 ? "bg-amber-500 text-white border-amber-500"
                 : "border-slate-200 text-slate-600 hover:bg-slate-50"
-            }`}
+              }`}
           >
             ⏳ Pending Results
           </button>
@@ -741,8 +734,8 @@ export default function MySessions() {
             {isFiltered
               ? "Try adjusting or clearing your filters."
               : statusFilter === "archived"
-              ? "Sessions you archive will appear here."
-              : `You have no ${statusFilter} sessions yet.`}
+                ? "Sessions you archive will appear here."
+                : `You have no ${statusFilter} sessions yet.`}
           </p>
         </div>
       ) : (
@@ -873,23 +866,23 @@ export default function MySessions() {
                             </div>
                           ) : (
                             <>
-<button
-  disabled={uploadingSessionId === session._id}
-  onClick={() => handleUploadClick(session._id)}
-  className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition disabled:opacity-60"
->
-  {uploadingSessionId === session._id ? (
-    <>
-      <Loader2 className="w-4 h-4 animate-spin" />
-      Uploading...
-    </>
-  ) : (
-    <>
-      <BookOpen className="w-4 h-4" />
-      Upload Quiz Results
-    </>
-  )}
-</button>
+                              <button
+                                disabled={uploadingSessionId === session._id}
+                                onClick={() => handleUploadClick(session._id)}
+                                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition disabled:opacity-60"
+                              >
+                                {uploadingSessionId === session._id ? (
+                                  <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Uploading...
+                                  </>
+                                ) : (
+                                  <>
+                                    <BookOpen className="w-4 h-4" />
+                                    Upload Quiz Results
+                                  </>
+                                )}
+                              </button>
                               <p className="text-xs text-slate-400">Format: Email | Marks | Total</p>
                             </>
                           )}
@@ -934,7 +927,38 @@ export default function MySessions() {
                         </div>
                       )}
 
-                      {/* ── Archived tab is read-only, no actions ── */}
+{/* ── Archived actions ── */}
+{statusFilter === "archived" && (
+  <div className="mt-5 pt-4 border-t border-slate-100">
+    <button
+      disabled={isActing}
+      onClick={async () => {
+        setActionLoading(session._id + "restore");
+        try {
+          await axios.put(
+            `http://localhost:5000/api/sessions/${session._id}/restore`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          setSessions((prev) => prev.filter((s) => s._id !== session._id));
+          setSuccessMessage("Session restored successfully!");
+        } catch (err) {
+          setError(err.response?.data?.message || "Failed to restore session");
+        } finally {
+          setActionLoading(null);
+        }
+      }}
+      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {actionLoading === session._id + "restore" ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <Archive className="w-4 h-4" />
+      )}
+      Restore Session
+    </button>
+  </div>
+)}
                     </div>
                   </div>
                 </div>

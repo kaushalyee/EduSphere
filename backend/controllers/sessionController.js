@@ -341,6 +341,7 @@ const getCompletedSessions = async (req, res) => {
     const sessions = await Session.find({
       tutorId: req.user._id,
       status: "completed",
+      isArchived: { $ne: true },
     }).sort({ updatedAt: -1 });
 
     const sessionIds = sessions.map((session) => session._id);
@@ -375,6 +376,7 @@ const getCancelledSessions = async (req, res) => {
     const sessions = await Session.find({
       tutorId: req.user._id,
       status: "cancelled",
+      isArchived: { $ne: true },
     }).sort({ updatedAt: -1 });
 
     res.status(200).json({
@@ -662,10 +664,25 @@ const getArchivedSessions = async (req, res) => {
       isArchived: true,
     }).sort({ archivedAt: -1 });
 
+    const sessionIds = sessions.map((s) => s._id);
+
+    const uploadedSessionIds = await QuizResult.find({
+      sessionId: { $in: sessionIds },
+    }).distinct("sessionId");
+
+    const uploadedSet = new Set(
+      uploadedSessionIds.map((id) => id.toString())
+    );
+
+    const sessionsWithUploadStatus = sessions.map((session) => ({
+      ...session.toObject(),
+      resultsUploaded: uploadedSet.has(session._id.toString()),
+    }));
+
     return res.status(200).json({
       success: true,
-      count: sessions.length,
-      sessions,
+      count: sessionsWithUploadStatus.length,
+      sessions: sessionsWithUploadStatus,
     });
   } catch (error) {
     console.error("getArchivedSessions error:", error);
