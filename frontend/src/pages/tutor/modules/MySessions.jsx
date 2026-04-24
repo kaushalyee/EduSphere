@@ -824,10 +824,7 @@ export default function MySessions() {
                           {session.mode === "online" ? <Monitor className="w-5 h-5 text-slate-500" /> : <MapPin className="w-5 h-5 text-slate-500" />}
                           <span className="text-sm">{session.mode === "online" ? "Online Session" : session.location || "No location added"}</span>
                         </div>
-                        <div className="flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-3">
-                          <Users className="w-5 h-5 text-slate-500" />
-                          <span className="text-sm">Registered: {session.registeredCount}{session.capacity ? ` / ${session.capacity}` : ""}</span>
-                        </div>
+ 
                       </div>
 
                       {session.description && (

@@ -217,17 +217,17 @@ export default function PeerLearning() {
     (request) => request.status === "pending" || !request.status
   );
 
-const fulfilledRequests = myRequests.filter(
-  (request) =>
-    request.status === "fulfilled" &&
-    request.matchedSessionId?.status !== "completed" &&
-    request.matchedSessionId?.status !== "cancelled"
-);
-const handleViewMatchedSession = (matchedSessionId) => {
-  const id = matchedSessionId?._id || matchedSessionId;
-  setHighlightedSessionId(id);
-  setActiveTab("sessions");
-};
+  const fulfilledRequests = myRequests.filter(
+    (request) =>
+      request.status === "fulfilled" &&
+      request.matchedSessionId?.status !== "completed" &&
+      request.matchedSessionId?.status !== "cancelled"
+  );
+  const handleViewMatchedSession = (matchedSessionId) => {
+    const id = matchedSessionId?._id || matchedSessionId;
+    setHighlightedSessionId(id);
+    setActiveTab("sessions");
+  };
 
   return (
     <div className="space-y-6">
@@ -649,19 +649,17 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
 
   return (
     <div
-      className={`rounded-2xl p-5 transition-all flex gap-4 border ${
-        isHighlighted
+      className={`rounded-2xl p-5 transition-all flex gap-4 border ${isHighlighted
           ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
           : isRecommended
-          ? "bg-blue-50 border-blue-200 shadow-[0_0_0_1px_rgba(47,102,224,0.08),0_8px_24px_rgba(47,102,224,0.12)]"
-          : "bg-white border-slate-200"
-      }`}
+            ? "bg-blue-50 border-blue-200 shadow-[0_0_0_1px_rgba(47,102,224,0.08),0_8px_24px_rgba(47,102,224,0.12)]"
+            : "bg-white border-slate-200"
+        }`}
     >
       {/* DATE BOX */}
       <div
-        className={`flex flex-col items-center justify-center text-white rounded-xl px-4 py-3 min-w-[80px] ${
-          isRecommended ? "bg-[#2F66E0]" : "bg-[#2F66E0]"
-        }`}
+        className={`flex flex-col items-center justify-center text-white rounded-xl px-4 py-3 min-w-[80px] ${isRecommended ? "bg-[#2F66E0]" : "bg-[#2F66E0]"
+          }`}
       >
         <p className="text-xs uppercase">Date</p>
         <p className="text-lg font-bold">
@@ -733,7 +731,9 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
         </h3>
 
         <p className="text-sm text-blue-600 font-medium">{session.category}</p>
-
+        {session.description && (
+          <p className="text-sm text-slate-500 mt-2 leading-relaxed">{session.description}</p>
+        )}
         {/* Time */}
         <div className="flex items-center gap-4 mt-3">
           <p className="text-xl font-bold text-[#2F66E0]">{session.time}</p>
@@ -749,9 +749,9 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
           {session.mode === "offline" && session.location && (
             <p>📌 {session.location}</p>
           )}
-           {session.capacity && (
-    <p>👥 Capacity: {session.capacity}</p>
-  )}
+          {session.capacity && (
+            <p>👥 Capacity: {session.capacity}</p>
+          )}
         </div>
 
         {/* Links */}
