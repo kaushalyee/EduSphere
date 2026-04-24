@@ -274,7 +274,6 @@ export default function CreateSession({
         </div>
       )}
 
-      <h2 className="text-3xl font-bold text-slate-900 mb-2">Create Session</h2>
       <p className="text-slate-500 mb-8">
         Add a new peer learning session for students.
       </p>
