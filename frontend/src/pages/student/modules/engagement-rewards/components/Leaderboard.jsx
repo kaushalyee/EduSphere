@@ -1,70 +1,130 @@
-export default function Leaderboard({ balance = 0, loading = false }) {
-  if (loading) return <div className="animate-pulse bg-slate-100 rounded-2xl h-64 w-full" />;
+import React, { useState, useEffect } from "react";
+import api from "@/api/api";
 
-  const topThree = [
-    { name: "SARAH K.", avatar: "https://ui-avatars.com/api/?name=SK&background=3b82f6&color=fff" },
-    { name: "MARCUS R.", avatar: "https://ui-avatars.com/api/?name=MR&background=f59e0b&color=fff" },
-    { name: "ELENA W.", avatar: "https://ui-avatars.com/api/?name=EW&background=10b981&color=fff" },
-  ];
+export default function Leaderboard({ loading = false }) {
+  const [topPlayers, setTopPlayers] = useState([]);
+  const [fetching, setFetching] = useState(true);
 
-  const runnersUp = [
-    { name: "Alex Vance", rank: 4, points: Math.max(0, (balance ?? 0) + 200).toLocaleString(), avatar: "https://ui-avatars.com/api/?name=AV&background=475569&color=fff" },
-    { name: "Jason Thorne", rank: 5, points: Math.max(0, (balance ?? 0) + 100).toLocaleString(), avatar: "https://ui-avatars.com/api/?name=JT&background=475569&color=fff" },
-  ];
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const top3Res = await api.get("/leaderboard/top3");
+        // Ensure data exists and is sorted by score DESC
+        const players = (top3Res.data.topPlayers || []).sort((a, b) => (b.score || 0) - (a.score || 0));
+        setTopPlayers(players);
+      } catch (err) {
+        console.error("Leaderboard fetch failed", err);
+      } finally {
+        setFetching(false);
+      }
+    };
+    fetchLeaderboard();
+  }, []);
+
+  if (loading || fetching) {
+    return (
+      <div className="bg-[#0f1923] border border-white/5 rounded-[12px] p-4 h-[180px] w-full animate-pulse flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Styling helpers
+  const getGPColor = (rank) => {
+    if (rank === 0) return "#f5c518"; // Gold
+    if (rank === 1) return "#c0c9d8"; // Silver
+    if (rank === 2) return "#cd7f32"; // Bronze
+    return "#94a3b8";
+  };
+
+  const getRankBackground = (rank) => {
+    if (rank === 0) return "#f5c518";
+    if (rank === 1) return "#c0c9d8";
+    if (rank === 2) return "#cd7f32";
+    return "#475569";
+  };
+
+  const getGlowEffect = (rank) => {
+    if (rank === 0) return "0 0 16px 4px rgba(245, 197, 24, 0.75)";
+    if (rank === 1) return "0 0 12px 3px rgba(192, 201, 216, 0.65)";
+    if (rank === 2) return "0 0 12px 3px rgba(205, 127, 50, 0.65)";
+    return "none";
+  };
+
+  // Reorder for podium display: Rank 2 (index 1), Rank 1 (index 0), Rank 3 (index 2)
+  const podiumIndices = [1, 0, 2];
 
   return (
-    <div className="relative flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-md overflow-hidden transition-all duration-200">
-      {/* Top Gradient Strip */}
-      <div className="h-1 bg-gradient-to-r from-blue-500 to-purple-500 absolute top-0 left-0 right-0 rounded-t-2xl" />
-
-      <h3 className="mb-6 mt-1 text-xs font-black tracking-widest text-gray-400 uppercase">
-        LEADERBOARD
-      </h3>
-
-      <div className="mb-8 flex items-end justify-center gap-4">
-        {/* Rank 2 - Silver */}
-        <div className="flex flex-col items-center">
-          <div className="relative mb-2">
-            <img src={topThree[0].avatar} alt="" className="h-12 w-12 rounded-full border-2 border-gray-100 shadow-sm" />
-            <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-gray-300 to-gray-500 text-[10px] font-black text-white shadow-sm ring-2 ring-white">2</div>
-          </div>
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{topThree[0].name}</div>
-        </div>
-
-        {/* Rank 1 - Gold */}
-        <div className="flex flex-col items-center pb-2">
-          <div className="relative mb-2">
-            <img src={topThree[1].avatar} alt="" className="h-15 w-15 rounded-full border-4 border-yellow-300 shadow-lg ring-2 ring-yellow-300 m-1" />
-            <div className="absolute -top-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 text-sm font-black text-white shadow-md ring-2 ring-white">1</div>
-          </div>
-          <div className="text-xs font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-3 py-0.5 rounded-full ring-1 ring-yellow-100 shadow-sm">
-            {topThree[1].name}
-          </div>
-        </div>
-
-        {/* Rank 3 - Bronze */}
-        <div className="flex flex-col items-center">
-          <div className="relative mb-2">
-            <img src={topThree[2].avatar} alt="" className="h-12 w-12 rounded-full border-2 border-orange-100 shadow-sm" />
-            <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-orange-700 text-[10px] font-black text-white shadow-sm ring-2 ring-white">3</div>
-          </div>
-          <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{topThree[2].name}</div>
+    <div className="top-performers-card bg-[#0f1923] border border-white/10 rounded-[12px] p-4 shadow-xl transition-all duration-300 h-auto">
+      {/* Header Row */}
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-[10px] font-black tracking-[0.2em] text-gray-400 uppercase leading-none">
+          TOP PERFORMERS
+        </h3>
+        <div className="flex items-center">
+          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
         </div>
       </div>
 
-      <div className="flex-grow space-y-1.5 mt-2">
-        {runnersUp.map((user) => (
-          <div key={user.rank} className="flex items-center justify-between rounded-xl p-2.5 hover:bg-blue-50 transition-all duration-200 border border-transparent hover:border-blue-100 group">
-            <div className="flex items-center gap-3">
-              <span className="w-4 text-center text-xs font-black text-gray-300 group-hover:text-blue-500">#{user.rank}</span>
-              <img src={user.avatar} alt="" className="h-9 w-9 rounded-full border border-gray-100 shadow-sm" />
-              <span className="text-sm font-bold text-gray-700 tracking-tight">{user.name}</span>
+      {/* Podium Row */}
+      <div className="flex items-end justify-center gap-4">
+        {podiumIndices.map((idx) => {
+          const player = topPlayers[idx];
+          const isRank1 = idx === 0;
+          const imageSize = isRank1 ? "100px" : "80px";
+          
+          return (
+            <div 
+              key={idx} 
+              className="flex flex-col items-center flex-1 max-w-[100px]"
+              style={isRank1 ? { marginBottom: '20px' } : {}}
+            >
+              {/* Image Container with Glow */}
+              <div 
+                className="relative overflow-hidden rounded-[8px] border border-white/10 bg-slate-900/40 transition-transform duration-300"
+                style={{ 
+                  width: imageSize, 
+                  height: imageSize,
+                  boxShadow: getGlowEffect(idx)
+                }}
+              >
+                <img 
+                  src={`/assets/avatars/previews/${player?.activeCompanion || 'robot'}.jpg`} 
+                  className="w-full h-full object-cover" 
+                  alt=""
+                  onError={(e) => { e.target.src = '/assets/avatars/previews/robot.jpg'; }}
+                />
+                
+                {/* Rank Badge Overlay */}
+                <div 
+                  className="absolute bottom-0 left-0 right-0 py-0.5 text-[9px] font-black text-center"
+                  style={{ 
+                    backgroundColor: getRankBackground(idx),
+                    color: idx === 2 ? '#fff' : '#0f172a'
+                  }}
+                >
+                  #{idx + 1}
+                </div>
+              </div>
+
+              {/* Name & GP */}
+              <div className="text-center w-full mt-2">
+                <p 
+                  className="text-white text-[11px] font-bold truncate leading-tight w-full" 
+                  title={player?.name || "-"}
+                >
+                  {player?.name || "-"}
+                </p>
+                <p 
+                  className="text-[10px] font-black mt-1"
+                  style={{ color: getGPColor(idx) }}
+                >
+                  {player?.score ? player.score.toLocaleString() : 0} GP
+                </p>
+              </div>
             </div>
-            <span className="text-[11px] font-black text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full group-hover:bg-blue-100 transition-colors tracking-wide">
-              {user.points}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

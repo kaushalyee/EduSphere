@@ -274,6 +274,7 @@ exports.getLeaderboard = async (req, res) => {
     const leaderboard = await GameScore.aggregate([
       {
         $match: {
+          gp: { $gt: 0 },
           createdAt: { 
             $gte: startOfDay, 
             $lt: endOfDay 
@@ -305,7 +306,8 @@ exports.getLeaderboard = async (req, res) => {
           totalTime: 1,
           name: "$userDetails.name",
           studentID: "$userDetails.studentID",
-          avatar: "$userDetails.avatar"
+          avatar: "$userDetails.avatar",
+          activeCompanion: "$userDetails.activeCompanion"
         }
       }
     ]);

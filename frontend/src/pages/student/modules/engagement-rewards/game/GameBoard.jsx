@@ -23,20 +23,20 @@ const HudBar = ({ time, coverage, onUndo, onClear }) => {
     };
 
     return (
-    <div className="flex items-center justify-between mb-6 px-5 py-4 bg-white rounded-xl border border-gray-100 shadow-sm w-full" style={{ maxWidth: 'min(90vw, 500px)' }}>
-        <div className="flex gap-8">
+    <div className="flex items-center justify-between mb-4 px-4 py-3 bg-white/95 backdrop-blur-sm rounded-xl border border-white/20 shadow-xl w-full" style={{ maxWidth: 'min(90vw, 500px)' }}>
+        <div className="flex gap-6">
             <div>
-                <span className="text-gray-500 text-sm block font-medium">Time</span>
-                <span className="text-2xl font-bold text-gray-900">{formatTime(time)}</span>
+                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Time</span>
+                <span className="text-xl font-black text-gray-900">{formatTime(time)}</span>
             </div>
             <div>
-                <span className="text-gray-500 text-sm block font-medium">Coverage</span>
-                <span className="text-2xl font-bold text-gray-900">{coverage}%</span>
+                <span className="text-gray-500 text-[10px] block font-bold uppercase tracking-wider">Coverage</span>
+                <span className="text-xl font-black text-gray-900">{coverage}%</span>
             </div>
         </div>
-        <div className="flex gap-3">
-            <button onClick={onUndo} className="px-4 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg text-sm transition-colors border border-gray-200 font-semibold shadow-sm">Undo</button>
-            <button onClick={onClear} className="px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-sm transition-colors border border-red-200 font-semibold shadow-sm">Clear</button>
+        <div className="flex gap-2">
+            <button onClick={onUndo} className="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg text-xs transition-colors border border-slate-200 font-bold shadow-sm">Undo</button>
+            <button onClick={onClear} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs transition-colors border border-red-200 font-bold shadow-sm">Clear</button>
         </div>
     </div>
     );
@@ -426,18 +426,32 @@ const GameBoard = () => {
     }
 
     return (
-        <div
-            className="relative flex flex-col items-center justify-start pb-16"
-            onPointerUp={handlePointerUp}
-            onPointerLeave={handlePointerUp}
-        >
-                <div className="mb-6 text-center">
-                    <h1 className="text-3xl font-extrabold text-gray-900">FlowFree Challenge</h1>
-                    <p className="text-gray-500 text-sm mt-1 uppercase tracking-widest font-semibold">Standalone Test Mode</p>
-                </div>
+        <div className="relative min-h-screen w-full">
+            {/* 🌌 LAYER 1: BASE GIF BACKGROUND */}
+            <div 
+                className="fixed inset-0 z-0"
+                style={{
+                    backgroundImage: "url('/assets/backgrounds/gameUI.gif')",
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    backgroundRepeat: 'no-repeat',
+                }}
+            />
 
-                <Link to={`/student/rewards/game`} className="mb-6 inline-block text-blue-600 hover:text-blue-700 font-semibold transition-colors">
-                    ← Back to Rewards
+            {/* 🌑 LAYER 2: DARK OVERLAY LAYER */}
+            <div className="fixed inset-0 z-10 bg-slate-950/70 backdrop-blur-[1px]" />
+
+            {/* 🎮 LAYER 3: UI LAYER */}
+            <div
+                className="relative z-20 flex flex-col items-center justify-center min-h-screen pt-4 pb-4 overflow-hidden"
+                onPointerUp={handlePointerUp}
+                onPointerLeave={handlePointerUp}
+            >
+                <Link 
+                    to={`/student/rewards/game`} 
+                    className="fixed top-6 left-6 z-30 flex items-center gap-2 text-white/50 hover:text-white/90 transition-all text-xs font-bold uppercase tracking-widest"
+                >
+                    <span className="text-lg">←</span> Back to Rewards
                 </Link>
 
                 <HudBar
@@ -448,11 +462,11 @@ const GameBoard = () => {
                 />
 
                 <div
-                    className="grid gap-1 bg-[#1a1f3c] p-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.1),_inset_0_0_20px_rgba(168,85,247,0.1)] border border-gray-800"
+                    className="grid gap-1 bg-[#1a1f3c]/80 p-3 rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.5),_inset_0_0_20px_rgba(168,85,247,0.2)] border border-white/5 backdrop-blur-md"
                     style={{
                         gridTemplateColumns: 'repeat(5, 1fr)',
-                        width: 'min(90vw, 500px)',
-                        height: 'min(90vw, 500px)',
+                        width: 'min(85vw, 85vh, 480px)',
+                        height: 'min(85vw, 85vh, 480px)',
                         touchAction: 'none'
                     }}
                 >
@@ -468,7 +482,7 @@ const GameBoard = () => {
                         return (
                             <div
                                 key={key}
-                                className="relative aspect-square bg-[#0f172a] rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-white/5 hover:bg-[#1e293b]"
+                                className="relative aspect-square bg-[#0f172a]/60 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-white/5 hover:bg-[#1e293b]"
                                 onPointerDown={() => handlePointerDown(key)}
                                 onPointerEnter={() => handlePointerEnter(key)}
                                 style={{
@@ -509,6 +523,7 @@ const GameBoard = () => {
                         `,
                     }}
                 />
+            </div>
         </div>
     );
 };

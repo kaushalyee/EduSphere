@@ -2,6 +2,19 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import api from "../api/api";
 import { useAuth } from "../context/AuthContext";
 
+const DEFAULT_ATTEMPT_CONFIG = {
+  attemptCost: 50,
+  maxAttempts: 3,
+  attemptsUsedToday: 0,
+  availableAttempts: 3,
+  walletBalance: 0,
+  usageMultiplier: 1,
+  performanceMultiplier: 1,
+  lastQuizPerformance: 0,
+  totalAttemptsLast7Days: 0,
+  companionSpendingLast7Days: 0,
+};
+
 export default function useAttemptConfig() {
   const { token, user } = useAuth();
   const [config, setConfig] = useState(null);
@@ -29,11 +42,15 @@ export default function useAttemptConfig() {
         return;
       }
 
-      setConfig(res.data);
+      setConfig({
+        ...DEFAULT_ATTEMPT_CONFIG,
+        ...(res.data ?? {}),
+      });
     } catch (err) {
       if (latestRequestRef.current !== requestId) {
         return;
       }
+      setConfig(DEFAULT_ATTEMPT_CONFIG);
       setError(err?.response?.data?.message || "Failed to load attempt config");
     } finally {
       if (latestRequestRef.current === requestId) {

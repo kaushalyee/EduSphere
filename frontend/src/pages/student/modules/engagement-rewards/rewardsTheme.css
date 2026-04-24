@@ -1,11 +1,13 @@
 .rewards-themed {
-  min-height: 100vh;
+  height: auto;
   position: relative;
+  /* Shared Theme Source of Truth */
+  --dashboard-gradient: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
 }
 
 .rewards-theme-shell {
   position: relative;
-  min-height: 100vh;
+  height: auto;
 }
 
 .rewards-theme-shell::before,
@@ -45,11 +47,11 @@
 }
 
 .rewards-variant-dashboard {
-  background: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
+  background: var(--dashboard-gradient);
 }
 
 .rewards-variant-wallet {
-  background: linear-gradient(135deg, #eef2ff, #dbeafe, #e0e7ff);
+  background: var(--dashboard-gradient);
 }
 
 .rewards-variant-game {
@@ -57,11 +59,32 @@
 }
 
 .rewards-variant-leaderboard {
-  background: linear-gradient(135deg, #fff7ed, #fde68a, #fca5a5);
+  background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%) !important;
+  background-attachment: fixed;
 }
 
 .rewards-variant-companion {
-  background: linear-gradient(135deg, #f3e8ff, #e9d5ff, #c084fc);
+  background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%) !important;
+  background-attachment: fixed;
+}
+
+.leaderboard-page {
+  height: auto;
+  width: 100%;
+  background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%) !important;
+  background-attachment: fixed;
+  position: relative;
+  z-index: 1;
+}
+
+.leaderboard-page::before,
+.companion-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+  pointer-events: none;
 }
 
 .rewards-glass-card {
@@ -88,6 +111,51 @@
 
 .rewards-heading {
   color: #1f2937;
+}
+
+.leaderboard-title-glow {
+  color: #ffffff !important;
+  text-shadow: 0 0 15px rgba(255, 255, 255, 0.4), 
+               0 0 30px rgba(59, 130, 246, 0.3);
+  letter-spacing: -0.02em;
+}
+
+.status-timer-glass {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37),
+              0 0 15px rgba(59, 130, 246, 0.2);
+  border-radius: 12px;
+  padding: 10px 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.status-timer-glass::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+}
+
+.timer-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.timer-value {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  line-height: 1;
 }
 
 .rewards-subtext {
@@ -236,7 +304,7 @@
 /* Companion Page Dark Gaming Design */
 .companion-page {
   background: linear-gradient(135deg, #0f0c29, #1a1a2e, #16213e);
-  min-height: 100vh;
+  height: auto;
   color: white;
   margin: -24px; /* compensate for parent padding if necessary */
   padding: 24px;
@@ -403,3 +471,125 @@
   font-weight: 600;
   color: #c4b5fd;
 }
+
+/* Companion Rarity Badge Styles */
+.rarity-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  padding: 4px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  border: 1px solid transparent;
+}
+
+.legendary-badge {
+  background: rgba(251, 191, 36, 0.1) !important;
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  color: #fbbf24 !important;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
+}
+
+.epic-badge {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+  color: #ef4444 !important;
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+
+/* Companion Hover Card Styles */
+.companion-hover-card {
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translate(100%, -50%) scale(0.95);
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: 220px;
+}
+
+.companion-hover-card.visible {
+  opacity: 1;
+  transform: translate(100%, -50%) scale(1);
+  right: -20px;
+}
+
+.chc-content {
+  background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 70%, #16213e 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5),
+              0 0 20px rgba(139, 92, 246, 0.1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.chc-image-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chc-image {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.5));
+  z-index: 2;
+}
+
+.chc-image-glow {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+  filter: blur(15px);
+  z-index: 1;
+}
+
+.chc-name {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+}
+
+.chc-rarity {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Response handling for narrow screens */
+@media (max-width: 1200px) {
+  .companion-hover-card {
+    transform: translate(-100%, -50%) scale(0.95);
+    left: -10px;
+    right: auto;
+  }
+  .companion-hover-card.visible {
+    transform: translate(-100%, -50%) scale(1);
+    left: -20px;
+    right: auto;
+  }
+}
+

@@ -9,11 +9,20 @@ export default function Avatar({ model }) {
   const groupRef = useRef();
   
   // --- STEP 1: DETECT MODEL NAME ---
-  const modelPath = `/avatars/optimized/${model}`;
+  const getAvatarPath = (file) => `/assets/avatars/optimized/${file}`;
+  const modelPath = getAvatarPath(model);
   const isLesley = modelPath.toLowerCase().includes("lesley");
 
   // --- STEP 2: LOAD MODEL SAFELY ---
-  const { scene, animations } = useGLTF(modelPath);
+  let gltfData = { scene: null, animations: [] };
+  try {
+    gltfData = useGLTF(modelPath);
+  } catch (e) {
+    if (e instanceof Promise) throw e; // Let suspense handle the promise
+    console.error("GLB load failed:", modelPath, e);
+  }
+  
+  const { scene, animations } = gltfData;
   const { actions } = useAnimations(animations, groupRef);
 
   const isSpecial = isLesley || modelPath.toLowerCase().includes("gwen") || modelPath.toLowerCase().includes("spider") || modelPath.toLowerCase().includes("robot");
@@ -41,11 +50,16 @@ export default function Avatar({ model }) {
   useEffect(() => {
     if (!scene) return;
 
-    scene.scale.set(1.2, 1.2, 1.2);
+    // Detect oversized models (Hulk & Superman)
+    const isOversized = modelPath.toLowerCase().includes("hulk") || modelPath.toLowerCase().includes("superman");
+    
+    // Apply conditional scale (Reduce oversized models by ~12.5%)
+    const modelScale = isOversized ? 1.4 : 1.6;
 
-    scene.position.set(0, -0.9, 0);
+    scene.scale.set(modelScale, modelScale, modelScale);
+    scene.position.set(0, -1.3, 0);
 
-  }, [scene]);
+  }, [scene, modelPath]);
 
   // Play first animation
   useEffect(() => {
@@ -56,7 +70,14 @@ export default function Avatar({ model }) {
   }, [actions]);
 
   // Fallback for loading states / failures
-  if (!scene) return null;
+  if (!scene) {
+    return (
+      <mesh>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial color="gray" wireframe />
+      </mesh>
+    );
+  }
 
   return (
     <group ref={groupRef}>
