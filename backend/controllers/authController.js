@@ -80,7 +80,11 @@ exports.register = async (req, res) => {
       year: role === "student" ? Number(year) : null,
       semester: role === "student" ? Number(semester) : null,
       weakCategories: role === "student" ? weakCategories : [],
-      weakTopics: role === "student" ? (weakTopics || []) : [],
+      weakTopics: role === "student"
+  ? (weakTopics || []).map((topic) =>
+      typeof topic === "string" ? { topic, weight: 0.5 } : topic
+    )
+  : [],
     });
 
     const token = signToken(created._id);
