@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { getOrCreateWallet } = require("../services/walletService");
 
 /**
  * Helper to check if it's a new day for GP reset (Asia/Colombo)
@@ -103,22 +104,16 @@ exports.getMe = async (req, res) => {
       );
       if (updated) {
         // Sync Reward Points from Wallet if they exist
-        const Wallet = require("../models/Wallet");
-        const wallet = await Wallet.findOne({ userId: updated._id });
-        if (wallet) {
-          updated.rewardPoints = wallet.balance;
-        }
+        const wallet = await getOrCreateWallet(updated._id);
+        updated.rewardPoints = Number(wallet?.balance ?? 0);
         return res.status(200).json(updated);
       }
     }
     
     // Sync Reward Points from Wallet
-    const Wallet = require("../models/Wallet");
-    const wallet = await Wallet.findOne({ userId: user._id });
-    if (wallet) {
-      user.rewardPoints = wallet.balance;
-      // We don't necessarily need to save it to DB every time if we just want it in the response
-    }
+    const wallet = await getOrCreateWallet(user._id);
+    user.rewardPoints = Number(wallet?.balance ?? 0);
+    user.attemptsUsedToday = Number.isFinite(user.attemptsUsedToday) ? user.attemptsUsedToday : 0;
 
     // DEBUG LOG (PART 6)
     console.log("User:", user._id, "GP:", user.totalGP, "RP:", user.rewardPoints);

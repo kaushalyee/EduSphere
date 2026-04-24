@@ -35,6 +35,7 @@ export default function RewardsDashboard() {
   const attemptsUsedToday = safeAttemptConfig.attemptsUsedToday ?? 0;
   const maxAttempts = safeAttemptConfig.maxAttempts ?? 3;
   const availableAttempts = safeAttemptConfig.availableAttempts ?? 0;
+  const rewardPoints = Number(balance ?? user?.rewardPoints ?? 0);
 
   const error = walletError || configError;
 
@@ -58,7 +59,7 @@ export default function RewardsDashboard() {
   }
 
   return (
-    <div className="min-h-full bg-transparent">
+    <div className="h-auto bg-transparent">
       {/* Optimized Layout: High Focus Design */}
       <div className="mx-auto grid max-w-[1700px] auto-rows-min grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8 pb-10 items-start">
         
@@ -71,7 +72,7 @@ export default function RewardsDashboard() {
           {walletLoading ? (
              <div className="w-full bg-slate-800/5 animate-pulse rounded-xl min-h-[200px]" />
           ) : (
-            <RewardWallet points={user?.rewardPoints || 0} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
+            <RewardWallet points={rewardPoints} attemptsUsedToday={attemptsUsedToday} maxAttempts={maxAttempts} />
           )}
         </div>
 

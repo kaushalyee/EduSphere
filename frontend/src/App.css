@@ -55,3 +55,18 @@
 .animate-slide-in {
   animation: slide-in 0.3s ease;
 }
+
+/* ----------------------------------
+   SIDEBAR ICON ENFORCEMENT
+   ---------------------------------- */
+.sidebar svg {
+  color: #000000 !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.sidebar .active svg,
+.sidebar-item:hover svg,
+.sidebar-item:focus svg {
+  color: #000000 !important;
+}

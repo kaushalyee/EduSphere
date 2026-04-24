@@ -12,21 +12,34 @@ function toUserObjectId(userId) {
 /**
  * Find existing wallet or create one. Handles duplicate-key races safely.
  */
-async function getOrCreateWallet(userId) {
+async function getOrCreateWallet(userId, options = {}) {
   const uid = toUserObjectId(userId);
+  const { session } = options;
 
-  let wallet = await Wallet.findOne({ userId: uid });
+  let walletQuery = Wallet.findOne({ userId: uid });
+  if (session) walletQuery = walletQuery.session(session);
+
+  let wallet = await walletQuery;
   if (wallet) return wallet;
 
   try {
-    return await Wallet.create({
+    const walletData = {
       userId: uid,
       balance: 0,
       currency: "coins",
-    });
+    };
+
+    if (session) {
+      const created = await Wallet.create([walletData], { session });
+      return created[0];
+    }
+
+    return await Wallet.create(walletData);
   } catch (err) {
     if (err && err.code === 11000) {
-      wallet = await Wallet.findOne({ userId: uid });
+      let retryQuery = Wallet.findOne({ userId: uid });
+      if (session) retryQuery = retryQuery.session(session);
+      wallet = await retryQuery;
       if (wallet) return wallet;
     }
     throw err;

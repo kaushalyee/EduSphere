@@ -14,7 +14,6 @@ const variantFromPath = (pathname = "") => {
 };
 
 export default function RewardsLayout({ children, variant = "dashboard" }) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const { pathname } = useLocation();
   const activeVariant = children ? variant : variantFromPath(pathname);
 
@@ -22,53 +21,41 @@ export default function RewardsLayout({ children, variant = "dashboard" }) {
     {
       id: "Dashboard",
       title: "Dashboard Overview",
-      icon: <LayoutDashboard className="w-5 h-5" />,
+      icon: <LayoutDashboard className="w-5 h-5 text-black" />,
     },
     {
       id: "PeerLearning",
       title: "Peer Learning & Kuppi",
-      icon: <Users className="w-5 h-5" />,
+      icon: <Users className="w-5 h-5 text-black" />,
     },
     {
       id: "Market",
       title: "Market Place",
-      icon: <ShoppingBag className="w-5 h-5" />,
+      icon: <ShoppingBag className="w-5 h-5 text-black" />,
     },
     {
       id: "Progress",
       title: "Progress Tracking",
-      icon: <TrendingUp className="w-5 h-5" />,
+      icon: <TrendingUp className="w-5 h-5 text-black" />,
     },
     {
       id: "Rewards",
       title: "Rewards & Game",
-      icon: <Award className="w-5 h-5" />,
+      icon: <Award className="w-5 h-5 text-black" />,
     },
   ];
 
   return (
-    <div className={`rewards-themed rewards-variant-${activeVariant} flex min-h-screen flex-row`}>
-      {/* Global Navigation: Main EduSphere Sidebar */}
-      <StudentSidebar
-        isSidebarOpen={isSidebarOpen}
-        activeTab="Rewards"
-        setActiveTab={() => {}} // Tab switching is handled via routing
-        options={options}
-      />
+    <div className={`rewards-themed rewards-variant-${activeVariant} flex-1 flex flex-col h-auto`}>
+      {/* Module Navigation: Reward Rush Navbar */}
+      <RewardNavbar />
 
-      {/* Module Content Area */}
-      <div className="main-content flex-1 flex flex-col min-w-0">
-        
-        {/* Module Navigation: Reward Rush Navbar */}
-        <RewardNavbar />
-
-        {/* Dynamic Page Content */}
-        <main className="flex-1 rewards-theme-shell">
-          <div className="rewards-theme-content p-6">
-            {children ?? <Outlet />}
-          </div>
-        </main>
-      </div>
+      {/* Dynamic Page Content */}
+      <main className="rewards-theme-shell flex-1">
+        <div className="rewards-theme-content p-6">
+          {children ?? <Outlet />}
+        </div>
+      </main>
     </div>
   );
 }

@@ -106,8 +106,11 @@ export default function Leaderboard() {
       {/* Header with wider container to match Navbar padding */}
       <div className="mx-auto max-w-7xl px-6">
         <header className="mb-10 flex items-center justify-between w-full pt-4">
-          <div>
-            <h1 className="text-4xl font-black text-white leaderboard-title-glow tracking-tight">
+          <div className="relative z-10 px-2 py-1">
+            <h1 
+              className="text-white text-2xl font-bold tracking-tight relative z-20"
+              style={{ textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}
+            >
               Leaderboard
             </h1>
           </div>
@@ -128,7 +131,7 @@ export default function Leaderboard() {
 
         {leaderboard.length === 0 ? (
           <div className="rewards-glass-card p-12 text-center">
-            <p className="text-gray-400">No scores recorded yet for today. Be the first!</p>
+            <p className="text-white">No scores recorded yet for today. Be the first!</p>
           </div>
         ) : (
           <>

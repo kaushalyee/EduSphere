@@ -1,5 +1,5 @@
 .rewards-themed {
-  min-height: 100vh;
+  height: auto;
   position: relative;
   /* Shared Theme Source of Truth */
   --dashboard-gradient: linear-gradient(135deg, #f5edf0, #c7a3ff, #5aa9ff);
@@ -7,7 +7,7 @@
 
 .rewards-theme-shell {
   position: relative;
-  min-height: 100vh;
+  height: auto;
 }
 
 .rewards-theme-shell::before,
@@ -69,12 +69,22 @@
 }
 
 .leaderboard-page {
-  min-height: 100vh;
+  height: auto;
   width: 100%;
   background: linear-gradient(135deg, #0f0c29 0%, #1a1a2e 50%, #16213e 100%) !important;
   background-attachment: fixed;
   position: relative;
   z-index: 1;
+}
+
+.leaderboard-page::before,
+.companion-page::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+  pointer-events: none;
 }
 
 .rewards-glass-card {
@@ -132,7 +142,7 @@
 .timer-label {
   font-size: 9px;
   font-weight: 800;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.85);
   text-transform: uppercase;
   letter-spacing: 0.15em;
   line-height: 1;
@@ -294,7 +304,7 @@
 /* Companion Page Dark Gaming Design */
 .companion-page {
   background: linear-gradient(135deg, #0f0c29, #1a1a2e, #16213e);
-  min-height: 100vh;
+  height: auto;
   color: white;
   margin: -24px; /* compensate for parent padding if necessary */
   padding: 24px;

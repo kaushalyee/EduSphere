@@ -69,8 +69,8 @@ export default function Companion() {
       }));
       
       alert("Purchase successful!");
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to purchase");
+    } catch (error) {
+      alert(error.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -85,8 +85,8 @@ export default function Companion() {
         ...prev,
         activeCompanion: data.activeCompanion
       }));
-    } catch (err) {
-      alert(err.response?.data?.message || "Failed to equip");
+    } catch (error) {
+      alert(error.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -95,16 +95,20 @@ export default function Companion() {
   return (
     <div className="companion-page">
       {/* Title & Reward Points Badge */}
-      <div className="flex w-full items-center justify-between mb-8 px-4">
-        <div>
-          <h1 className="text-[28px] font-bold text-white mb-0 leading-tight">Your Companions</h1>
-          <p className="text-[#a78bfa] text-sm mt-1">Unlock and select your study companions</p>
+        <div className="flex items-center justify-between mb-6">
+          <div className="relative z-10 px-2 py-1">
+            <h1 
+              className="text-white text-2xl font-bold tracking-tight relative z-20"
+              style={{ textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}
+            >
+              Your Companions
+            </h1>
+          </div>
+          <div className="reward-badge flex items-center gap-2">
+            <Zap size={14} className="text-amber-400 fill-amber-400" />
+            Reward Points: {rewardPoints.toLocaleString()}
+          </div>
         </div>
-        <div className="reward-badge flex items-center gap-2">
-          <Zap size={14} className="text-amber-400 fill-amber-400" />
-          Reward Points: {rewardPoints.toLocaleString()}
-        </div>
-      </div>
       
       <CompanionSelector companionsList={companionsList}>
         {({ currentCompanion, next, prev, index, companions }) => {
@@ -168,7 +172,7 @@ export default function Companion() {
                       {currentCompanion.name}
                     </h2>
                     
-                    <p className="text-gray-300 mb-8 leading-relaxed text-lg">
+                    <p className="text-white mb-8 leading-relaxed text-lg">
                       {currentCompanion.description || "A loyal study partner to help you achieve your unique learning goals."}
                     </p>
                     

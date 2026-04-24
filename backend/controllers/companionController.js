@@ -3,7 +3,7 @@ const User = require("../models/User");
 const companionsConfig = require("../config/companions");
 
 // GET /api/companions
-exports.getCompanions = (req, res) => {
+exports.getCompanions = function (req, res) {
   try {
     res.status(200).json(companionsConfig);
   } catch (error) {
@@ -12,7 +12,7 @@ exports.getCompanions = (req, res) => {
 };
 
 // POST /api/companions/buy
-exports.buyCompanion = async (req, res) => {
+exports.buyCompanion = async function (req, res) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -66,6 +66,14 @@ exports.buyCompanion = async (req, res) => {
     
     user.rewardPoints = wallet ? wallet.balance : 0;
     user.companionsOwned.push(companionId);
+
+    // NORMALIZE WEAK TOPICS (SUPPORTS STRINGS AND OBJECTS)
+    if (user.weakTopics && Array.isArray(user.weakTopics)) {
+      user.weakTopics = user.weakTopics.map(function (t) {
+        return typeof t === "string" ? { topic: t, weight: 0 } : t;
+      });
+    }
+
     await user.save({ session });
 
     await session.commitTransaction();
@@ -77,25 +85,48 @@ exports.buyCompanion = async (req, res) => {
       companionsOwned: user.companionsOwned
     });
   } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    res.status(500).json({ message: "Server error", error: error.message });
+    if (session) {
+      await session.abortTransaction();
+      session.endSession();
+    }
+    console.error("Purchase Error:", error);
+    res.status(400).json({ 
+      message: error.name === 'ValidationError' 
+        ? "Failed to update user data" 
+        : (error.message || "Failed to purchase companion")
+    });
   }
 };
 
 // PUT /api/companions/equip
-exports.equipCompanion = async (req, res) => {
+exports.equipCompanion = async function (req, res) {
   try {
+    // STEP 4 — VALIDATE INPUT
+    if (!req.body.companionId) {
+      return res.status(400).json({
+        message: "Invalid companion ID"
+      });
+    }
+
     const { companionId } = req.body;
     const userId = req.user._id;
 
-    if (!companionId) {
-      return res.status(400).json({ message: "Companion ID is required" });
+    const user = await User.findById(userId);
+
+    // STEP 2 — VALIDATE USER DATA
+    if (!user) throw new Error("User not found");
+
+    if (!user.rewardPoints) {
+      user.rewardPoints = 0;
     }
 
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
+    // STEP 3 — PREVENT DOUBLE SELECTION CRASH
+    // We check if an active companion is already set (and it's not the default 'robot')
+    // to prevent double selection issues.
+    if (user.activeCompanion && user.activeCompanion !== 'robot' && user.activeCompanion === companionId) {
+      return res.status(400).json({
+        message: "Companion already selected"
+      });
     }
 
     // Default ownership of robot
@@ -110,13 +141,27 @@ exports.equipCompanion = async (req, res) => {
     }
 
     user.activeCompanion = companionId;
+
+    // NORMALIZE WEAK TOPICS (SUPPORTS STRINGS AND OBJECTS)
+    if (user.weakTopics && Array.isArray(user.weakTopics)) {
+      user.weakTopics = user.weakTopics.map(function (t) {
+        return typeof t === "string" ? { topic: t, weight: 0 } : t;
+      });
+    }
+
     await user.save();
 
     res.status(200).json({
       message: "Companion equipped successfully",
       activeCompanion: user.activeCompanion
     });
-  } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+  } catch (err) {
+    // STEP 1 — ADD SAFE BACKEND HANDLING
+    console.error("Equip Error:", err);
+    return res.status(400).json({
+      message: err.name === 'ValidationError'
+        ? "Failed to update user data"
+        : (err.message || "Failed to select companion")
+    });
   }
 };

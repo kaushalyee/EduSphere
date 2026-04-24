@@ -56,8 +56,7 @@ const ProgressSimple = () => {
             </div>
           </div>
           
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Student Progress Management</h1>
-          <p className="text-gray-600">Track your academic growth, compare performance, and improve your assignments</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-6">Student Progress Management</h1>
         </div>
       </div>
 

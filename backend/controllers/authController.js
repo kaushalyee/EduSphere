@@ -2,6 +2,7 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { getOrCreateWallet } = require("../services/walletService");
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -85,6 +86,10 @@ exports.register = async (req, res) => {
 
     const token = signToken(created._id);
 
+    if (created.role === "student") {
+      await getOrCreateWallet(created._id);
+    }
+
     // password excluded by schema (select:false)
     const user = await User.findById(created._id);
 
@@ -107,6 +112,12 @@ exports.login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (user.role === "student") {
+      const wallet = await getOrCreateWallet(user._id);
+      user.rewardPoints = Number(wallet?.balance ?? 0);
+      user.attemptsUsedToday = Number.isFinite(user.attemptsUsedToday) ? user.attemptsUsedToday : 0;
+    }
 
     const token = signToken(user._id);
 

@@ -58,7 +58,12 @@ const userSchema = new mongoose.Schema(
     },
 
     weakTopics: {
-      type: [String],
+      type: [
+        {
+          topic: { type: String, required: true },
+          weight: { type: Number, default: 0 },
+        },
+      ],
       default: [],
     },
     lastQuizScore: {
@@ -97,7 +102,29 @@ const userSchema = new mongoose.Schema(
       default: "robot",
     },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true }
+  }
 );
+
+// Transform legacy string data to objects when reading from DB
+userSchema.pre("init", function (doc) {
+  if (doc.weakTopics) {
+    doc.weakTopics = doc.weakTopics.map(function (t) {
+      return typeof t === "string" ? { topic: t, weight: 0 } : t;
+    });
+  }
+});
+
+userSchema.pre("save", function (next) {
+  if (this.weakTopics) {
+    this.weakTopics = this.weakTopics.map(function (t) {
+      return typeof t === "string" ? { topic: t, weight: 0 } : t;
+    });
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", userSchema);
