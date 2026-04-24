@@ -16,6 +16,7 @@ import {
   Archive,
   Filter,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
 
 const STATUS_FILTERS = ["upcoming", "completed", "cancelled", "archived"];
@@ -25,6 +26,9 @@ const STATUS_STYLES = {
   completed: "bg-emerald-100 text-emerald-700",
   cancelled: "bg-red-100 text-red-600",
 };
+
+// ── Helper: check if session date has passed ───────────────────────────────
+const isExpired = (session) => new Date(session.date) < new Date();
 
 export default function MySessions() {
   const [sessions, setSessions] = useState([]);
@@ -46,7 +50,6 @@ export default function MySessions() {
   // ── Archived tab filters ───────────────────────────────────────────────────
   const [archivedStatusFilter, setArchivedStatusFilter] = useState("all");
   const [archivedDateFilter, setArchivedDateFilter] = useState("all");
-  // Option 2: Pending results filter in archived tab
   const [archivedPendingOnly, setArchivedPendingOnly] = useState(false);
 
   // ── Completed tab filters ──────────────────────────────────────────────────
@@ -56,7 +59,7 @@ export default function MySessions() {
   // ── Cancelled tab filters ──────────────────────────────────────────────────
   const [cancelledDateFilter, setCancelledDateFilter] = useState("all");
 
-  // ── Option 1: Archive warning dialog ──────────────────────────────────────
+  // ── Archive warning dialog ─────────────────────────────────────────────────
   const [archiveWarningDialog, setArchiveWarningDialog] = useState(null);
 
   const fileInputRef = useRef(null);
@@ -148,14 +151,13 @@ export default function MySessions() {
       else if (archivedDateFilter === "3months") cutoff.setMonth(cutoff.getMonth() - 3);
       filtered = filtered.filter((s) => new Date(s.archivedAt) >= cutoff);
     }
-    // Option 2: filter by pending results
     if (archivedPendingOnly) {
       filtered = filtered.filter((s) => s.quizLink && !s.resultsUploaded);
     }
     return filtered;
   };
 
-  // ── Option 1: Archive click — check if pending results ────────────────────
+  // ── Archive click — check if pending results ───────────────────────────────
   const handleArchiveClick = (session) => {
     const hasPendingResults = session.quizLink && !session.resultsUploaded;
     if (hasPendingResults) {
@@ -309,7 +311,9 @@ export default function MySessions() {
     meetingLink: "", location: "", description: "", capacity: "",
   });
 
+  // ── FIXED: Guard edit click — block expired sessions ──────────────────────
   const handleEditClick = (session) => {
+    if (isExpired(session)) return; // Extra guard — shouldn't reach here via UI
     setError(""); setSuccessMessage(""); setEditErrors({});
     setEditingSession(session);
     setEditForm({
@@ -361,6 +365,14 @@ export default function MySessions() {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editingSession) return;
+
+    // ── FIXED: Double-check session isn't expired before submitting ───────
+    if (isExpired(editingSession)) {
+      setError("This session has already passed and cannot be edited.");
+      setEditingSession(null);
+      return;
+    }
+
     const validationErrors = validateEditForm();
     setEditErrors(validationErrors);
     if (Object.keys(validationErrors).length > 0) return;
@@ -413,7 +425,7 @@ export default function MySessions() {
         </div>
       )}
 
-      {/* ── Option 1: Archive warning dialog (pending results) ── */}
+      {/* ── Archive warning dialog (pending results) ── */}
       {archiveWarningDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full mx-4">
@@ -560,8 +572,6 @@ export default function MySessions() {
             <Filter className="w-4 h-4" />
             <span className="text-sm font-medium">Filter by:</span>
           </div>
-
-          {/* Date range */}
           <div className="flex rounded-xl border border-slate-200 overflow-hidden">
             {[
               { value: "all", label: "All Time" },
@@ -581,8 +591,6 @@ export default function MySessions() {
               </button>
             ))}
           </div>
-
-          {/* Pending Results toggle */}
           <button
             onClick={() => setCompletedPendingOnly((prev) => !prev)}
             className={`px-3 py-1.5 text-sm font-medium rounded-xl border transition ${completedPendingOnly
@@ -592,8 +600,6 @@ export default function MySessions() {
           >
             ⏳ Pending Results
           </button>
-
-          {/* Clear */}
           {(completedDateFilter !== "all" || completedPendingOnly) && (
             <button
               onClick={() => { setCompletedDateFilter("all"); setCompletedPendingOnly(false); }}
@@ -612,7 +618,6 @@ export default function MySessions() {
             <Filter className="w-4 h-4" />
             <span className="text-sm font-medium">Filter by:</span>
           </div>
-
           <div className="flex rounded-xl border border-slate-200 overflow-hidden">
             {[
               { value: "all", label: "All Time" },
@@ -632,7 +637,6 @@ export default function MySessions() {
               </button>
             ))}
           </div>
-
           {cancelledDateFilter !== "all" && (
             <button
               onClick={() => setCancelledDateFilter("all")}
@@ -651,8 +655,6 @@ export default function MySessions() {
             <Filter className="w-4 h-4" />
             <span className="text-sm font-medium">Filter by:</span>
           </div>
-
-          {/* Status filter */}
           <div className="flex rounded-xl border border-slate-200 overflow-hidden">
             {[
               { value: "all", label: "All" },
@@ -671,8 +673,6 @@ export default function MySessions() {
               </button>
             ))}
           </div>
-
-          {/* Date range filter */}
           <div className="flex rounded-xl border border-slate-200 overflow-hidden">
             {[
               { value: "all", label: "All Time" },
@@ -691,8 +691,6 @@ export default function MySessions() {
               </button>
             ))}
           </div>
-
-          {/* Option 2: Pending Results toggle in archived tab */}
           <button
             onClick={() => setArchivedPendingOnly((prev) => !prev)}
             className={`px-3 py-1.5 text-sm font-medium rounded-xl border transition ${archivedPendingOnly
@@ -702,8 +700,6 @@ export default function MySessions() {
           >
             ⏳ Pending Results
           </button>
-
-          {/* Clear filters */}
           {isFiltered && statusFilter === "archived" && (
             <button
               onClick={() => { setArchivedStatusFilter("all"); setArchivedDateFilter("all"); setArchivedPendingOnly(false); }}
@@ -761,6 +757,10 @@ export default function MySessions() {
                 actionLoading === session._id + "cancel" ||
                 actionLoading === session._id + "archive";
 
+              // ── FIXED: Compute locked state per session ────────────────
+              const sessionIsExpired = isExpired(session);
+              const editLocked = sessionIsExpired || session.status === "completed";
+
               return (
                 <div
                   key={session._id}
@@ -785,6 +785,12 @@ export default function MySessions() {
                           <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${STATUS_STYLES[session.status] || "bg-slate-100 text-slate-600"}`}>
                             {session.status}
                           </span>
+                          {/* ── FIXED: Show expired badge ── */}
+                          {sessionIsExpired && session.status === "upcoming" && (
+                            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-500">
+                              expired
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -803,7 +809,6 @@ export default function MySessions() {
                         </div>
                       </div>
 
-                      {/* Archived on date */}
                       {statusFilter === "archived" && session.archivedAt && (
                         <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                           <Archive className="w-3.5 h-3.5" />
@@ -811,7 +816,6 @@ export default function MySessions() {
                         </div>
                       )}
 
-                      {/* Option 2: Pending results badge in archived tab */}
                       {statusFilter === "archived" && session.quizLink && !session.resultsUploaded && (
                         <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-amber-600 font-semibold bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
                           <AlertTriangle className="w-3.5 h-3.5" />
@@ -824,7 +828,6 @@ export default function MySessions() {
                           {session.mode === "online" ? <Monitor className="w-5 h-5 text-slate-500" /> : <MapPin className="w-5 h-5 text-slate-500" />}
                           <span className="text-sm">{session.mode === "online" ? "Online Session" : session.location || "No location added"}</span>
                         </div>
- 
                       </div>
 
                       {session.description && (
@@ -869,21 +872,14 @@ export default function MySessions() {
                                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium transition disabled:opacity-60"
                               >
                                 {uploadingSessionId === session._id ? (
-                                  <>
-                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                    Uploading...
-                                  </>
+                                  <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</>
                                 ) : (
-                                  <>
-                                    <BookOpen className="w-4 h-4" />
-                                    Upload Quiz Results
-                                  </>
+                                  <><BookOpen className="w-4 h-4" />Upload Quiz Results</>
                                 )}
                               </button>
                               <p className="text-xs text-slate-400">Format: Email | Marks | Total</p>
                             </>
                           )}
-                          {/* Option 1: use handleArchiveClick instead of handleArchive */}
                           <button
                             disabled={isActing}
                             onClick={() => handleArchiveClick(session)}
@@ -898,12 +894,42 @@ export default function MySessions() {
                       {/* ── Upcoming actions ── */}
                       {session.status === "upcoming" && (
                         <div className="mt-5 pt-4 border-t border-slate-100 flex gap-3 flex-wrap">
-                          <button disabled={isActing} onClick={() => handleEditClick(session)} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">Edit</button>
-                          <button disabled={isActing} onClick={() => setConfirmDialog({ sessionId: session._id, action: "complete" })} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+
+                          {/* ── FIXED: Edit button — disabled + tooltip when expired ── */}
+                          <div className="flex-1 relative group">
+                            <button
+                              disabled={isActing || editLocked}
+                              onClick={() => handleEditClick(session)}
+                              className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition
+                                ${editLocked
+                                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                                  : "bg-blue-50 hover:bg-blue-100 text-blue-700"
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {editLocked && <Lock className="w-3.5 h-3.5" />}
+                              Edit
+                            </button>
+                            {/* Tooltip on hover when locked */}
+                            {editLocked && (
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-slate-800 text-white text-xs rounded-lg whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
+                                {sessionIsExpired ? "Session has already passed" : "Completed sessions cannot be edited"}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            disabled={isActing}
+                            onClick={() => setConfirmDialog({ sessionId: session._id, action: "complete" })}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
                             {actionLoading === session._id + "complete" ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                             Mark Complete
                           </button>
-                          <button disabled={isActing} onClick={() => setConfirmDialog({ sessionId: session._id, action: "cancel" })} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
+                          <button
+                            disabled={isActing}
+                            onClick={() => setConfirmDialog({ sessionId: session._id, action: "cancel" })}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
                             {actionLoading === session._id + "cancel" ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
                             Cancel
                           </button>
@@ -924,38 +950,38 @@ export default function MySessions() {
                         </div>
                       )}
 
-{/* ── Archived actions ── */}
-{statusFilter === "archived" && (
-  <div className="mt-5 pt-4 border-t border-slate-100">
-    <button
-      disabled={isActing}
-      onClick={async () => {
-        setActionLoading(session._id + "restore");
-        try {
-          await axios.put(
-            `http://localhost:5000/api/sessions/${session._id}/restore`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          setSessions((prev) => prev.filter((s) => s._id !== session._id));
-          setSuccessMessage("Session restored successfully!");
-        } catch (err) {
-          setError(err.response?.data?.message || "Failed to restore session");
-        } finally {
-          setActionLoading(null);
-        }
-      }}
-      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
-    >
-      {actionLoading === session._id + "restore" ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <Archive className="w-4 h-4" />
-      )}
-      Restore Session
-    </button>
-  </div>
-)}
+                      {/* ── Archived actions ── */}
+                      {statusFilter === "archived" && (
+                        <div className="mt-5 pt-4 border-t border-slate-100">
+                          <button
+                            disabled={isActing}
+                            onClick={async () => {
+                              setActionLoading(session._id + "restore");
+                              try {
+                                await axios.put(
+                                  `http://localhost:5000/api/sessions/${session._id}/restore`,
+                                  {},
+                                  { headers: { Authorization: `Bearer ${token}` } }
+                                );
+                                setSessions((prev) => prev.filter((s) => s._id !== session._id));
+                                setSuccessMessage("Session restored successfully!");
+                              } catch (err) {
+                                setError(err.response?.data?.message || "Failed to restore session");
+                              } finally {
+                                setActionLoading(null);
+                              }
+                            }}
+                            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {actionLoading === session._id + "restore" ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Archive className="w-4 h-4" />
+                            )}
+                            Restore Session
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

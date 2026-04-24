@@ -52,9 +52,6 @@ export default function TrendingRequests({
 
     return (
         <div className="bg-white rounded-2xl shadow-sm p-8">
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">
-                Trending Requests
-            </h2>
             <p className="text-slate-500 mb-6">
                 Topics most requested by students.
             </p>
