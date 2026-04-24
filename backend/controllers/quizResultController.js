@@ -1,4 +1,3 @@
-// Optional dependency handled gracefully
 let xlsx;
 try {
   xlsx = require("xlsx");
@@ -12,6 +11,7 @@ const User = require("../models/User");
 const Session = require("../models/Session");
 const QuizResult = require("../models/QuizResult");
 const { convertQuizResultToRP } = require("../services/quizRPConversionService");
+const { recalculatePatterns } = require("../utils/patternEngine");
 
 const deleteFileIfExists = (filePath) => {
   if (filePath && fs.existsSync(filePath)) {
@@ -25,28 +25,19 @@ const importQuizResults = async (req, res) => {
 
   try {
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No Excel file uploaded",
-      });
+      return res.status(400).json({ success: false, message: "No Excel file uploaded" });
     }
 
     if (!mongoose.Types.ObjectId.isValid(sessionIdParam)) {
       deleteFileIfExists(req.file.path);
-      return res.status(400).json({
-        success: false,
-        message: "Invalid session ID",
-      });
+      return res.status(400).json({ success: false, message: "Invalid session ID" });
     }
 
     const session = await Session.findById(sessionIdParam);
 
     if (!session) {
       deleteFileIfExists(req.file.path);
-      return res.status(404).json({
-        success: false,
-        message: "Session not found",
-      });
+      return res.status(404).json({ success: false, message: "Session not found" });
     }
 
     if (session.status !== "completed") {
@@ -56,9 +47,9 @@ const importQuizResults = async (req, res) => {
         message: "Quiz results can only be uploaded for completed sessions",
       });
     }
+
     const sessionId = new mongoose.Types.ObjectId(sessionIdParam);
 
-    // only session owner tutor can upload results
     if (session.tutorId.toString() !== req.user._id.toString()) {
       deleteFileIfExists(req.file.path);
       return res.status(403).json({
@@ -67,12 +58,11 @@ const importQuizResults = async (req, res) => {
       });
     }
 
-    // Check if xlsx library is available
     if (!xlsx) {
       deleteFileIfExists(req.file.path);
       return res.status(503).json({
         success: false,
-        message: "Excel processing service is currently unavailable. Please contact the administrator.",
+        message: "Excel processing service is currently unavailable.",
       });
     }
 
@@ -82,11 +72,8 @@ const importQuizResults = async (req, res) => {
 
     const firstRow = rows[0] || {};
     const headers = Object.keys(firstRow).map((key) => key.trim());
-
     const requiredHeaders = ["Email", "Marks", "Total"];
-    const missingHeaders = requiredHeaders.filter(
-      (header) => !headers.includes(header)
-    );
+    const missingHeaders = requiredHeaders.filter((h) => !headers.includes(h));
 
     if (missingHeaders.length > 0) {
       deleteFileIfExists(req.file.path);
@@ -95,16 +82,16 @@ const importQuizResults = async (req, res) => {
         message: `Missing required Excel columns: ${missingHeaders.join(", ")}`,
       });
     }
+
     if (!rows || rows.length === 0) {
       deleteFileIfExists(req.file.path);
-      return res.status(400).json({
-        success: false,
-        message: "Excel file is empty",
-      });
+      return res.status(400).json({ success: false, message: "Excel file is empty" });
     }
 
     const savedResults = [];
     const skippedDetails = [];
+    const sessionTopic = session.topic;
+    const MASTERY_THRESHOLD = 70;
 
     for (const row of rows) {
       const normalizedRow = {};
@@ -117,10 +104,7 @@ const importQuizResults = async (req, res) => {
       const totalValue = normalizedRow["Total"];
 
       if (!email || marksValue === undefined || totalValue === undefined) {
-        skippedDetails.push({
-          row,
-          reason: "Missing required columns: Email, Marks, or Total",
-        });
+        skippedDetails.push({ row, reason: "Missing required columns: Email, Marks, or Total" });
         continue;
       }
 
@@ -129,93 +113,83 @@ const importQuizResults = async (req, res) => {
       const totalMarks = Number(totalValue);
 
       if (Number.isNaN(marksObtained) || Number.isNaN(totalMarks)) {
-        skippedDetails.push({
-          email: normalizedEmail,
-          reason: "Marks or Total must be valid numbers",
-        });
+        skippedDetails.push({ email: normalizedEmail, reason: "Marks or Total must be valid numbers" });
         continue;
       }
-
       if (marksObtained < 0) {
-        skippedDetails.push({
-          email: normalizedEmail,
-          reason: "Marks cannot be negative",
-        });
+        skippedDetails.push({ email: normalizedEmail, reason: "Marks cannot be negative" });
         continue;
       }
-
       if (totalMarks <= 0) {
-        skippedDetails.push({
-          email: normalizedEmail,
-          reason: "Total marks must be greater than 0",
-        });
+        skippedDetails.push({ email: normalizedEmail, reason: "Total marks must be greater than 0" });
         continue;
       }
-
       if (marksObtained > totalMarks) {
-        skippedDetails.push({
-          email: normalizedEmail,
-          reason: "Marks cannot be greater than total marks",
-        });
+        skippedDetails.push({ email: normalizedEmail, reason: "Marks cannot be greater than total marks" });
         continue;
       }
 
-      const student = await User.findOne({
-        email: normalizedEmail,
-        role: "student",
-      });
+      const student = await User.findOne({ email: normalizedEmail, role: "student" });
 
       if (!student) {
-        console.warn(
-          `[importQuizResults] Student not found, skipping row — email: ${normalizedEmail}`
-        );
-        skippedDetails.push({
-          email: normalizedEmail,
-          reason: "Student not found",
-        });
+        skippedDetails.push({ email: normalizedEmail, reason: "Student not found" });
         continue;
       }
 
       const studentId = new mongoose.Types.ObjectId(student._id);
-
-      const percentage = Number(
-        ((marksObtained / totalMarks) * 100).toFixed(2)
-      );
+      const percentage = Number(((marksObtained / totalMarks) * 100).toFixed(2));
 
       const saved = await QuizResult.findOneAndUpdate(
-        {
-          sessionId,
-          studentId,
-        },
-        {
-          sessionId,
-          studentId,
-          studentEmail: student.email,
-          marksObtained,
-          totalMarks,
-          percentage,
-        },
-        {
-          upsert: true,
-          returnDocument: "after",
-          runValidators: true,
-          setDefaultsOnInsert: true,
-        }
+        { sessionId, studentId },
+        { sessionId, studentId, studentEmail: student.email, marksObtained, totalMarks, percentage },
+        { upsert: true, returnDocument: "after", runValidators: true, setDefaultsOnInsert: true }
       );
 
-      // Auto convert on save; non-blocking for quiz-result persistence.
+      // Auto convert to RP — non-blocking
       try {
         await convertQuizResultToRP(saved._id);
       } catch (conversionError) {
-        console.error(
-          `[auto-rp-conversion] Failed for quizResult ${saved._id}:`,
-          conversionError.message
-        );
+        console.error(`[auto-rp-conversion] Failed for quizResult ${saved._id}:`, conversionError.message);
       }
 
       savedResults.push(saved);
+
+      // ── Auto weak topic update (weighted) ──────────────────────────────
+      try {
+        if (percentage >= MASTERY_THRESHOLD) {
+          // Student mastered this topic — remove it from weakTopics
+          await User.findByIdAndUpdate(student._id, {
+            $pull: { weakTopics: { topic: sessionTopic } },
+          });
+        } else {
+          // Student is still weak — calculate weight from score
+          // Lower score = higher weight = stronger recommendation priority
+          const weight = parseFloat((1 - percentage / 100).toFixed(2));
+
+          // Remove old entry first (in case weight changed)
+          await User.findByIdAndUpdate(student._id, {
+            $pull: { weakTopics: { topic: sessionTopic } },
+          });
+
+          // Add updated entry with new weight
+          await User.findByIdAndUpdate(student._id, {
+            $push: { weakTopics: { topic: sessionTopic, weight } },
+          });
+        }
+      } catch (weakTopicError) {
+        console.error(
+          `[weak-topic-update] Failed for student ${student.email}:`,
+          weakTopicError.message
+        );
+      }
+      // ───────────────────────────────────────────────────────────────────
     }
 
+    // ── Recalculate learning patterns for this topic — non-blocking ──────
+    recalculatePatterns(sessionTopic).catch((err) =>
+      console.error(`[patternEngine] Background recalculation failed:`, err.message)
+    );
+    // ─────────────────────────────────────────────────────────────────────
 
     deleteFileIfExists(req.file.path);
 
@@ -229,10 +203,7 @@ const importQuizResults = async (req, res) => {
       skippedDetails,
     });
   } catch (error) {
-    if (req.file) {
-      deleteFileIfExists(req.file.path);
-    }
-
+    if (req.file) deleteFileIfExists(req.file.path);
     return res.status(500).json({
       success: false,
       message: "Failed to import quiz results",
@@ -247,19 +218,12 @@ const getResultsBySession = async (req, res) => {
     const { sessionId } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(sessionId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid session ID",
-      });
+      return res.status(400).json({ success: false, message: "Invalid session ID" });
     }
 
     const session = await Session.findById(sessionId);
-
     if (!session) {
-      return res.status(404).json({
-        success: false,
-        message: "Session not found",
-      });
+      return res.status(404).json({ success: false, message: "Session not found" });
     }
 
     if (
@@ -276,11 +240,7 @@ const getResultsBySession = async (req, res) => {
       .populate("studentId", "name email studentID")
       .sort({ percentage: -1, marksObtained: -1 });
 
-    return res.status(200).json({
-      success: true,
-      count: results.length,
-      results,
-    });
+    return res.status(200).json({ success: true, count: results.length, results });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -296,16 +256,10 @@ const getResultsByStudent = async (req, res) => {
     const { studentId } = req.params;
 
     if (!mongoose.Types.ObjectId.isValid(studentId)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid student ID",
-      });
+      return res.status(400).json({ success: false, message: "Invalid student ID" });
     }
 
-    if (
-      req.user.role === "student" &&
-      req.user._id.toString() !== studentId
-    ) {
+    if (req.user.role === "student" && req.user._id.toString() !== studentId) {
       return res.status(403).json({
         success: false,
         message: "Not authorized to view these results",
@@ -316,11 +270,7 @@ const getResultsByStudent = async (req, res) => {
       .populate("sessionId", "topic category date time")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({
-      success: true,
-      count: results.length,
-      results,
-    });
+    return res.status(200).json({ success: true, count: results.length, results });
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -329,17 +279,14 @@ const getResultsByStudent = async (req, res) => {
     });
   }
 };
+
 const getMyResults = async (req, res) => {
   try {
     const results = await QuizResult.find({ studentId: req.user._id })
       .populate("sessionId", "topic category date time")
       .sort({ createdAt: -1 });
 
-    return res.status(200).json({
-      success: true,
-      count: results.length,
-      results,
-    });
+    return res.status(200).json({ success: true, count: results.length, results });
   } catch (error) {
     return res.status(500).json({
       success: false,

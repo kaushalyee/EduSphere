@@ -57,15 +57,20 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
+    // ── Updated: weighted weak topics 
+    // Each entry: { topic: "OOP", weight: 0.85 }
+    // weight = 1 - (percentage / 100) — lower score = higher weight
+    // Old format [String] is supported in recommendationEngine via normalizeWeakTopics
     weakTopics: {
       type: [
         {
-          topic: { type: String, required: true },
-          weight: { type: Number, default: 0 },
+          topic: { type: String, required: true, trim: true },
+          weight: { type: Number, required: true, min: 0, max: 1 },
         },
       ],
       default: [],
     },
+
     lastQuizScore: {
       type: Number,
       default: 0,

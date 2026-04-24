@@ -15,6 +15,7 @@ import StudentHeader from "./components/StudentHeader";
 import StudentContent from "./components/StudentContent";
 import ChatbotButton from "./components/ChatbotButton";
 import ChatbotOverlay from "./components/ChatbotOverlay";
+import StudentProfile from "./modules/StudentProfile"; // ← add this import
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -31,11 +32,12 @@ export default function StudentDashboard() {
 
   const [activeTab, setActiveTab] = useState(getInitialTab(pathname));
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [showProfile, setShowProfile] = useState(false); // ← add this
 
-  // Handle navigation state from assignment submission
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
+      setShowProfile(false);
       window.history.replaceState({}, document.title);
     } else {
       setActiveTab(getInitialTab(pathname));
@@ -47,6 +49,12 @@ export default function StudentDashboard() {
       logout();
       navigate("/");
     }
+  };
+
+  // When switching tabs, close profile
+  const handleTabChange = (tab) => {
+    setShowProfile(false);
+    setActiveTab(tab);
   };
 
   const options = [

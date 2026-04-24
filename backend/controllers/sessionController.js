@@ -8,6 +8,22 @@ const { rankSessions } = require("../utils/recommendationEngine");
 const isValidUrl = (value) => {
   return /^https?:\/\/.+/i.test(value);
 };
+const parseDateTime = (date, time) => {
+  const [hours, minutes] = time.split(":").map(Number);
+  const dt = new Date(date);
+  dt.setHours(hours, minutes, 0, 0);
+  return dt;
+};
+
+const hasTimeConflict = (existingSessions, newStart, newDuration, excludeId = null) => {
+  const newEnd = new Date(newStart.getTime() + newDuration * 60000);
+  return existingSessions.some((s) => {
+    if (excludeId && s._id.toString() === excludeId.toString()) return false;
+    const existStart = parseDateTime(s.date, s.time);
+    const existEnd = new Date(existStart.getTime() + s.duration * 60000);
+    return newStart < existEnd && newEnd > existStart;
+  });
+};
 
 const createSession = async (req, res) => {
   try {
@@ -107,6 +123,25 @@ const createSession = async (req, res) => {
         message: "Capacity must be at least 1",
       });
     }
+    // ── Overlap check ──────────────────────────────────────────────
+    const newStart = parseDateTime(date, time);
+    const newDuration = duration ? Number(duration) : 60;
+
+    const sameDaySessions = await Session.find({
+      tutorId: req.user._id,
+      status: "upcoming",
+      date: {
+        $gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date(date).setHours(23, 59, 59, 999)),
+      },
+    });
+
+    if (hasTimeConflict(sameDaySessions, newStart, newDuration)) {
+      return res.status(409).json({
+        success: false,
+        message: "You already have a session during this time slot.",
+      });
+    }
 
     const session = await Session.create({
       tutorId: req.user._id,
@@ -123,21 +158,21 @@ const createSession = async (req, res) => {
       description: description ? description.trim() : "",
     });
 
-const updatedRequests = await SessionRequest.updateMany(
-  {
-    category: category.trim(),
-    topic: topic.trim(),
-    status: "pending",
-  },
-  {
-    $set: {
-      status: "fulfilled",
-      matchedSessionId: session._id,
-    },
-  }
-);
+    const updatedRequests = await SessionRequest.updateMany(
+      {
+        category: category.trim(),
+        topic: topic.trim(),
+        status: "pending",
+      },
+      {
+        $set: {
+          status: "fulfilled",
+          matchedSessionId: session._id,
+        },
+      }
+    );
 
-console.log("Updated requests result:", updatedRequests);
+    console.log("Updated requests result:", updatedRequests);
 
     return res.status(201).json({
       success: true,
@@ -306,6 +341,7 @@ const getCompletedSessions = async (req, res) => {
     const sessions = await Session.find({
       tutorId: req.user._id,
       status: "completed",
+      isArchived: { $ne: true },
     }).sort({ updatedAt: -1 });
 
     const sessionIds = sessions.map((session) => session._id);
@@ -323,11 +359,11 @@ const getCompletedSessions = async (req, res) => {
       resultsUploaded: uploadedSet.has(session._id.toString()),
     }));
 
-res.status(200).json({
-  success: true,
-  count: sessionsWithUploadStatus.length,
-  sessions: sessionsWithUploadStatus,
-});
+    res.status(200).json({
+      success: true,
+      count: sessionsWithUploadStatus.length,
+      sessions: sessionsWithUploadStatus,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -340,13 +376,14 @@ const getCancelledSessions = async (req, res) => {
     const sessions = await Session.find({
       tutorId: req.user._id,
       status: "cancelled",
+      isArchived: { $ne: true },
     }).sort({ updatedAt: -1 });
 
-res.status(200).json({
-  success: true,
-  count: sessions.length,
-  sessions,
-});
+    res.status(200).json({
+      success: true,
+      count: sessions.length,
+      sessions,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -354,6 +391,10 @@ res.status(200).json({
     });
   }
 };
+// ── REPLACE only getStudentFeed in sessionController.js ──────────────────
+// rankSessions is now async (it queries LearningPattern)
+// Everything else in sessionController stays the same
+
 const getStudentFeed = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("weakTopics");
@@ -363,12 +404,13 @@ const getStudentFeed = async (req, res) => {
       .populate("tutorId", "name email")
       .sort({ date: 1 });
 
-    const feed = rankSessions(weakTopics, allUpcoming);
+    // rankSessions is now async — must await it
+    const feed = await rankSessions(weakTopics, allUpcoming);
 
     return res.status(200).json({
       success: true,
       totalSessions: feed.length,
-      recommendedCount: feed.filter(s => s.isRecommended).length,
+      recommendedCount: feed.filter((s) => s.isRecommended).length,
       weakTopics,
       feed,
     });
@@ -383,7 +425,7 @@ const getStudentFeed = async (req, res) => {
 const updateSession = async (req, res) => {
   try {
     const { sessionId } = req.params;
-    
+
 
     const session = await Session.findById(sessionId);
 
@@ -495,6 +537,26 @@ const updateSession = async (req, res) => {
         message: `Capacity cannot be less than registered count (${session.registeredCount})`,
       });
     }
+    // ── Overlap check ──────────────────────────────────────────────
+    const newStart = parseDateTime(date, time);
+    const newDuration = duration ? Number(duration) : session.duration;
+
+    const sameDaySessions = await Session.find({
+      tutorId: req.user._id,
+      status: "upcoming",
+      date: {
+        $gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
+        $lte: new Date(new Date(date).setHours(23, 59, 59, 999)),
+      },
+    });
+
+    if (hasTimeConflict(sameDaySessions, newStart, newDuration, sessionId)) {
+      return res.status(409).json({
+        success: false,
+        message: "This time slot conflicts with another session you have.",
+      });
+    }
+    // ───────────────────────────────────────────────────────────────
 
     session.date = date;
     session.time = time;
@@ -519,6 +581,117 @@ const updateSession = async (req, res) => {
   }
 };
 
+
+// ARCHIVE SESSION
+const archiveSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (session.status === "upcoming") {
+      return res.status(400).json({
+        message: "Cannot archive an upcoming session. Cancel it first.",
+      });
+    }
+
+    if (session.isArchived) {
+      return res.status(400).json({ message: "Session is already archived" });
+    }
+
+    session.isArchived = true;
+    session.archivedAt = new Date();
+    await session.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Session archived successfully",
+      session,
+    });
+  } catch (error) {
+    console.error("archiveSession error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// RESTORE SESSION
+const restoreSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({ message: "Session not found" });
+    }
+
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized" });
+    }
+
+    if (!session.isArchived) {
+      return res.status(400).json({ message: "Session is not archived" });
+    }
+
+    session.isArchived = false;
+    session.archivedAt = null;
+    await session.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Session restored successfully",
+      session,
+    });
+  } catch (error) {
+    console.error("restoreSession error:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
+// GET ARCHIVED SESSIONS
+const getArchivedSessions = async (req, res) => {
+  try {
+    const sessions = await Session.find({
+      tutorId: req.user._id,
+      isArchived: true,
+    }).sort({ archivedAt: -1 });
+
+    const sessionIds = sessions.map((s) => s._id);
+
+    const uploadedSessionIds = await QuizResult.find({
+      sessionId: { $in: sessionIds },
+    }).distinct("sessionId");
+
+    const uploadedSet = new Set(
+      uploadedSessionIds.map((id) => id.toString())
+    );
+
+    const sessionsWithUploadStatus = sessions.map((session) => ({
+      ...session.toObject(),
+      resultsUploaded: uploadedSet.has(session._id.toString()),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      count: sessionsWithUploadStatus.length,
+      sessions: sessionsWithUploadStatus,
+    });
+  } catch (error) {
+    console.error("getArchivedSessions error:", error);
+    return res.status(500).json({
+      message: "Server error while fetching archived sessions",
+    });
+  }
+};
+
 module.exports = {
   createSession,
   getMySessions,
@@ -530,4 +703,7 @@ module.exports = {
   getCancelledSessions,
   getStudentFeed,
   updateSession,
+  getArchivedSessions,
+  archiveSession,
+  restoreSession,
 };
