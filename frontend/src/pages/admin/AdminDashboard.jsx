@@ -48,9 +48,9 @@ export default function AdminDashboard() {
             {activeTab === "Overview" ? "Dashboard Overview" : activeTab}
           </h2>
           <div className="flex items-center gap-4">
-            <span className="bg-primary-50 text-primary-700 px-4 py-2 rounded-full text-sm font-bold border border-primary-100">
+            <div className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full shadow-sm border border-blue-500/20">
               Admin Portal
-            </span>
+            </div>
           </div>
         </header>
 
