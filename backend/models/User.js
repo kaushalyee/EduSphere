@@ -89,9 +89,7 @@ const userSchema = new mongoose.Schema(
     verificationStatus: {
       type: String,
       enum: ['pending', 'approved', 'rejected', 'resubmission_required'],
-      default: function () {
-        return this.role === 'student' ? 'pending' : 'approved';
-      },
+      default: 'approved',
     },
     studentIdPhoto: {
       type: String,

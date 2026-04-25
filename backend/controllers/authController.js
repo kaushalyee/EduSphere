@@ -81,6 +81,7 @@ exports.register = async (req, res) => {
       email,
       password: hashed,
       role,
+      verificationStatus: role === 'student' ? 'pending' : 'approved',
 
       // ✅ store student fields only for students
       studentID: role === "student" ? studentID.trim() : null,
