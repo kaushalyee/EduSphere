@@ -3,6 +3,11 @@ const MarketplaceListing = require("../models/MarketplaceListing");
 const ListingImage = require("../models/ListingImage");
 const fs = require("fs");
 const path = require("path");
+const {
+  sendApprovalEmail,
+  sendRejectionEmail,
+  sendResubmissionEmail,
+} = require('../services/emailService');
 
 exports.getAllUsers = async (req, res) => {
   try {
@@ -123,6 +128,120 @@ exports.deleteListingAdmin = async (req, res) => {
     });
   }
 };
+
+// ── Verification endpoints ────────────────────────────────────────────────
+
+exports.getPendingVerifications = async (req, res) => {
+  try {
+    const students = await User.find({
+      role: 'student',
+      verificationStatus: { $in: ['pending', 'resubmission_required'] },
+    })
+      .select('name email studentID year semester verificationStatus studentIdPhoto supportingDocument documentType createdAt')
+      .sort({ createdAt: 1 });
+
+    res.json({ success: true, data: students });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+exports.getAllVerifications = async (req, res) => {
+  try {
+    const students = await User.find({ role: 'student' })
+      .select('name email studentID year semester verificationStatus studentIdPhoto supportingDocument documentType createdAt verifiedAt rejectionReason resubmissionNote')
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data: students });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+exports.approveStudent = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.verificationStatus = 'approved';
+    user.verifiedBy = req.user._id;
+    user.verifiedAt = Date.now();
+    user.verificationHistory.push({ status: 'approved', changedBy: req.user._id, changedAt: Date.now() });
+    await user.save();
+
+    console.log('Sending approval email to:', user.email, user.name);
+    await sendApprovalEmail(user.email, user.name);
+    console.log('Approval email sent successfully');
+
+    res.json({ success: true, message: 'Student approved successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+exports.rejectStudent = async (req, res) => {
+  try {
+    const { rejectionReason } = req.body;
+    if (!rejectionReason) {
+      return res.status(400).json({ success: false, message: 'Rejection reason is required' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.verificationStatus = 'rejected';
+    user.rejectionReason = rejectionReason;
+    user.verifiedBy = req.user._id;
+    user.verifiedAt = Date.now();
+    user.verificationHistory.push({
+      status: 'rejected',
+      reason: rejectionReason,
+      changedBy: req.user._id,
+      changedAt: Date.now(),
+    });
+    await user.save();
+
+    sendRejectionEmail(user.email, user.name, rejectionReason).catch((err) =>
+      console.error('Rejection email failed:', err.message)
+    );
+
+    res.json({ success: true, message: 'Student rejected successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+exports.requestResubmission = async (req, res) => {
+  try {
+    const { resubmissionNote } = req.body;
+    if (!resubmissionNote) {
+      return res.status(400).json({ success: false, message: 'Resubmission note is required' });
+    }
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.verificationStatus = 'resubmission_required';
+    user.resubmissionNote = resubmissionNote;
+    user.verificationHistory.push({
+      status: 'resubmission_required',
+      note: resubmissionNote,
+      changedBy: req.user._id,
+      changedAt: Date.now(),
+    });
+    await user.save();
+
+    sendResubmissionEmail(user.email, user.name, resubmissionNote).catch((err) =>
+      console.error('Resubmission email failed:', err.message)
+    );
+
+    res.json({ success: true, message: 'Resubmission requested successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// ── User / Listing management ─────────────────────────────────────────────
 
 exports.deleteUser = async (req, res) => {
   try {

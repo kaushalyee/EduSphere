@@ -84,6 +84,60 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    // Verification fields
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'resubmission_required'],
+      default: function () {
+        return this.role === 'student' ? 'pending' : 'approved';
+      },
+    },
+    studentIdPhoto: {
+      type: String,
+      default: null,
+    },
+    supportingDocument: {
+      type: String,
+      default: null,
+    },
+    documentType: {
+      type: String,
+      enum: ['exam_timetable', 'enrollment_letter', 'course_registration', null],
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
+    resubmissionNote: {
+      type: String,
+      default: null,
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    verificationHistory: [
+      {
+        status: String,
+        reason: String,
+        note: String,
+        changedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        changedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );

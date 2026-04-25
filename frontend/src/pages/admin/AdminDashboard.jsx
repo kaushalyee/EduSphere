@@ -3,14 +3,17 @@ import AdminSidebar from "./components/AdminSidebar";
 import StatsOverview from "./components/StatsOverview";
 import MarketplaceModeration from "./components/MarketplaceModeration";
 import UserManagement from "./components/UserManagement";
+import StudentVerification from "./components/StudentVerification";
 import api from "../../api/api";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Menu } from "lucide-react";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -35,74 +38,77 @@ export default function AdminDashboard() {
     }
   }, [activeTab]);
 
+  useEffect(() => {
+    const fetchPendingCount = async () => {
+      try {
+        const res = await api.get("/admin/verifications/pending");
+        if (res.data.success) setPendingCount(res.data.data.length);
+      } catch {
+        // non-critical — badge simply won't show
+      }
+    };
+    fetchPendingCount();
+  }, [activeTab]);
+
+  const PAGE_TITLES = {
+    Overview: "Dashboard Overview",
+    Marketplace: "Marketplace Moderation",
+    Users: "User Management",
+    Verification: "Student Verification",
+  };
+  const currentPageTitle = PAGE_TITLES[activeTab] || activeTab;
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      <AdminSidebar
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        pendingCount={pendingCount}
+        isSidebarOpen={isSidebarOpen}
+        setIsSidebarOpen={setIsSidebarOpen}
+      />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
-        <header className="h-20 bg-white border-b border-gray-200 px-8 flex items-center justify-between sticky top-0 z-30">
-          <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-            {activeTab === "Overview" ? "Dashboard Overview" : activeTab}
-          </h2>
+        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center gap-4">
-            <span className="bg-primary-50 text-primary-700 px-4 py-2 rounded-full text-sm font-bold border border-primary-100">
-              Admin Portal
-            </span>
+            <button
+              onClick={() => setIsSidebarOpen((prev) => !prev)}
+              className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-lg font-bold text-gray-800">{currentPageTitle}</h1>
+              <p className="text-sm text-gray-500">Welcome back</p>
+            </div>
           </div>
         </header>
 
-        {/* Content Area */}
-        <main className="p-8">
+        {/* Content */}
+        <main className="flex-1 p-6 overflow-auto">
           {activeTab === "Overview" ? (
-            <div className="max-w-7xl mx-auto space-y-8">
+            <div className="space-y-6">
               {error && (
-                <div className="flex items-center gap-3 p-6 bg-rose-50 border border-rose-100 rounded-[2rem] text-rose-600">
-                  <AlertCircle className="w-6 h-6" />
-                  <p className="font-bold">{error}</p>
+                <div className="flex items-center gap-3 p-4 bg-red-50 border border-red-100 rounded-xl text-red-600">
+                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <p className="text-sm">{error}</p>
                 </div>
               )}
-
-              <section>
-                <div className="mb-6">
-                  <h3 className="text-xl font-black text-gray-900">Platform Performance</h3>
-                  <p className="text-gray-500 font-medium">Real-time statistics of EduSphere growth</p>
-                </div>
-                <StatsOverview stats={stats} loading={loading} />
-              </section>
-
-              {/* Placeholder for more cards/charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
-                <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
-                   <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                     <AlertCircle className="w-8 h-8 text-gray-300" />
-                   </div>
-                   <h4 className="text-lg font-bold text-gray-900">Activity Charts</h4>
-                   <p className="text-gray-500 text-sm mt-1">Growth charts and user activity maps coming soon.</p>
-                </div>
-                <div className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm flex flex-col items-center justify-center text-center">
-                   <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
-                     <AlertCircle className="w-8 h-8 text-gray-300" />
-                   </div>
-                   <h4 className="text-lg font-bold text-gray-900">Notification Hub</h4>
-                   <p className="text-gray-500 text-sm mt-1">Global platform alerts and system logs coming soon.</p>
-                </div>
-              </div>
+              <StatsOverview stats={stats} loading={loading} />
             </div>
           ) : activeTab === "Marketplace" ? (
             <MarketplaceModeration />
           ) : activeTab === "Users" ? (
             <UserManagement />
+          ) : activeTab === "Verification" ? (
+            <StudentVerification />
           ) : (
-            <div className="max-w-7xl mx-auto py-20 bg-white rounded-[3rem] border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
-              <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                <AlertCircle className="w-10 h-10 text-gray-300" />
-              </div>
-              <h3 className="text-2xl font-black text-gray-900">{activeTab} Section</h3>
-              <p className="text-gray-500 mt-2 font-medium max-w-md px-6">
-                We are currently building the {activeTab.toLowerCase()} tools for administrators. Please check back soon.
+            <div className="py-20 bg-white rounded-xl border border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
+              <AlertCircle className="w-10 h-10 text-gray-300 mb-4" />
+              <h3 className="text-base font-bold text-gray-800">{activeTab} Section</h3>
+              <p className="text-gray-500 mt-1 text-sm max-w-md">
+                This section is coming soon.
               </p>
             </div>
           )}
