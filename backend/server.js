@@ -1,10 +1,9 @@
+const dotenv = require('dotenv');
+dotenv.config(); // Must run before any require() that reads process.env
+
 const app = require("./app");
 const connectDB = require("./config/db");
 const cookieParser = require('cookie-parser');
-const dotenv = require('dotenv');
-
-// Load environment variables
-dotenv.config();
 
 // Ensure uploads directory exists on server startup
 require('./scripts/ensureUploadsDir');

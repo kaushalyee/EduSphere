@@ -66,8 +66,18 @@ export const AuthProvider = ({ children }) => {
     sessionStorage.clear();
   };
 
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
+  };
+
   const value = useMemo(
-    () => ({ user, setUser, token, isAuth: !!token, login, register, logout }),
+    () => ({ user, setUser, token, isAuth: !!token, login, register, logout, refreshUser }),
     [user, token]
   );
 

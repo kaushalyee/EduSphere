@@ -75,13 +75,8 @@ export default function MarketplaceModeration() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      {/* Header & Stats */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Marketplace Moderation</h2>
-          <p className="text-gray-500 font-medium mt-1">Review and manage all marketplace listings platform-wide.</p>
-        </div>
-        
+      {/* Stats */}
+      <div className="flex justify-end">
         <div className="bg-white px-8 py-4 rounded-[2rem] border border-gray-200 shadow-sm flex items-center gap-4">
            <div className="p-3 bg-primary-100 rounded-2xl text-primary-600">
              <ShoppingBag className="w-6 h-6" />

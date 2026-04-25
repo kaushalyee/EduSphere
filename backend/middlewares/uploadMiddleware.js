@@ -58,4 +58,34 @@ const uploadMiddleware = (req, res, next) => {
   });
 };
 
+// --- Verification document upload config ---
+
+const verificationStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const dir = 'uploads/verification/';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    cb(null, dir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `verification-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
+const verificationFileFilter = (req, file, cb) => {
+  const allowed = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only jpg, jpeg, png and pdf files are allowed'), false);
+  }
+};
+
+const uploadVerification = multer({
+  storage: verificationStorage,
+  fileFilter: verificationFileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+});
+
 module.exports = uploadMiddleware;
+module.exports.uploadVerification = uploadVerification;
