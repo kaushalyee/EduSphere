@@ -20,6 +20,7 @@ import GameBoard from "./pages/student/modules/engagement-rewards/game/GameBoard
 import TutorDashboard from "./pages/tutor/TutorDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import { useAuth } from "./context/AuthContext";
+import StudentProfile from "./pages/student/modules/StudentProfile";
 
 export default function App() {
   const { user } = useAuth();
@@ -55,6 +56,7 @@ export default function App() {
         }
       >
         <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="profile" element={<StudentProfile />} />
         <Route path="learning-trajectory" element={<LearningTrajectory />} />
         <Route path="progress-tracking" element={<StudentDashboard />} />
         <Route path="marketplace" element={<StudentDashboard />} />

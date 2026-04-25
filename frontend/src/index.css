@@ -172,13 +172,13 @@
   cursor: not-allowed;
 }
 
+/* ✅ Fix */
 html, body, #root {
   height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  /* Remove overflow: hidden */
 }
-
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }

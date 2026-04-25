@@ -70,22 +70,25 @@ export default function AdminDashboard() {
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => setIsSidebarOpen((prev) => !prev)}
-              className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-lg font-bold text-gray-800">{currentPageTitle}</h1>
-              <p className="text-sm text-gray-500">Welcome back</p>
-            <div className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full shadow-sm border border-blue-500/20">
-              Admin Portal
-            </div>
-          </div>
-        </header>
+<header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
+  <div className="flex items-center gap-4">
+    <button
+      onClick={() => setIsSidebarOpen((prev) => !prev)}
+      className="p-2 rounded-md hover:bg-gray-100 text-gray-600"
+    >
+      <Menu className="w-5 h-5" />
+    </button>
+
+    <div>
+      <h1 className="text-lg font-bold text-gray-800">{currentPageTitle}</h1>
+      <p className="text-sm text-gray-500">Welcome back</p>
+    </div>
+  </div>
+
+  <div className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full shadow-sm border border-blue-500/20">
+    Admin Portal
+  </div>
+</header>
 
         {/* Content */}
         <main className="flex-1 p-6 overflow-auto">
