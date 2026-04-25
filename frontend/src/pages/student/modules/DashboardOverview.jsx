@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react"; // FIXED: added useState, useEffect
 import { 
   BookOpen, 
   TrendingUp, 
@@ -11,37 +11,76 @@ import {
   CheckCircle
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
+import api from "../../../api/api"; // FIXED: added shared api instance
 
 export default function DashboardOverview({ setActiveTab }) {
   const { user } = useAuth();
+  const [realStats, setRealStats] = useState(null); // FIXED: real data state
+  const [loadingStats, setLoadingStats] = useState(true); // FIXED: loading state
 
+  // FIXED: fetch real stats from backend instead of hardcoded mock values
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?._id && !user?.id) return;
+      const studentId = user._id || user.id;
+      try {
+        setLoadingStats(true);
+        const [summaryRes, streaksRes] = await Promise.all([
+          api.get(`/progress/trajectory/${studentId}/summary`),
+          api.get(`/progress/trajectory/${studentId}/streaks`),
+        ]);
+        const summaryData = summaryRes.data.success ? summaryRes.data : null;
+        const streaksData = streaksRes.data.success ? streaksRes.data.streaks : {};
+
+        // Compute max streak across all subjects
+        const maxStreak = Object.values(streaksData).reduce(
+          (max, s) => Math.max(max, s.currentStreak || 0), 0
+        );
+
+        setRealStats({
+          overallAverage: summaryData?.overallAverage ?? "—",
+          subjectsTracked: summaryData?.subjectSummaries?.length ?? "—",
+          studyStreak: maxStreak,
+          totalQuizzes: summaryData?.totalAttempts ?? "—",
+        });
+      } catch (err) {
+        console.error("Failed to fetch dashboard stats", err);
+        setRealStats(null);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchStats();
+  }, [user]);
+
+  // FIXED: stats now use real API values with "—" fallback while loading
   const stats = [
     {
-      title: "Assignments Completed",
-      value: "12",
-      change: "+2 this week",
-      icon: <CheckCircle className="w-5 h-5 text-green-600" />,
-      color: "bg-green-50 border-green-200"
-    },
-    {
-      title: "Average Grade",
-      value: "85%",
-      change: "+3% improvement",
+      title: "Overall Average",
+      value: loadingStats ? "…" : realStats ? `${realStats.overallAverage}%` : "—",
+      change: "Across all subjects",
       icon: <TrendingUp className="w-5 h-5 text-blue-600" />,
       color: "bg-blue-50 border-blue-200"
     },
     {
+      title: "Subjects Tracked",
+      value: loadingStats ? "…" : realStats ? `${realStats.subjectsTracked}` : "—",
+      change: "Active categories",
+      icon: <BookOpen className="w-5 h-5 text-green-600" />,
+      color: "bg-green-50 border-green-200"
+    },
+    {
       title: "Study Streak",
-      value: "7 days",
-      change: "Keep it up!",
+      value: loadingStats ? "…" : realStats ? `${realStats.studyStreak} wks` : "—",
+      change: "Consecutive weeks",
       icon: <Award className="w-5 h-5 text-orange-600" />,
       color: "bg-orange-50 border-orange-200"
     },
     {
-      title: "Kuppi Sessions",
-      value: "8",
-      change: "+3 this month",
-      icon: <Users className="w-5 h-5 text-purple-600" />,
+      title: "Quizzes Taken",
+      value: loadingStats ? "…" : realStats ? `${realStats.totalQuizzes}` : "—",
+      change: "Total attempts",
+      icon: <CheckCircle className="w-5 h-5 text-purple-600" />,
       color: "bg-purple-50 border-purple-200"
     }
   ];

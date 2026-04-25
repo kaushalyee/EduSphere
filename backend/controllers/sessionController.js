@@ -357,7 +357,7 @@ res.status(200).json({
 const getStudentFeed = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("weakTopics");
-    const weakTopics = user.weakTopics || [];
+    const weakTopics = user?.weakTopics || [];
 
     const allUpcoming = await Session.find({ status: "upcoming" })
       .populate("tutorId", "name email")
@@ -377,6 +377,7 @@ const getStudentFeed = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error while fetching feed",
+      error: error.message,
     });
   }
 };

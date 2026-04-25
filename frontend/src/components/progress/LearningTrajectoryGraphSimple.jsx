@@ -118,7 +118,9 @@ const LearningTrajectoryGraph = () => {
 
     return {
       currentScore: summary?.overallAverage || 0,
-      improvement: summary?.improvingSubjects > 0 ? parseFloat(((summary.improvingSubjects / summary.subjectSummaries.length) * 10).toFixed(1)) : 0,
+      improvement: (summary?.improvingSubjects > 0 && summary?.subjectSummaries?.length > 0)
+        ? parseFloat(((summary.improvingSubjects / summary.subjectSummaries.length) * 10).toFixed(1))
+        : 0,
       highestScore,
       highestScoreMonth,
       subjectsTracked: scorecard.length,

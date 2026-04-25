@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import axios from "axios";
+import api from "../../../api/api";
 import Toast from "../../../components/ui/Toast";
 
 const TABS = [
@@ -34,12 +34,12 @@ export default function PeerLearning() {
     preferredDate: "",
   });
 
-  const token = localStorage.getItem("token");
+  // Token managed automatically by api.js interceptor
 
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/constants/topics");
+        const res = await api.get("/constants/topics");
         setTopicsByCategory(res.data);
       } catch (err) {
         console.error("Failed to fetch topics", err);
@@ -51,10 +51,7 @@ export default function PeerLearning() {
   const fetchMyRequests = async () => {
     try {
       setFetchingRequests(true);
-      const res = await axios.get(
-        "http://localhost:5000/api/session-requests/my-requests",
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.get("/session-requests/my-requests");
       setMyRequests(res.data.requests || []);
     } catch (err) {
       console.error("Failed to fetch requests", err);
@@ -66,9 +63,7 @@ export default function PeerLearning() {
   const fetchSessions = async () => {
     try {
       setFetchingSessions(true);
-      const res = await axios.get("http://localhost:5000/api/sessions/feed", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await api.get("/sessions/feed");
       setSessions(res.data.feed || []);
     } catch (err) {
       console.error("Failed to fetch sessions", err);
@@ -156,11 +151,7 @@ export default function PeerLearning() {
 
     try {
       setLoading(true);
-      const res = await axios.post(
-        "http://localhost:5000/api/session-requests",
-        formData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const res = await api.post("/session-requests", formData);
 
       setToast({
         type: "success",

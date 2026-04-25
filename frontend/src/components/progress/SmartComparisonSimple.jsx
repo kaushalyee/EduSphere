@@ -77,7 +77,9 @@ const SmartComparison = () => {
         const currentPoints = allPoints.slice(midPoint);
 
         const currentAvg = currentPoints.length ? currentPoints.reduce((a,b)=>a+b.percentage, 0)/currentPoints.length : 0;
-        const previousAvg = previousPoints.length ? previousPoints.reduce((a,b)=>a+b.percentage, 0)/previousPoints.length : 0;
+        const previousAvg = previousPoints.length > 0
+          ? previousPoints.reduce((a, b) => a + b.percentage, 0) / previousPoints.length
+          : currentAvg; // Fallback: same as current → shows 0% change instead of NaN
         
         // Build self-comparison summary map
         const subjectsMap = {};
