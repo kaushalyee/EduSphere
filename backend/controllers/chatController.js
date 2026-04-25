@@ -1,7 +1,37 @@
 const ChatConversation = require('../models/ChatConversation');
 const ChatMessage = require('../models/ChatMessage');
 const Session = require('../models/Session');
+const QuizResult = require('../models/QuizResult');
 const { getResponse, generateConversationTitle, extractAcademicTopic } = require('../ai/chatEngine');
+
+const getStudentQuizPerformance = async (studentId, category) => {
+  try {
+    const sessions = await Session.find({ category }).select('_id');
+    const sessionIds = sessions.map(s => s._id);
+
+    if (sessionIds.length === 0) return null;
+
+    const results = await QuizResult.find({
+      studentId,
+      sessionId: { $in: sessionIds }
+    }).sort({ createdAt: -1 }).limit(3);
+
+    if (results.length === 0) return null;
+
+    const avgPercentage = Math.round(
+      results.reduce((sum, r) => sum + r.percentage, 0) / results.length
+    );
+
+    return {
+      attempts: results.length,
+      averageScore: avgPercentage,
+      lastScore: results[0].percentage,
+      lastMarks: `${results[0].marksObtained}/${results[0].totalMarks}`
+    };
+  } catch (err) {
+    return null;
+  }
+};
 
 const getRecommendedSessions = async (category) => {
   try {
@@ -78,10 +108,33 @@ exports.startConversation = async (req, res) => {
     const aiResult = getResponse(message);
     const title = generateConversationTitle(message);
 
+    // Check for academic topic FIRST so we can personalise the response
+    const academicTopic = extractAcademicTopic(message);
+    let recommendedSessions = [];
+    let quizPerformance = null;
+
+    if (academicTopic.detected && academicTopic.category) {
+      quizPerformance = await getStudentQuizPerformance(req.user._id, academicTopic.category);
+      recommendedSessions = await getRecommendedSessions(academicTopic.category);
+    }
+
+    // Build personalised AI response
+    let aiResponseText = aiResult.response;
+    if (quizPerformance) {
+      const performanceMsg = quizPerformance.lastScore < 50
+        ? `I can see you scored ${quizPerformance.lastScore}% in your last ${academicTopic.category} quiz. Don't worry — with the right guidance you can improve!`
+        : `I can see you scored ${quizPerformance.lastScore}% in your last ${academicTopic.category} quiz. You're doing well but there's always room to grow!`;
+      aiResponseText = performanceMsg + ' ' + aiResult.response;
+    }
+
+    if (aiResult.followUp) {
+      aiResponseText += '\n\n' + aiResult.followUp;
+    }
+
     const newConversation = new ChatConversation({
       participants: [req.user._id],
       isGroupChat: false,
-      groupName: title, 
+      groupName: title,
       lastMessageAt: Date.now()
     });
 
@@ -94,25 +147,12 @@ exports.startConversation = async (req, res) => {
     });
     await userMsg.save();
 
-    let aiResponseText = aiResult.response;
-    if (aiResult.followUp) {
-      aiResponseText += "\n\n" + aiResult.followUp;
-    }
-
     const aiMsg = new ChatMessage({
       conversationId: newConversation._id,
       senderId: null,
       content: aiResponseText
     });
     await aiMsg.save();
-
-    // Check for academic topic
-    const academicTopic = extractAcademicTopic(message);
-    let recommendedSessions = [];
-
-    if (academicTopic.detected && academicTopic.category) {
-      recommendedSessions = await getRecommendedSessions(academicTopic.category);
-    }
 
     return res.status(201).json({
       success: true,
@@ -121,7 +161,8 @@ exports.startConversation = async (req, res) => {
         title,
         messages: [userMsg, aiMsg],
         recommendedSessions,
-        academicTopic: academicTopic.detected ? academicTopic.category : null
+        academicTopic: academicTopic.detected ? academicTopic.category : null,
+        quizPerformance
       }
     });
   } catch (error) {
@@ -157,9 +198,27 @@ exports.sendMessage = async (req, res) => {
 
     const aiResult = getResponse(message);
 
+    // Check for academic topic FIRST so we can personalise the response
+    const academicTopic = extractAcademicTopic(message);
+    let recommendedSessions = [];
+    let quizPerformance = null;
+
+    if (academicTopic.detected && academicTopic.category) {
+      quizPerformance = await getStudentQuizPerformance(req.user._id, academicTopic.category);
+      recommendedSessions = await getRecommendedSessions(academicTopic.category);
+    }
+
+    // Build personalised AI response
     let aiResponseText = aiResult.response;
+    if (quizPerformance) {
+      const performanceMsg = quizPerformance.lastScore < 50
+        ? `I can see you scored ${quizPerformance.lastScore}% in your last ${academicTopic.category} quiz. Don't worry — with the right guidance you can improve!`
+        : `I can see you scored ${quizPerformance.lastScore}% in your last ${academicTopic.category} quiz. You're doing well but there's always room to grow!`;
+      aiResponseText = performanceMsg + ' ' + aiResult.response;
+    }
+
     if (aiResult.followUp) {
-      aiResponseText += "\n\n" + aiResult.followUp;
+      aiResponseText += '\n\n' + aiResult.followUp;
     }
 
     const aiMessage = new ChatMessage({
@@ -172,21 +231,14 @@ exports.sendMessage = async (req, res) => {
     conversation.lastMessageAt = Date.now();
     await conversation.save();
 
-    // Check for academic topic
-    const academicTopic = extractAcademicTopic(message);
-    let recommendedSessions = [];
-
-    if (academicTopic.detected && academicTopic.category) {
-      recommendedSessions = await getRecommendedSessions(academicTopic.category);
-    }
-
     return res.status(200).json({
       success: true,
       data: {
         userMessage,
         aiMessage,
         recommendedSessions,
-        academicTopic: academicTopic.detected ? academicTopic.category : null
+        academicTopic: academicTopic.detected ? academicTopic.category : null,
+        quizPerformance
       }
     });
   } catch (error) {

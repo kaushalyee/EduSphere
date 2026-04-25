@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { 
   MessageSquare, 
   Send, 
@@ -21,7 +22,49 @@ import {
 import api from "../../../api/api";
 import { useAuth } from "../../../context/AuthContext";
 
-export default function ChatbotOverlay({ onClose }) {
+const MOTIVATIONAL_QUOTES = [
+  { quote: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+  { quote: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+  { quote: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+  { quote: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" },
+  { quote: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { quote: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+  { quote: "You don't have to be great to start, but you have to start to be great.", author: "Zig Ziglar" },
+  { quote: "The harder you work for something, the greater you'll feel when you achieve it.", author: "Unknown" },
+  { quote: "Dream bigger. Do bigger.", author: "Unknown" },
+  { quote: "Don't stop when you're tired. Stop when you're done.", author: "Unknown" },
+  { quote: "Push yourself because no one else is going to do it for you.", author: "Unknown" },
+  { quote: "Great things never come from comfort zones.", author: "Unknown" },
+  { quote: "Wake up with determination. Go to bed with satisfaction.", author: "Unknown" },
+  { quote: "Little things make big days.", author: "Unknown" },
+  { quote: "It's going to be hard but hard does not mean impossible.", author: "Unknown" },
+  { quote: "Don't wait for opportunity. Create it.", author: "Unknown" },
+  { quote: "Sometimes we're tested not to show our weaknesses, but to discover our strengths.", author: "Unknown" },
+  { quote: "The key to success is to focus on goals, not obstacles.", author: "Unknown" },
+  { quote: "Dream it. Wish it. Do it.", author: "Unknown" },
+  { quote: "Stay focused and never give up.", author: "Unknown" },
+  { quote: "Strive for progress not perfection.", author: "Unknown" },
+  { quote: "You are stronger than you think.", author: "Unknown" },
+  { quote: "Every day is a second chance.", author: "Unknown" },
+  { quote: "Work hard in silence. Let success be your noise.", author: "Unknown" },
+  { quote: "Be so good they can't ignore you.", author: "Steve Martin" },
+  { quote: "Success usually comes to those who are too busy to be looking for it.", author: "Henry David Thoreau" },
+  { quote: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+  { quote: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" },
+  { quote: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+  { quote: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+  { quote: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" }
+];
+
+const getDailyQuote = () => {
+  const today = new Date();
+  const dayOfYear = Math.floor(
+    (today - new Date(today.getFullYear(), 0, 0)) / 1000 / 60 / 60 / 24
+  );
+  return MOTIVATIONAL_QUOTES[dayOfYear % MOTIVATIONAL_QUOTES.length];
+};
+
+export default function ChatbotOverlay({ onClose, setActiveTab }) {
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -31,8 +74,23 @@ export default function ChatbotOverlay({ onClose }) {
   const [error, setError] = useState(null);
   
   const [sessionRecommendations, setSessionRecommendations] = useState({});
+  const [quizPerformance, setQuizPerformance] = useState({});
   const [showSidebar, setShowSidebar] = useState(false);
+  const [todayMood, setTodayMood] = useState(null);
+  const [moodHistory, setMoodHistory] = useState([]);
+  const [selectedMood, setSelectedMood] = useState(null);
+  const [moodNote, setMoodNote] = useState('');
+  const [moodLoading, setMoodLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const navigate = useNavigate();
+
+  const handleSessionNavigate = (session) => {
+    if (setActiveTab) {
+      setActiveTab('PeerLearning');
+    }
+    navigate('/student/peer-learning');
+    onClose();
+  };
 
   // Dragging state
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -50,6 +108,23 @@ export default function ChatbotOverlay({ onClose }) {
   useEffect(() => {
     console.log('Conversations state updated:', conversations);
   }, [conversations]);
+
+  // Fetch today's mood and 7-day history on mount
+  useEffect(() => {
+    const fetchMoodData = async () => {
+      try {
+        const [todayRes, historyRes] = await Promise.all([
+          api.get('/mood/today'),
+          api.get('/mood/history')
+        ]);
+        setTodayMood(todayRes.data.data);
+        setMoodHistory(historyRes.data.data);
+      } catch (err) {
+        console.error('Mood fetch error:', err);
+      }
+    };
+    fetchMoodData();
+  }, []);
 
   // Initial Position: Bottom Right
   useEffect(() => {
@@ -168,14 +243,17 @@ export default function ChatbotOverlay({ onClose }) {
       
       const res = await api.post('/chat/start', { message: initialMessage });
       if (res.data.success) {
-        const { conversationId, title, messages: newMsgs, recommendedSessions, academicTopic } = res.data.data;
-        
+        const { conversationId, title, messages: newMsgs, recommendedSessions, academicTopic, quizPerformance: qp } = res.data.data;
+
         // Store recommended sessions if present
         if (recommendedSessions && recommendedSessions.length > 0) {
           setSessionRecommendations(prev => ({
             ...prev,
             [conversationId]: { sessions: recommendedSessions, topic: academicTopic }
           }));
+        }
+        if (qp) {
+          setQuizPerformance(prev => ({ ...prev, [conversationId]: qp }));
         }
 
         const newConv = {
@@ -223,14 +301,17 @@ export default function ChatbotOverlay({ onClose }) {
       
       const res = await api.post(`/chat/${activeConversationId}/message`, { message: userInput });
       if (res.data.success) {
-        const { userMessage, aiMessage, recommendedSessions, academicTopic } = res.data.data;
-        
+        const { userMessage, aiMessage, recommendedSessions, academicTopic, quizPerformance: qp } = res.data.data;
+
         // Store recommended sessions if present
         if (recommendedSessions && recommendedSessions.length > 0) {
           setSessionRecommendations(prev => ({
             ...prev,
             [activeConversationId]: { sessions: recommendedSessions, topic: academicTopic }
           }));
+        }
+        if (qp) {
+          setQuizPerformance(prev => ({ ...prev, [activeConversationId]: qp }));
         }
 
         setMessages(prev => {
@@ -274,7 +355,162 @@ export default function ChatbotOverlay({ onClose }) {
     { text: "Prepare for my exam", icon: <Target className="w-5 h-5 text-amber-500" /> }
   ];
 
-  const SessionCards = ({ sessions, topic }) => (
+  const DailyQuoteCard = () => {
+    const quote = getDailyQuote();
+    return (
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-2xl p-4 mb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-lg">✨</span>
+          <p className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+            Daily Inspiration
+          </p>
+        </div>
+        <p className="text-sm font-medium text-gray-700 italic leading-relaxed">
+          "{quote.quote}"
+        </p>
+        <p className="text-xs text-gray-500 mt-2 text-right font-semibold">
+          — {quote.author}
+        </p>
+      </div>
+    );
+  };
+
+  const MoodTrackerPanel = () => {
+    const moodEmojis = ['😢', '😔', '😕', '😐', '🙂', '😊', '😀', '😄', '🤩', '🥳'];
+    const moodLabels = ['Terrible', 'Very Bad', 'Bad', 'Okay', 'Fine', 'Good', 'Great', 'Very Good', 'Excellent', 'Amazing'];
+
+    const handleMoodSubmit = async () => {
+      if (!selectedMood) return;
+      try {
+        setMoodLoading(true);
+        const res = await api.post('/mood', { mood: selectedMood, note: moodNote });
+        setTodayMood(res.data.data);
+        setMoodHistory(prev => [...prev, res.data.data]);
+        setSelectedMood(null);
+        setMoodNote('');
+      } catch (err) {
+        console.error('Mood log error:', err);
+      } finally {
+        setMoodLoading(false);
+      }
+    };
+
+    return (
+      <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-bold text-gray-800">How are you feeling today?</h3>
+          {todayMood && (
+            <span className="text-xs bg-green-100 text-green-600 font-semibold px-2 py-1 rounded-full">
+              ✓ Logged today
+            </span>
+          )}
+        </div>
+
+        {!todayMood ? (
+          <>
+            <div className="grid grid-cols-5 gap-1 mb-3">
+              {moodEmojis.map((emoji, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedMood(index + 1)}
+                  className={`flex flex-col items-center p-2 rounded-xl transition-all ${
+                    selectedMood === index + 1
+                      ? 'bg-indigo-100 border-2 border-indigo-400 scale-110'
+                      : 'hover:bg-gray-100 border-2 border-transparent'
+                  }`}
+                >
+                  <span className="text-xl">{emoji}</span>
+                  <span className="text-[9px] text-gray-500 mt-0.5">{index + 1}</span>
+                </button>
+              ))}
+            </div>
+            {selectedMood && (
+              <p className="text-center text-xs font-semibold text-indigo-600 mb-2">
+                {moodEmojis[selectedMood - 1]} {moodLabels[selectedMood - 1]}
+              </p>
+            )}
+            <input
+              type="text"
+              placeholder="Add a note (optional)..."
+              value={moodNote}
+              onChange={e => setMoodNote(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-xs mb-2 focus:outline-none focus:border-indigo-400"
+            />
+            <button
+              onClick={handleMoodSubmit}
+              disabled={!selectedMood || moodLoading}
+              className="w-full py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl disabled:opacity-50 hover:bg-indigo-700 transition"
+            >
+              {moodLoading ? 'Saving...' : 'Log Mood'}
+            </button>
+          </>
+        ) : (
+          <div className="text-center">
+            <span className="text-3xl">{moodEmojis[todayMood.mood - 1]}</span>
+            <p className="text-xs text-gray-500 mt-1">{moodLabels[todayMood.mood - 1]} ({todayMood.mood}/10)</p>
+            {todayMood.note && <p className="text-xs text-gray-400 mt-1 italic">"{todayMood.note}"</p>}
+          </div>
+        )}
+
+        {moodHistory.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-100">
+            <p className="text-xs font-bold text-gray-600 mb-2">Last 7 Days</p>
+            <div className="flex items-end gap-1 h-12">
+              {moodHistory.slice(-7).map((entry, index) => (
+                <div key={index} className="flex-1 flex flex-col items-center gap-1">
+                  <div
+                    className={`w-full rounded-t-sm transition-all ${
+                      entry.mood >= 7 ? 'bg-green-400' :
+                      entry.mood >= 5 ? 'bg-amber-400' : 'bg-red-400'
+                    }`}
+                    style={{ height: `${(entry.mood / 10) * 48}px` }}
+                    title={`${moodLabels[entry.mood - 1]} (${entry.mood}/10)`}
+                  />
+                  <span className="text-[8px] text-gray-400">
+                    {new Date(entry.date).toLocaleDateString('en', { weekday: 'narrow' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const QuizPerformanceCard = ({ performance, category }) => (
+    <div className="mt-2 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-amber-600 text-xs font-bold uppercase tracking-wider">
+          📊 Your {category} Performance
+        </span>
+      </div>
+      <div className="flex items-center gap-4">
+        <div className="text-center">
+          <p className="text-2xl font-black text-amber-600">{performance.lastScore}%</p>
+          <p className="text-xs text-gray-500">Last Score</p>
+        </div>
+        <div className="text-center">
+          <p className="text-2xl font-black text-amber-600">{performance.averageScore}%</p>
+          <p className="text-xs text-gray-500">Average</p>
+        </div>
+        <div className="text-center">
+          <p className="text-2xl font-black text-amber-600">{performance.attempts}</p>
+          <p className="text-xs text-gray-500">Attempts</p>
+        </div>
+      </div>
+      <div className="mt-2">
+        <div className="w-full bg-amber-100 rounded-full h-2">
+          <div
+            className={`h-2 rounded-full ${performance.lastScore >= 70 ? 'bg-green-500' : performance.lastScore >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+            style={{ width: `${performance.lastScore}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const SessionCards = ({ sessions, topic, onNavigate }) => (
     <div className="mt-3 space-y-2">
       <div className="flex items-center gap-2 mb-2">
         <div className="w-5 h-5 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -285,10 +521,16 @@ export default function ChatbotOverlay({ onClose }) {
         </p>
       </div>
       {sessions.map((session) => (
-        <div key={session._id} className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 hover:border-indigo-300 transition-all">
+        <div
+          key={session._id}
+          onClick={() => onNavigate(session)}
+          className="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 hover:border-indigo-400 hover:shadow-md transition-all cursor-pointer group"
+        >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1">
-              <p className="text-sm font-bold text-gray-800">{session.topic}</p>
+              <p className="text-sm font-bold text-gray-800 group-hover:text-indigo-600 transition-colors">
+                {session.topic}
+              </p>
               <p className="text-xs text-indigo-600 font-medium">{session.category}</p>
               <div className="flex items-center gap-3 mt-2 flex-wrap">
                 <span className="flex items-center gap-1 text-xs text-gray-500">
@@ -304,16 +546,17 @@ export default function ChatbotOverlay({ onClose }) {
                   {session.mode}
                 </span>
               </div>
-              {session.mode === 'online' && session.meetingLink && (
-                <a href={session.meetingLink} target="_blank" rel="noopener noreferrer"
-                  className="text-xs text-indigo-500 hover:text-indigo-700 font-medium mt-1 block">
-                  🔗 Join Meeting
-                </a>
-              )}
-              {session.mode === 'offline' && session.location && (
-                <p className="text-xs text-gray-500 mt-1">📍 {session.location}</p>
-              )}
             </div>
+            <div className="flex-shrink-0 mt-1">
+              <span className="text-xs text-indigo-500 font-semibold group-hover:text-indigo-700">
+                View →
+              </span>
+            </div>
+          </div>
+          <div className="mt-2 pt-2 border-t border-indigo-100">
+            <p className="text-xs text-indigo-500 font-medium">
+              👆 Click to view this session in Peer Learning
+            </p>
           </div>
         </div>
       ))}
@@ -438,8 +681,12 @@ export default function ChatbotOverlay({ onClose }) {
         {/* Message Area */}
         <div className="flex-1 overflow-y-auto p-8 space-y-8 scroll-smooth thin-scrollbar bg-white">
           {!activeConversationId && messages.length === 0 && !isTyping ? (
-            <div className="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto">
-              <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">How can I help you?</h2>
+            <div className="flex flex-col max-w-lg mx-auto w-full pt-4">
+              <MoodTrackerPanel />
+              <DailyQuoteCard />
+              <div className="text-center">
+                <h2 className="text-3xl font-black text-gray-900 mb-2 tracking-tight">How can I help you?</h2>
+              </div>
             </div>
           ) : (
             <>
@@ -467,11 +714,19 @@ export default function ChatbotOverlay({ onClose }) {
                                ))
                             )}
                           </div>
-                          {!isUser && sessionRecommendations[activeConversationId] && 
+                          {!isUser && quizPerformance[activeConversationId] &&
+                            messages[messages.length - 1]?._id === msg._id && (
+                            <QuizPerformanceCard
+                              performance={quizPerformance[activeConversationId]}
+                              category={sessionRecommendations[activeConversationId]?.topic}
+                            />
+                          )}
+                          {!isUser && sessionRecommendations[activeConversationId] &&
                             messages[messages.length - 1]?._id === msg._id && (
                              <SessionCards
                                sessions={sessionRecommendations[activeConversationId].sessions}
                                topic={sessionRecommendations[activeConversationId].topic}
+                               onNavigate={handleSessionNavigate}
                              />
                           )}
                           <span className="text-[10px] font-bold text-gray-400 mt-2 block px-1 uppercase tracking-tighter">
