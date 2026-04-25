@@ -175,13 +175,12 @@ userSchema.pre("init", function (doc) {
   }
 });
 
-userSchema.pre("save", function (next) {
+userSchema.pre("save", function () {
   if (this.weakTopics) {
     this.weakTopics = this.weakTopics.map(function (t) {
-      return typeof t === "string" ? { topic: t, weight: 0 } : t;
+      return typeof t === "string" ? { topic: t, weight: 0.5 } : t;
     });
   }
-  next();
 });
 
 module.exports = mongoose.model("User", userSchema);

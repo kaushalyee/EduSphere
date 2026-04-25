@@ -19,7 +19,6 @@ export default function AdminSidebar({
 }) {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
 
   const menuItems = [
     { id: "Overview",      title: "Dashboard Overview",      icon: LayoutDashboard },
