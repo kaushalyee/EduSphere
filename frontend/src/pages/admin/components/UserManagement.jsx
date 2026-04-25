@@ -85,10 +85,7 @@ export default function UserManagement() {
       {/* Header & Tabs */}
       <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">User Management</h2>
-          <p className="text-gray-500 font-medium mt-1">Manage all students and tutors registered on the EduSphere platform.</p>
-          
-          <div className="flex items-center gap-2 mt-6 bg-gray-100 p-1.5 rounded-2xl w-fit">
+          <div className="flex items-center gap-2 bg-gray-100 p-1.5 rounded-2xl w-fit">
             <button 
               onClick={() => setActiveTab("student")}
               className={`px-6 py-2.5 rounded-xl font-bold transition-all ${activeTab === "student" ? "bg-white text-primary-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}

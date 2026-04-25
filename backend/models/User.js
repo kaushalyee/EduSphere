@@ -94,6 +94,58 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+
+    // Verification fields
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'resubmission_required'],
+      default: 'approved',
+    },
+    studentIdPhoto: {
+      type: String,
+      default: null,
+    },
+    supportingDocument: {
+      type: String,
+      default: null,
+    },
+    documentType: {
+      type: String,
+      enum: ['exam_timetable', 'enrollment_letter', 'course_registration', null],
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      default: null,
+    },
+    resubmissionNote: {
+      type: String,
+      default: null,
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    verifiedAt: {
+      type: Date,
+      default: null,
+    },
+    verificationHistory: [
+      {
+        status: String,
+        reason: String,
+        note: String,
+        changedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'User',
+        },
+        changedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     rewardPoints: {
       type: Number,
       default: 0,
@@ -123,13 +175,12 @@ userSchema.pre("init", function (doc) {
   }
 });
 
-userSchema.pre("save", function (next) {
+userSchema.pre("save", function () {
   if (this.weakTopics) {
     this.weakTopics = this.weakTopics.map(function (t) {
-      return typeof t === "string" ? { topic: t, weight: 0 } : t;
+      return typeof t === "string" ? { topic: t, weight: 0.5 } : t;
     });
   }
-  next();
 });
 
 module.exports = mongoose.model("User", userSchema);

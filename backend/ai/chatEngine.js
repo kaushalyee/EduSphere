@@ -1,68 +1,82 @@
 const mentalHealthData = require('./mentalHealthData.js');
 
 const ACADEMIC_KEYWORDS = {
+  'academic_ai': [
+    'ai', 'machine learning', 'neural network', 'deep learning',
+    'regression', 'classification', 'data science', 'nlp',
+    'computer vision', 'reinforcement learning', 'tensorflow',
+    'artificial intelligence', 'ml', 'weak in ai', 'weak in machine learning',
+    'ai and machine learning', 'machine learning algorithms'
+  ],
   'academic_dsa': [
     'dsa', 'data structure', 'algorithm', 'linked list', 'array',
     'stack', 'queue', 'tree', 'graph', 'sorting', 'searching',
-    'recursion', 'binary search', 'dynamic programming', 'hashing'
+    'recursion', 'binary search', 'dynamic programming', 'hashing',
+    'weak in dsa', 'weak in algorithms'
   ],
   'academic_math': [
     'math', 'mathematics', 'calculus', 'algebra', 'discrete',
     'probability', 'statistics', 'logic', 'graph theory', 'set theory',
-    'number theory', 'combinatorics', 'matrices', 'vectors'
+    'number theory', 'combinatorics', 'matrices', 'vectors',
+    'weak in math', 'weak in mathematics'
   ],
-  'academic_programming': [
-    'programming', 'coding', 'java', 'python', 'javascript',
-    'typescript', 'kotlin', 'swift', 'golang', 'rust',
-    'c programming', 'c language', 'c++', 'coding in c',
-    'weak in c', 'learn java', 'learn python'
+  'academic_networking': [
+    'network', 'networking', 'osi', 'tcp', 'ip address',
+    'protocol', 'subnet', 'router', 'dns', 'http',
+    'ip model', 'computer network', 'lan', 'wan', 'mac address',
+    'weak in networking', 'weak in networks'
   ],
   'academic_dbms': [
     'database', 'dbms', 'sql', 'query', 'normalization',
     'join', 'relational', 'mongodb', 'table', 'schema',
-    'er diagram', 'transactions', 'indexing'
-  ],
-  'academic_networking': [
-    'network', 'networking', 'osi', 'tcp', 'ip address',
-    'protocol', 'subnet', 'router', 'dns', 'http', 'firewall',
-    'ip model', 'computer network', 'lan', 'wan', 'mac address'
-  ],
-  'academic_oop': [
-    'oop', 'object oriented', 'class', 'inheritance',
-    'polymorphism', 'encapsulation', 'abstraction', 'interface',
-    'object', 'method overriding', 'method overloading'
+    'er diagram', 'transactions', 'indexing',
+    'weak in database', 'weak in sql'
   ],
   'academic_web': [
     'web', 'html', 'css', 'react', 'node', 'frontend',
     'backend', 'web development', 'api', 'rest api',
-    'javascript framework', 'vue', 'angular', 'express'
+    'javascript framework', 'vue', 'angular', 'express',
+    'weak in web', 'weak in html'
   ],
   'academic_os': [
     'operating system', 'os', 'process', 'thread',
     'cpu scheduling', 'memory management', 'deadlock',
-    'virtual memory', 'file system', 'semaphore', 'mutex'
+    'virtual memory', 'file system', 'semaphore', 'mutex',
+    'weak in os', 'weak in operating systems'
   ],
-  'academic_se': [
-    'software engineering', 'sdlc', 'agile', 'scrum',
-    'design pattern', 'solid', 'testing', 'uml',
-    'requirement analysis', 'software design', 'waterfall'
+  'academic_oop': [
+    'oop', 'object oriented', 'class', 'inheritance',
+    'polymorphism', 'encapsulation', 'abstraction', 'interface',
+    'object', 'method overriding', 'method overloading',
+    'weak in oop', 'weak in object oriented'
   ],
   'academic_cybersecurity': [
     'cybersecurity', 'security', 'encryption', 'hacking',
     'firewall', 'authentication', 'sql injection', 'xss',
     'cryptography', 'cyber', 'network security', 'malware',
-    'firewalls', 'ids', 'intrusion detection'
+    'firewalls', 'ids', 'intrusion detection',
+    'weak in security', 'weak in cybersecurity'
   ],
-  'academic_ai': [
-    'ai', 'machine learning', 'neural network', 'deep learning',
-    'regression', 'classification', 'data science', 'nlp',
-    'computer vision', 'reinforcement learning', 'tensorflow'
+  'academic_se': [
+    'software engineering', 'sdlc', 'agile', 'scrum',
+    'design pattern', 'solid', 'testing', 'uml',
+    'requirement analysis', 'software design', 'waterfall',
+    'weak in software engineering', 'weak in sdlc'
   ],
   'academic_devops': [
     'devops', 'cloud', 'linux', 'docker', 'kubernetes',
     'aws', 'azure', 'gcp', 'shell', 'bash', 'git',
     'ci cd', 'linux fundamentals', 'cloud platform',
-    'linux basics', 'ubuntu', 'server'
+    'linux basics', 'ubuntu', 'server',
+    'weak in linux', 'weak in devops', 'weak in cloud'
+  ],
+  'academic_programming': [
+    'programming', 'coding', 'java', 'python', 'javascript',
+    'typescript', 'kotlin', 'swift', 'golang', 'rust',
+    'c programming', 'c language', 'c++', 'coding in c',
+    'weak in c', 'learn java', 'learn python',
+    'weak in programming', 'weak in coding', 'weak in java',
+    'weak in python'
   ]
 };
 
@@ -163,35 +177,48 @@ function classifyIntent(userInput) {
 }
 
 function getResponse(userInput) {
+  // Step 1: Check academic keywords FIRST
+  const academicCheck = extractAcademicTopic(userInput);
+  if (academicCheck.detected) {
+    const academicIntent = mentalHealthData.intents.find(i => i.tag === academicCheck.tag);
+    if (academicIntent) {
+      const randomIndex = Math.floor(Math.random() * academicIntent.responses.length);
+      return {
+        response: academicIntent.responses[randomIndex],
+        tag: academicCheck.tag,
+        confidence: 1.0,
+        followUp: academicIntent.followUp || ''
+      };
+    }
+  }
+
+  // Step 2: Fall back to pattern matching for mental health
   const classification = classifyIntent(userInput);
   const matchedIntent = mentalHealthData.intents.find(i => i.tag === classification.tag);
-  
+
   let chosenResponse = "I'm not sure how to respond to that.";
   let followUp = classification.followUp;
-  
-  if (matchedIntent && matchedIntent.responses && matchedIntent.responses.length > 0) {
+
+  if (matchedIntent?.responses?.length > 0) {
     const randomIndex = Math.floor(Math.random() * matchedIntent.responses.length);
     chosenResponse = matchedIntent.responses[randomIndex];
-    followUp = matchedIntent.followUp || "";
+    followUp = matchedIntent.followUp || '';
   }
-  
+
   let finalResponse = chosenResponse;
-  
-  if (classification.tag !== "unknown") {
-    if (classification.confidence > 0.7) {
-      // High confidence, respond normally
-    } else if (classification.confidence >= 0.4 && classification.confidence <= 0.7) {
-      finalResponse = "I think you might be feeling... " + chosenResponse;
-    } else if (classification.confidence > 0.20 && classification.confidence < 0.4) {
+  if (classification.tag !== 'unknown') {
+    if (classification.confidence >= 0.4 && classification.confidence <= 0.7) {
+      finalResponse = 'I think you might be feeling... ' + chosenResponse;
+    } else if (classification.confidence > 0.25 && classification.confidence < 0.4) {
       finalResponse = "I'm not sure I fully understand, but... " + chosenResponse;
     }
   }
-  
+
   return {
     response: finalResponse,
     tag: classification.tag,
     confidence: classification.confidence,
-    followUp: followUp
+    followUp
   };
 }
 
@@ -222,45 +249,27 @@ function generateConversationTitle(firstMessage) {
 
 function extractAcademicTopic(userInput) {
   const cleaned = preprocessInput(userInput).toLowerCase();
+  const words = cleaned.split(' ');
 
-  // Step 1: Direct keyword matching (most accurate)
+  // Step 1: ALWAYS check academic keywords FIRST
   for (const [tag, keywords] of Object.entries(ACADEMIC_KEYWORDS)) {
     for (const keyword of keywords) {
-      const words = cleaned.split(' ');
-      let isMatch = false;
-      if (keyword.trim().length === 1) {
-        if (words.includes(keyword.trim())) isMatch = true;
+      const kw = keyword.trim().toLowerCase();
+      if (kw.length === 1) {
+        if (words.includes(kw)) {
+          const matchedIntent = mentalHealthData.intents.find(i => i.tag === tag);
+          if (matchedIntent?.category) {
+            return { detected: true, category: matchedIntent.category, tag, confidence: 1.0 };
+          }
+        }
       } else {
-        if (cleaned.includes(keyword)) isMatch = true;
-      }
-
-      if (isMatch) {
-        const matchedIntent = mentalHealthData.intents.find(i => i.tag === tag);
-        if (matchedIntent && matchedIntent.category) {
-          return {
-            detected: true,
-            category: matchedIntent.category,
-            tag: tag,
-            confidence: 1.0
-          };
+        if (cleaned.includes(kw)) {
+          const matchedIntent = mentalHealthData.intents.find(i => i.tag === tag);
+          if (matchedIntent?.category) {
+            return { detected: true, category: matchedIntent.category, tag, confidence: 1.0 };
+          }
         }
       }
-    }
-  }
-
-  // Step 2: Fall back to intent classification
-  const classification = classifyIntent(userInput);
-  if (classification.tag && classification.tag.startsWith('academic_')) {
-    const matchedIntent = mentalHealthData.intents.find(
-      i => i.tag === classification.tag
-    );
-    if (matchedIntent && matchedIntent.category) {
-      return {
-        detected: true,
-        category: matchedIntent.category,
-        tag: classification.tag,
-        confidence: classification.confidence
-      };
     }
   }
 
