@@ -15,6 +15,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes");
 const gameRoutes = require("./routes/gameRoutes");
 const rewardRoutes = require("./routes/rewardRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const moodRoutes = require("./routes/moodRoutes");
 
 const app = express();
 
@@ -44,6 +45,7 @@ app.use("/api/analytics", analyticsRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/rewards", rewardRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/mood", moodRoutes);
 app.use("/api/activity", require("./routes/activityRoutes"));
 app.use("/api/companions", require("./routes/companionRoutes"));
 app.use("/api/leaderboard", require("./routes/leaderboardRoutes"));
