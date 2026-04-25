@@ -274,7 +274,6 @@ export default function CreateSession({
         </div>
       )}
 
-      <h2 className="text-3xl font-bold text-slate-900 mb-2">Create Session</h2>
       <p className="text-slate-500 mb-8">
         Add a new peer learning session for students.
       </p>
@@ -537,6 +536,64 @@ export default function CreateSession({
           </button>
         </div>
       </form>
+      {/* ── Instructions Card ── */}
+<div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 space-y-5">
+  <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+    📋 Session Creation Guidelines
+  </h3>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+    {/* Quiz */}
+    <div className="bg-white rounded-xl p-4 border border-blue-100">
+      <p className="text-sm font-bold text-blue-700 mb-2">📝 Quiz Setup</p>
+      <ul className="text-sm text-slate-600 space-y-1.5">
+        <li>✅ Use <span className="font-semibold">Microsoft Forms</span> only — other platforms may not work</li>
+        <li>✅ Questions must be <span className="font-semibold">MCQ (multiple choice)</span> format</li>
+        <li>✅ Total marks must add up to <span className="font-semibold">100</span></li>
+        <li>✅ Make sure the form is set to <span className="font-semibold">public / anyone with link</span></li>
+      </ul>
+    </div>
+
+    {/* Meeting Link */}
+    <div className="bg-white rounded-xl p-4 border border-blue-100">
+      <p className="text-sm font-bold text-blue-700 mb-2">🔗 Meeting Link</p>
+      <ul className="text-sm text-slate-600 space-y-1.5">
+        <li>✅ Use <span className="font-semibold">Zoom</span> or <span className="font-semibold">Microsoft Teams</span> links only</li>
+        <li>✅ Google Meet links are also accepted</li>
+        <li>⚠️ Other platforms may not be accessible to all students</li>
+        <li>✅ Test your link before the session starts</li>
+      </ul>
+    </div>
+
+    {/* Timing */}
+    <div className="bg-white rounded-xl p-4 border border-blue-100">
+      <p className="text-sm font-bold text-blue-700 mb-2">🕐 Choosing a Time</p>
+      <ul className="text-sm text-slate-600 space-y-1.5">
+        <li>✅ Prefer <span className="font-semibold">evenings (6PM–9PM)</span> on weekdays</li>
+        <li>✅ <span className="font-semibold">Weekend mornings & afternoons</span> have the highest attendance</li>
+        <li>⚠️ Avoid scheduling during common lecture hours</li>
+        <li>✅ Minimum duration is <span className="font-semibold">30 minutes</span></li>
+      </ul>
+    </div>
+
+    {/* Description */}
+    <div className="bg-white rounded-xl p-4 border border-blue-100">
+      <p className="text-sm font-bold text-blue-700 mb-2">📄 Writing a Good Description</p>
+      <ul className="text-sm text-slate-600 space-y-1.5">
+        <li>✅ Mention <span className="font-semibold">what topics will be covered</span></li>
+        <li>✅ List any <span className="font-semibold">prerequisites</span> students should know beforehand</li>
+        <li>✅ Suggest <span className="font-semibold">resources to read</span> before the session</li>
+        <li>✅ Keep it clear and concise — students rely on this to prepare</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <p className="text-xs text-slate-400 pt-1">
+    Following these guidelines ensures a smooth experience for both tutors and students.
+  </p>
+</div>
     </div>
   );
 }

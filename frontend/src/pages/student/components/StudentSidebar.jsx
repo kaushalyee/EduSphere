@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
 export default function StudentSidebar({
-  isSidebarOpen,
   activeTab,
   setActiveTab,
   options,
@@ -12,12 +11,10 @@ export default function StudentSidebar({
   const navigate = useNavigate();
   const location = useLocation();
   const { logout } = useAuth();
-  const isRewardsPage = location.pathname.startsWith("/student/rewards");
-  const isActive = (path) => location.pathname === path;
 
   return (
     <aside
-      className="sidebar bg-white border-r border-gray-200 h-screen flex flex-col"
+      className="sidebar bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col shrink-0"
     >
       {/* Logo */}
       <button 
@@ -81,7 +78,7 @@ export default function StudentSidebar({
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-800 border-l-4 border-transparent"
                   }`}
                 >
-                  <div className={`flex-shrink-0 ${active ? "text-blue-600" : "text-gray-400"}`}>
+                  <div className="flex-shrink-0 text-black">
                     {opt.icon}
                   </div>
                   <span className="nav-text text-sm font-medium">{opt.title}</span>

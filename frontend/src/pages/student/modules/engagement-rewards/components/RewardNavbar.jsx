@@ -43,13 +43,6 @@ export default function RewardNavbar() {
           })}
         </nav>
 
-        {/* Right Section: Notifications */}
-        <div className="flex items-center">
-          <div className="p-2 rounded-full hover:bg-gray-100 cursor-pointer transition-colors relative text-gray-500 group">
-            <Bell size={20} className="group-hover:text-blue-600" />
-            <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-          </div>
-        </div>
       </div>
     </header>
   );

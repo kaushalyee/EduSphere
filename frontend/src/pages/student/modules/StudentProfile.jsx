@@ -43,7 +43,12 @@ export default function StudentProfile() {
         setYear(u.year || "");
         setSemester(u.semester || "");
         setWeakCategories(u.weakCategories || []);
-        setWeakTopics(u.weakTopics || []);
+        // Normalize: handle both old string[] and new {topic,weight}[] formats
+        setWeakTopics(
+          (u.weakTopics || []).map((t) =>
+            typeof t === "string" ? { topic: t, weight: 0.5 } : t
+          )
+        );
       } catch (err) {
         setError("Failed to load profile");
       } finally {
@@ -78,18 +83,23 @@ export default function StudentProfile() {
     );
   };
 
+  // FIX 1: add as {topic, weight} object
   const addTopic = () => {
-    if (!selectedTopic || weakTopics.includes(selectedTopic)) return;
-    setWeakTopics((prev) => [...prev, selectedTopic]);
+    if (!selectedTopic || weakTopics.some((t) => t.topic === selectedTopic)) return;
+    setWeakTopics((prev) => [...prev, { topic: selectedTopic, weight: 0.5 }]);
     setSelectedTopic("");
   };
 
+  // FIX 2: filter by t.topic
   const removeTopic = (topic) => {
-    setWeakTopics((prev) => prev.filter((t) => t !== topic));
+    setWeakTopics((prev) => prev.filter((t) => t.topic !== topic));
   };
 
+  // FIX 3: filter available topics using t.topic
   const availableTopics = selectedCategory
-    ? TOPICS_BY_CATEGORY[selectedCategory]?.filter((t) => !weakTopics.includes(t)) || []
+    ? TOPICS_BY_CATEGORY[selectedCategory]?.filter(
+        (t) => !weakTopics.some((w) => w.topic === t)
+      ) || []
     : [];
 
   if (loading) {
@@ -243,21 +253,21 @@ export default function StudentProfile() {
           </button>
         </div>
 
-        {/* Current weak topics */}
+        {/* FIX 4: render item.topic instead of item directly */}
         {weakTopics.length === 0 ? (
           <div className="rounded-xl border border-slate-100 bg-slate-50 px-4 py-4 text-sm text-slate-400 text-center">
             No weak topics added yet — add topics to get personalized session recommendations
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {weakTopics.map((topic) => (
+            {weakTopics.map((item) => (
               <span
-                key={topic}
+                key={item.topic}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium border border-blue-100"
               >
-                {topic}
+                {item.topic}
                 <button
-                  onClick={() => removeTopic(topic)}
+                  onClick={() => removeTopic(item.topic)}
                   className="hover:text-red-500 transition"
                 >
                   <X className="w-3.5 h-3.5" />

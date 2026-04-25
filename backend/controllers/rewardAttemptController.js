@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 const User = require("../models/User");
-const Wallet = require("../models/Wallet");
 const AttemptCollection = require("../models/AttemptCollection");
 const RewardTransaction = require("../models/RewardTransaction");
 const GameAttempt = require("../models/GameAttempt");
@@ -9,7 +8,7 @@ const {
   getTodayDateKey,
   normalizeDailyAttemptState,
 } = require("../services/rewardEngineService");
-const { toUserObjectId } = require("../services/walletService");
+const { getOrCreateWallet, toUserObjectId } = require("../services/walletService");
 
 const getAttemptConfig = async (req, res) => {
   try {
@@ -20,7 +19,7 @@ const getAttemptConfig = async (req, res) => {
 
     const [user, wallet] = await Promise.all([
       User.findById(userId),
-      Wallet.findOne({ userId: toUserObjectId(userId) }),
+      getOrCreateWallet(userId),
     ]);
 
     if (!user) {
@@ -29,7 +28,16 @@ const getAttemptConfig = async (req, res) => {
 
     const resetState = normalizeDailyAttemptState(user);
     if (resetState.reset) {
-      await user.save();
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            attemptsUsedToday: user.attemptsUsedToday,
+            lastAttemptDate: user.lastAttemptDate,
+          },
+        },
+        { runValidators: false }
+      );
     }
 
     const walletBalance = Number(wallet?.balance ?? 0);
@@ -67,16 +75,12 @@ const unlockAttempt = async (req, res) => {
       const uid = toUserObjectId(userId);
       const [user, wallet] = await Promise.all([
         User.findById(uid).session(session),
-        Wallet.findOne({ userId: uid }).session(session),
+        getOrCreateWallet(uid, { session }),
       ]);
 
       if (!user) throw new Error("User not found");
-      if (!wallet) throw new Error("Wallet not found");
 
-      const resetState = normalizeDailyAttemptState(user);
-      if (resetState.reset) {
-        await user.save({ session });
-      }
+      normalizeDailyAttemptState(user);
 
       const config = await buildAttemptConfig({
         user,
@@ -95,7 +99,19 @@ const unlockAttempt = async (req, res) => {
       user.attemptsUsedToday += 1;
       user.lastAttemptDate = new Date();
 
-      await Promise.all([wallet.save({ session }), user.save({ session })]);
+      await Promise.all([
+        wallet.save({ session }),
+        User.updateOne(
+          { _id: user._id },
+          {
+            $set: {
+              attemptsUsedToday: user.attemptsUsedToday,
+              lastAttemptDate: user.lastAttemptDate,
+            },
+          },
+          { session, runValidators: false }
+        ),
+      ]);
 
       await RewardTransaction.create(
         [

@@ -212,7 +212,6 @@ export default function StudentDashboard() {
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab(pathname));
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showProfile, setShowProfile] = useState(false); // ← add this
 
@@ -256,64 +255,33 @@ export default function StudentDashboard() {
     {
       id: "Dashboard",
       title: "Dashboard Overview",
-      icon: <LayoutDashboard className="w-5 h-5" />,
+      icon: <LayoutDashboard className="w-5 h-5 text-black" />,
     },
     {
       id: "PeerLearning",
       title: "Peer Learning & Kuppi",
-      icon: <Users className="w-5 h-5" />,
+      icon: <Users className="w-5 h-5 text-black" />,
     },
     {
       id: "Market",
-      title: "Market Place",
-      icon: <ShoppingBag className="w-5 h-5" />,
+      title: "Student Marketplace",
+      icon: <ShoppingBag className="w-5 h-5 text-black" />,
     },
     {
       id: "Progress",
       title: "Progress Tracking",
-      icon: <TrendingUp className="w-5 h-5" />,
+      icon: <TrendingUp className="w-5 h-5 text-black" />,
     },
     {
       id: "Rewards",
       title: "Rewards & Game",
-      icon: <Award className="w-5 h-5" />,
+      icon: <Award className="w-5 h-5 text-black" />,
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <StudentSidebar
-        isSidebarOpen={isSidebarOpen}
-        activeTab={activeTab}
-        setActiveTab={handleTabChange}
-        options={options}
-      />
-
-      <div className="main-content flex-1 min-w-0 flex flex-col">
-        <StudentHeader
-          setIsSidebarOpen={setIsSidebarOpen}
-          activeTab={activeTab}
-          options={options}
-          handleLogout={handleLogout}
-          onProfileClick={() => setShowProfile(true)} // ← pass this
-        />
-
-        <main className="flex-1 p-6 overflow-auto">
-          {/* ── Show profile page when triggered from header ── */}
-          {showProfile ? (
-            <StudentProfile />
-          ) : (
-            <StudentContent
-              activeTab={activeTab}
-              options={options}
-              setActiveTab={handleTabChange}
-            />
-          )}
-        </main>
-      </div>
-
-      <ChatbotButton isOpen={isChatOpen} toggleChat={() => setIsChatOpen(!isChatOpen)} />
-      {isChatOpen && <ChatbotOverlay onClose={() => setIsChatOpen(false)} />}
+    <div className="p-0">
+      <StudentContent activeTab={activeTab} options={options} setActiveTab={setActiveTab} />
     </div>
   );
 }

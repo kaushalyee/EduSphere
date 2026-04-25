@@ -11,9 +11,12 @@ import {
   CheckCircle
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
+import useAttemptConfig from "../../../hooks/useAttemptConfig";
+import PuzzleChallengeCard from "../../../components/rewards/PuzzleChallengeCard";
 
 export default function DashboardOverview({ setActiveTab }) {
   const { user } = useAuth();
+  const { config } = useAttemptConfig();
 
   const stats = [
     {
@@ -165,37 +168,13 @@ export default function DashboardOverview({ setActiveTab }) {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Recent Activity</h2>
-        <div className="space-y-4">
-          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-800">Completed Database Design Assignment</p>
-              <p className="text-gray-600 text-sm">Score: 92% • 2 hours ago</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-800">Joined Programming Kuppi Session</p>
-              <p className="text-gray-600 text-sm">With 5 other students • Yesterday</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-              <Award className="w-5 h-5 text-orange-600" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-800">Achieved 7-Day Study Streak</p>
-              <p className="text-gray-600 text-sm">New personal record • 2 days ago</p>
-            </div>
-          </div>
+      {/* Puzzle Challenge Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <PuzzleChallengeCard 
+            gameAttempts={config?.availableAttempts ?? 0} 
+            hideBadge={true}
+          />
         </div>
       </div>
     </div>

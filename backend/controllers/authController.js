@@ -3,6 +3,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { sendRegistrationEmail } = require('../services/emailService');
+const { getOrCreateWallet } = require("../services/walletService");
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "7d" });
@@ -88,7 +89,11 @@ exports.register = async (req, res) => {
       year: role === "student" ? Number(year) : null,
       semester: role === "student" ? Number(semester) : null,
       weakCategories: role === "student" ? weakCategories : [],
-      weakTopics: role === "student" ? (weakTopics || []) : [],
+      weakTopics: role === "student"
+  ? (weakTopics || []).map((topic) =>
+      typeof topic === "string" ? { topic, weight: 0.5 } : topic
+    )
+  : [],
     });
 
     // Attach uploaded verification documents if present
@@ -107,12 +112,13 @@ exports.register = async (req, res) => {
 
     const token = signToken(created._id);
 
-    // Send verification-pending email to new students (non-blocking)
-    if (created.role === 'student') {
-      sendRegistrationEmail(created.email, created.name).catch((err) =>
-        console.error('Registration email failed:', err.message)
-      );
-    }
+if (created.role === 'student') {
+  sendRegistrationEmail(created.email, created.name).catch((err) =>
+    console.error('Registration email failed:', err.message)
+  );
+  await getOrCreateWallet(created._id);
+}
+const user = await User.findById(created._id);
 
     return res.status(201).json({
       success: true,
@@ -143,6 +149,12 @@ exports.login = async (req, res) => {
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+
+    if (user.role === "student") {
+      const wallet = await getOrCreateWallet(user._id);
+      user.rewardPoints = Number(wallet?.balance ?? 0);
+      user.attemptsUsedToday = Number.isFinite(user.attemptsUsedToday) ? user.attemptsUsedToday : 0;
+    }
 
     const token = signToken(user._id);
 

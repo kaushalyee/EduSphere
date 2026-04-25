@@ -71,6 +71,7 @@ export default function useWallet() {
       if (latestRequestRef.current !== requestId) {
         return;
       }
+      setBalance(0);
       setError(err?.response?.data?.message || "Failed to load wallet");
     } finally {
       if (latestRequestRef.current === requestId) {

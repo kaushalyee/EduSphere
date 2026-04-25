@@ -218,10 +218,14 @@ export default function PeerLearning() {
   );
 
   const fulfilledRequests = myRequests.filter(
-    (request) => request.status === "fulfilled"
+    (request) =>
+      request.status === "fulfilled" &&
+      request.matchedSessionId?.status !== "completed" &&
+      request.matchedSessionId?.status !== "cancelled"
   );
   const handleViewMatchedSession = (matchedSessionId) => {
-    setHighlightedSessionId(matchedSessionId);
+    const id = matchedSessionId?._id || matchedSessionId;
+    setHighlightedSessionId(id);
     setActiveTab("sessions");
   };
 
@@ -641,75 +645,116 @@ export default function PeerLearning() {
 }
 
 function SessionCard({ session, formatSessionDate, isHighlighted }) {
-  const formattedDate = formatSessionDate(session.date);
+  const isRecommended = session.isRecommended;
 
   return (
     <div
-      className={`rounded-2xl p-5 transition-all flex gap-4 ${isHighlighted
-        ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
-        : "bg-white border border-slate-200"
+      className={`rounded-2xl p-5 transition-all flex gap-4 border ${isHighlighted
+          ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
+          : isRecommended
+            ? "bg-blue-50 border-blue-200 shadow-[0_0_0_1px_rgba(47,102,224,0.08),0_8px_24px_rgba(47,102,224,0.12)]"
+            : "bg-white border-slate-200"
         }`}
     >
       {/* DATE BOX */}
-      <div className="flex flex-col items-center justify-center bg-[#2F66E0] text-white rounded-xl px-4 py-3 min-w-[80px]">
+      <div
+        className={`flex flex-col items-center justify-center text-white rounded-xl px-4 py-3 min-w-[80px] ${isRecommended ? "bg-[#2F66E0]" : "bg-[#2F66E0]"
+          }`}
+      >
         <p className="text-xs uppercase">Date</p>
         <p className="text-lg font-bold">
           {new Date(session.date).getDate()}
         </p>
         <p className="text-xs">
-          {new Date(session.date).toLocaleString("default", {
-            month: "short",
-          })}
+          {new Date(session.date).toLocaleString("default", { month: "short" })}
         </p>
       </div>
 
-      {/*  CONTENT */}
+      {/* CONTENT */}
       <div className="flex-1">
-        {/* Highlight badge */}
-        {isHighlighted && (
-          <span className="text-xs bg-[#2F66E0] text-white px-2 py-1 rounded-full">
-            Matched Session
-          </span>
-        )}
-        {/* Match % badge  */}
-        {session.isRecommended && (
-          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">
-            {Math.round(session.recommendationScore * 100)}% match
-          </span>
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          {isHighlighted && (
+            <span className="text-xs bg-[#2F66E0] text-white px-2 py-1 rounded-full">
+              Matched Session
+            </span>
+          )}
+
+          {isRecommended && (
+            <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full font-semibold">
+              Recommended
+            </span>
+          )}
+
+          {session.isRecommended && (
+            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-bold">
+              {Math.round(session.recommendationScore * 100)}% match
+            </span>
+          )}
+        </div>
+
+        {/* Recommendation reason */}
+        {session.recommendationReason && (
+          <p className="mt-2 text-xs text-blue-700 bg-white/70 border border-blue-100 px-3 py-2 rounded-lg">
+            {session.recommendationReason}
+          </p>
         )}
 
+        {/* Prerequisite advice */}
+        {session.prerequisiteAdvice && (
+          <div className="mt-2 flex items-start gap-2 bg-amber-50 border border-amber-200 px-3 py-2 rounded-lg">
+            <span className="text-base mt-0.5">💡</span>
+            <div>
+              <p className="text-xs font-semibold text-amber-700">
+                Study{" "}
+                <span className="font-bold">
+                  {session.prerequisiteAdvice.topic}
+                </span>{" "}
+                first
+              </p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Students who studied this first scored{" "}
+                <span className="font-bold">
+                  {Math.round(session.prerequisiteAdvice.improvementRate)}% higher
+                </span>{" "}
+                in this topic
+                <span className="text-amber-400 ml-1">
+                  ({session.prerequisiteAdvice.sampleSize} students)
+                </span>
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Title */}
-        <h3 className="text-lg font-bold text-slate-900 mt-1">
+        <h3 className="text-lg font-bold text-slate-900 mt-3">
           {session.topic}
         </h3>
 
-        <p className="text-sm text-blue-600 font-medium">
-          {session.category}
-        </p>
-
-        {/* TIME BIG */}
+        <p className="text-sm text-blue-600 font-medium">{session.category}</p>
+        {session.description && (
+          <p className="text-sm text-slate-500 mt-2 leading-relaxed">{session.description}</p>
+        )}
+        {/* Time */}
         <div className="flex items-center gap-4 mt-3">
-          <p className="text-xl font-bold text-[#2F66E0]">
-            {session.time}
-          </p>
-
+          <p className="text-xl font-bold text-[#2F66E0]">{session.time}</p>
           <span className="text-sm bg-gray-100 px-2 py-1 rounded-lg">
             {session.duration} mins
           </span>
         </div>
 
-        {/* DETAILS */}
+        {/* Details */}
         <div className="mt-3 text-sm text-slate-600 space-y-1">
-          <p>👨‍🏫 {session.tutorId?.name || "N/A"}</p>
+          <p>🧑🏿‍🏫 {session.tutorId?.name || "N/A"}</p>
           <p>📍 {session.mode}</p>
-
           {session.mode === "offline" && session.location && (
             <p>📌 {session.location}</p>
           )}
+          {session.capacity && (
+            <p>👥 Capacity: {session.capacity}</p>
+          )}
         </div>
 
-        {/* LINKS */}
+        {/* Links */}
         <div className="mt-4 flex gap-3 flex-wrap">
           {session.meetingLink && (
             <a
@@ -721,7 +766,6 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
               Join
             </a>
           )}
-
           {session.quizLink && (
             <a
               href={session.quizLink}

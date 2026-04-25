@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const { getOrCreateWallet } = require("../services/walletService");
 
 /**
  * Helper to check if it's a new day for GP reset (Asia/Colombo)
@@ -42,7 +43,9 @@ exports.completeOnboarding = async (req, res) => {
     user.year = year;
     user.semester = semester;
     user.weakCategories = weakCategories;
-    user.weakTopics = weakTopics;
+    user.weakTopics = (weakTopics || []).map((topic) =>
+  typeof topic === "string" ? { topic, weight: 0.5 } : topic
+);
 
     await user.save();
 
@@ -102,15 +105,20 @@ exports.getMe = async (req, res) => {
         { new: true }
       );
       if (updated) {
+        // Sync Reward Points from Wallet if they exist
+        const wallet = await getOrCreateWallet(updated._id);
+        updated.rewardPoints = Number(wallet?.balance ?? 0);
         return res.status(200).json(updated);
       }
-      // If someone else reset it, we just re-fetch to get current state
-      const refreshed = await User.findById(req.user.id);
-      return res.status(200).json(refreshed);
     }
     
+    // Sync Reward Points from Wallet
+    const wallet = await getOrCreateWallet(user._id);
+    user.rewardPoints = Number(wallet?.balance ?? 0);
+    user.attemptsUsedToday = Number.isFinite(user.attemptsUsedToday) ? user.attemptsUsedToday : 0;
+
     // DEBUG LOG (PART 6)
-    console.log("User:", user._id, "GP:", user.totalGP);
+    console.log("User:", user._id, "GP:", user.totalGP, "RP:", user.rewardPoints);
     
     res.status(200).json(user);
   } catch (error) {
@@ -139,10 +147,12 @@ exports.updateProfile = async (req, res) => {
     if (year !== undefined) user.year = year;
     if (semester !== undefined) user.semester = semester;
     if (weakCategories !== undefined) user.weakCategories = weakCategories;
-    if (weakTopics !== undefined) user.weakTopics = weakTopics;
-
+if (weakTopics !== undefined) {
+  user.weakTopics = (weakTopics || []).map((topic) =>
+    typeof topic === "string" ? { topic, weight: 0.5 } : topic
+  );
+}
     await user.save();
-
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",

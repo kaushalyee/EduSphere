@@ -7,6 +7,7 @@ import RedirectIfAuth from "./components/RedirectIfAuth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import StudentDashboard from "./pages/student/StudentDashboard";
+import StudentLayout from "./pages/student/StudentLayout";
 import LearningTrajectory from "./pages/student/LearningTrajectory";
 import RewardsLayout from "./pages/student/modules/engagement-rewards/components/RewardsLayout";
 import RewardsDashboard from "./pages/student/modules/engagement-rewards/RewardsDashboard";
@@ -46,67 +47,27 @@ export default function App() {
       />
 
       <Route
-        path="/student/dashboard"
+        path="/student"
         element={
           <ProtectedRoute role="student">
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/learning-trajectory"
-        element={
-          <ProtectedRoute role="student">
-            <LearningTrajectory />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/progress-tracking"
-        element={
-          <ProtectedRoute role="student">
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/marketplace"
-        element={
-          <ProtectedRoute role="student">
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/peer-learning"
-        element={
-          <ProtectedRoute role="student">
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/kuppi"
-        element={
-          <ProtectedRoute role="student">
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/student/rewards"
-        element={
-          <ProtectedRoute role="student">
-            <RewardsLayout />
+            <StudentLayout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<RewardsDashboard key={user?._id ?? "guest"} />} />
-        <Route path="wallet" element={<Wallet />} />
-        <Route path="game" element={<Game />} />
-        <Route path="leaderboard" element={<Leaderboard />} />
-        <Route path="companion" element={<Companion />} />
+        <Route path="dashboard" element={<StudentDashboard />} />
+        <Route path="learning-trajectory" element={<LearningTrajectory />} />
+        <Route path="progress-tracking" element={<StudentDashboard />} />
+        <Route path="marketplace" element={<StudentDashboard />} />
+        <Route path="peer-learning" element={<StudentDashboard />} />
+        <Route path="kuppi" element={<StudentDashboard />} />
+        
+        <Route path="rewards" element={<RewardsLayout />}>
+          <Route index element={<RewardsDashboard key={user?._id ?? "guest"} />} />
+          <Route path="wallet" element={<Wallet />} />
+          <Route path="game" element={<Game />} />
+          <Route path="leaderboard" element={<Leaderboard />} />
+          <Route path="companion" element={<Companion />} />
+        </Route>
       </Route>
 
       <Route

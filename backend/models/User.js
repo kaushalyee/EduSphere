@@ -57,10 +57,20 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
+    // ── Updated: weighted weak topics 
+    // Each entry: { topic: "OOP", weight: 0.85 }
+    // weight = 1 - (percentage / 100) — lower score = higher weight
+    // Old format [String] is supported in recommendationEngine via normalizeWeakTopics
     weakTopics: {
-      type: [String],
+      type: [
+        {
+          topic: { type: String, required: true, trim: true },
+          weight: { type: Number, required: true, min: 0, max: 1 },
+        },
+      ],
       default: [],
     },
+
     lastQuizScore: {
       type: Number,
       default: 0,
@@ -136,8 +146,42 @@ const userSchema = new mongoose.Schema(
         },
       },
     ],
+    rewardPoints: {
+      type: Number,
+      default: 0,
+    },
+    companionsOwned: {
+      type: [String],
+      default: ["robot"],
+    },
+    activeCompanion: {
+      type: String,
+      default: "robot",
+    },
   },
-  { timestamps: true }
+  { 
+    timestamps: true,
+    toJSON: { getters: true },
+    toObject: { getters: true }
+  }
 );
+
+// Transform legacy string data to objects when reading from DB
+userSchema.pre("init", function (doc) {
+  if (doc.weakTopics) {
+    doc.weakTopics = doc.weakTopics.map(function (t) {
+      return typeof t === "string" ? { topic: t, weight: 0 } : t;
+    });
+  }
+});
+
+userSchema.pre("save", function (next) {
+  if (this.weakTopics) {
+    this.weakTopics = this.weakTopics.map(function (t) {
+      return typeof t === "string" ? { topic: t, weight: 0 } : t;
+    });
+  }
+  next();
+});
 
 module.exports = mongoose.model("User", userSchema);

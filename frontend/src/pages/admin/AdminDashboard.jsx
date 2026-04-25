@@ -81,6 +81,8 @@ export default function AdminDashboard() {
             <div>
               <h1 className="text-lg font-bold text-gray-800">{currentPageTitle}</h1>
               <p className="text-sm text-gray-500">Welcome back</p>
+            <div className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-sm font-medium rounded-full shadow-sm border border-blue-500/20">
+              Admin Portal
             </div>
           </div>
         </header>

@@ -1,25 +1,16 @@
 import { useState, useEffect } from "react";
-import avatarConfig from "../../../../../assets/avatars/avatarConfig";
 
-const companions = avatarConfig.map(({ name, file, description }, index) => ({
-  id: index + 1,
-  name,
-  model: file,
-  description,
-  unlocked: true,
-}));
-
-export default function CompanionSelector({ children }) {
+export default function CompanionSelector({ children, companionsList = [] }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    if (index >= companions.length) {
-      setIndex(Math.max(0, companions.length - 1));
+    if (companionsList.length > 0 && index >= companionsList.length) {
+      setIndex(Math.max(0, companionsList.length - 1));
     }
-  }, [companions]);
+  }, [companionsList, index]);
 
   const next = () => {
-    if (index < companions.length - 1) {
+    if (index < companionsList.length - 1) {
       setIndex(index + 1);
     }
   };
@@ -30,13 +21,13 @@ export default function CompanionSelector({ children }) {
     }
   };
 
-  const currentCompanion = companions[index];
+  const currentCompanion = companionsList[index];
 
   return children({
     currentCompanion,
     next,
     prev,
-    companions,
+    companions: companionsList,
     index,
   });
 }

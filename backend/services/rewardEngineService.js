@@ -94,6 +94,10 @@ async function getTotalAttemptsLast7Days(userId) {
 }
 
 function normalizeDailyAttemptState(user) {
+  if (!Number.isFinite(user.attemptsUsedToday) || user.attemptsUsedToday < 0) {
+    user.attemptsUsedToday = 0;
+  }
+
   const todayKey = getTodayDateKey();
   const lastAttemptKey = user.lastAttemptDate ? getTodayDateKey(user.lastAttemptDate) : null;
 
