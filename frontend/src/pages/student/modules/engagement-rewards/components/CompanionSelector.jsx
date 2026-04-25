@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import avatarConfig from "../../../../../assets/avatars/avatarConfig";
 
-const companions = avatarConfig.map(({ name, file }, index) => ({
+const companions = avatarConfig.map(({ name, file, description }, index) => ({
   id: index + 1,
   name,
   model: file,
+  description,
   unlocked: true,
 }));
 

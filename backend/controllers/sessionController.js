@@ -381,6 +381,144 @@ const getStudentFeed = async (req, res) => {
     });
   }
 };
+const updateSession = async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    
+
+    const session = await Session.findById(sessionId);
+
+    if (!session) {
+      return res.status(404).json({
+        success: false,
+        message: "Session not found",
+      });
+    }
+
+    if (session.tutorId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to edit this session",
+      });
+    }
+
+    if (session.status !== "upcoming") {
+      return res.status(400).json({
+        success: false,
+        message: "Only upcoming sessions can be edited",
+      });
+    }
+
+    const {
+      date,
+      time,
+      duration,
+      quizLink,
+      meetingLink,
+      location,
+      description,
+      capacity,
+    } = req.body;
+
+    if (!date || !time) {
+      return res.status(400).json({
+        success: false,
+        message: "Date and time are required",
+      });
+    }
+
+    const selectedDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      return res.status(400).json({
+        success: false,
+        message: "Past dates cannot be selected",
+      });
+    }
+
+    if (duration && Number(duration) < 30) {
+      return res.status(400).json({
+        success: false,
+        message: "Session duration must be at least 30 minutes",
+      });
+    }
+
+    if (quizLink && !isValidUrl(quizLink)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid quiz link",
+      });
+    }
+
+    if (session.mode === "online") {
+      if (!meetingLink?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Meeting link is required for online sessions",
+        });
+      }
+
+      if (!isValidUrl(meetingLink)) {
+        return res.status(400).json({
+          success: false,
+          message: "Please enter a valid meeting link",
+        });
+      }
+
+      session.meetingLink = meetingLink.trim();
+      session.location = "";
+    }
+
+    if (session.mode === "offline") {
+      if (!location?.trim()) {
+        return res.status(400).json({
+          success: false,
+          message: "Location is required for offline sessions",
+        });
+      }
+
+      session.location = location.trim();
+      session.meetingLink = "";
+    }
+
+    if (capacity && Number(capacity) < 1) {
+      return res.status(400).json({
+        success: false,
+        message: "Capacity must be at least 1",
+      });
+    }
+
+    if (capacity && Number(capacity) < Number(session.registeredCount || 0)) {
+      return res.status(400).json({
+        success: false,
+        message: `Capacity cannot be less than registered count (${session.registeredCount})`,
+      });
+    }
+
+    session.date = date;
+    session.time = time;
+    session.duration = duration ? Number(duration) : session.duration;
+    session.quizLink = quizLink ? quizLink.trim() : "";
+    session.description = description ? description.trim() : "";
+    session.capacity = capacity ? Number(capacity) : null;
+
+    await session.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Session updated successfully",
+      session,
+    });
+  } catch (error) {
+    console.error("updateSession error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error while updating session",
+    });
+  }
+};
 
 module.exports = {
   createSession,
@@ -392,4 +530,5 @@ module.exports = {
   getCompletedSessions,
   getCancelledSessions,
   getStudentFeed,
+  updateSession,
 };

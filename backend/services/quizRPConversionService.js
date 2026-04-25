@@ -2,6 +2,7 @@ const QuizResult = require("../models/QuizResult");
 const Wallet = require("../models/Wallet");
 const RewardTransaction = require("../models/RewardTransaction");
 const { getOrCreateWallet } = require("./walletService");
+const { createRewardEvent } = require("./eventService");
 
 const calculateRPFromPercentage = (percentage) => {
   if (percentage >= 90) return 100;
@@ -48,6 +49,9 @@ const convertQuizResultToRP = async (quizResultId) => {
     type: "earned",
     description: `quiz:${quizResult._id}`,
   });
+
+  // 🎯 CREATE REWARD EVENT FOR ACTIVITY FEED
+  await createRewardEvent(quizResult.studentId, "QUIZ", rp, `Earned ${rp} RP from ${quizResult.percentage}% quiz score`);
 
   return {
     percentage: quizResult.percentage,

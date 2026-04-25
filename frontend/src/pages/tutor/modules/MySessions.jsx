@@ -27,6 +27,7 @@ export default function MySessions() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editErrors, setEditErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState("");
   const [sortOrder, setSortOrder] = useState("soonest");
   const [statusFilter, setStatusFilter] = useState("upcoming");
@@ -53,8 +54,8 @@ export default function MySessions() {
         status === "completed"
           ? "http://localhost:5000/api/sessions/completed"
           : status === "cancelled"
-          ? "http://localhost:5000/api/sessions/cancelled"
-          : "http://localhost:5000/api/sessions/my-sessions";
+            ? "http://localhost:5000/api/sessions/cancelled"
+            : "http://localhost:5000/api/sessions/my-sessions";
 
       const response = await axios.get(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -81,7 +82,7 @@ export default function MySessions() {
 
     const timer = setTimeout(() => {
       setSuccessMessage("");
-    }, 3000);
+    }, 5000);
 
     return () => clearTimeout(timer);
   }, [successMessage]);
@@ -189,6 +190,177 @@ export default function MySessions() {
       setSelectedSessionId(null);
     }
   };
+  const [editingSession, setEditingSession] = useState(null);
+  const [editForm, setEditForm] = useState({
+    date: "",
+    time: "",
+    duration: 60,
+    quizLink: "",
+    meetingLink: "",
+    location: "",
+    description: "",
+    capacity: "",
+  });
+  const handleEditClick = (session) => {
+    setError("");
+    setSuccessMessage("");
+    setEditErrors({});
+    setEditingSession(session);
+
+    setEditForm({
+      date: session.date ? new Date(session.date).toISOString().split("T")[0] : "",
+      time: session.time || "",
+      duration: session.duration || 60,
+      quizLink: session.quizLink || "",
+      meetingLink: session.meetingLink || "",
+      location: session.location || "",
+      description: session.description || "",
+      capacity: session.capacity || "",
+    });
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+
+    setEditForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    setEditErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
+  };
+  const validateEditForm = () => {
+    const newErrors = {};
+
+    if (!editForm.date) {
+      newErrors.date = "Date is required";
+    }
+
+    if (!editForm.time) {
+      newErrors.time = "Time is required";
+    }
+
+const today = new Date().toISOString().split("T")[0];
+
+if (editForm.date && editForm.date < today) {
+  newErrors.date = "Past dates cannot be selected";
+}
+
+
+    if (!editForm.duration || Number(editForm.duration) < 30) {
+      newErrors.duration = "Duration must be at least 30 minutes";
+    }
+
+    if (Number(editForm.duration) > 480) {
+      newErrors.duration = "Duration cannot exceed 480 minutes";
+    }
+
+    if (editingSession?.mode === "online") {
+      if (!editForm.meetingLink.trim()) {
+        newErrors.meetingLink = "Meeting link is required";
+      } else {
+        try {
+          new URL(editForm.meetingLink);
+        } catch {
+          newErrors.meetingLink = "Please enter a valid meeting link";
+        }
+      }
+    }
+
+    if (editingSession?.mode === "offline") {
+      if (!editForm.location.trim()) {
+        newErrors.location = "Location is required";
+      } else if (editForm.location.trim().length < 3) {
+        newErrors.location = "Please enter a more specific location";
+      }
+    }
+
+    if (editForm.quizLink) {
+      try {
+        new URL(editForm.quizLink);
+      } catch {
+        newErrors.quizLink = "Please enter a valid quiz link";
+      }
+    }
+
+    if (editForm.capacity && Number(editForm.capacity) < 1) {
+      newErrors.capacity = "Capacity must be at least 1";
+    }
+
+    if (editForm.capacity && Number(editForm.capacity) > 500) {
+      newErrors.capacity = "Capacity cannot exceed 500";
+    }
+
+    if (
+      editForm.capacity &&
+      editingSession?.registeredCount &&
+      Number(editForm.capacity) < Number(editingSession.registeredCount)
+    ) {
+      newErrors.capacity = `Capacity cannot be less than registered count (${editingSession.registeredCount})`;
+    }
+
+    if (editForm.description && editForm.description.trim().length > 0 && editForm.description.trim().length < 10) {
+      newErrors.description = "Description should be at least 10 characters";
+    }
+
+    if (editForm.description && editForm.description.trim().length > 1000) {
+      newErrors.description = "Description cannot exceed 1000 characters";
+    }
+
+    return newErrors;
+  };
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!editingSession) return;
+
+    const validationErrors = validateEditForm();
+    setEditErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    try {
+      setError("");
+      setSuccessMessage("");
+      setActionLoading(editingSession._id + "edit");
+
+      const payload = {
+        date: editForm.date,
+        time: editForm.time,
+        duration: Number(editForm.duration),
+        quizLink: editForm.quizLink,
+        meetingLink: editForm.meetingLink,
+        location: editForm.location,
+        description: editForm.description,
+        capacity: editForm.capacity ? Number(editForm.capacity) : null,
+      };
+
+      const res = await axios.put(
+        `http://localhost:5000/api/sessions/${editingSession._id}`,
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      setSessions((prev) =>
+        prev.map((s) => (s._id === editingSession._id ? res.data.session : s))
+      );
+
+      setEditingSession(null);
+      setEditErrors({});
+      setSuccessMessage("Session updated successfully!");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to update session");
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   return (
     <div>
@@ -201,8 +373,159 @@ export default function MySessions() {
       />
 
       {successMessage && (
-        <div className="fixed top-5 right-5 z-50 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-medium text-white shadow-lg">
+        <div className="fixed top-6 right-6 z-50 rounded-2xl bg-emerald-500 px-8 py-5 text-lg font-semibold text-white shadow-2xl">
           {successMessage}
+        </div>
+      )}
+      {editingSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Edit Session</h3>
+
+            <div className="mb-4 text-sm text-slate-600">
+              <p><strong>Category:</strong> {editingSession.category}</p>
+              <p><strong>Topic:</strong> {editingSession.topic}</p>
+              <p><strong>Mode:</strong> {editingSession.mode}</p>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              {/* Date */}
+              <div className="flex flex-col gap-1">
+                <input
+                  type="date"
+                  name="date"
+                  value={editForm.date}
+                  onChange={handleEditChange}
+                  min={new Date().toISOString().split("T")[0]}
+                  className={`border rounded-xl px-4 py-3 ${editErrors.date ? "border-red-400" : ""}`}
+                />
+                {editErrors.date && <p className="text-red-500 text-xs px-1">{editErrors.date}</p>}
+              </div>
+
+              {/* Time */}
+              <div className="flex flex-col gap-1">
+                <input
+                  type="time"
+                  name="time"
+                  value={editForm.time}
+                  onChange={handleEditChange}
+                  className={`border rounded-xl px-4 py-3 ${editErrors.time ? "border-red-400" : ""}`}
+                />
+                {editErrors.time && <p className="text-red-500 text-xs px-1">{editErrors.time}</p>}
+              </div>
+
+              {/* Duration */}
+              <div className="flex flex-col gap-1">
+                <input
+                  type="number"
+                  name="duration"
+                  value={editForm.duration}
+                  onChange={handleEditChange}
+                  placeholder="Duration (mins)"
+                  min="30"
+                  className={`border rounded-xl px-4 py-3 ${editErrors.duration ? "border-red-400" : ""}`}
+                />
+                {editErrors.duration && <p className="text-red-500 text-xs px-1">{editErrors.duration}</p>}
+              </div>
+
+              {/* Capacity */}
+              <div className="flex flex-col gap-1">
+                <input
+                  type="number"
+                  name="capacity"
+                  value={editForm.capacity}
+                  onChange={handleEditChange}
+                  placeholder="Capacity (optional)"
+                  min="1"
+                  className={`border rounded-xl px-4 py-3 ${editErrors.capacity ? "border-red-400" : ""}`}
+                />
+                {editErrors.capacity && <p className="text-red-500 text-xs px-1">{editErrors.capacity}</p>}
+              </div>
+
+              {/* Meeting Link or Location */}
+              {editingSession.mode === "online" ? (
+                <div className="flex flex-col gap-1 md:col-span-2">
+                  <input
+                    type="text"
+                    name="meetingLink"
+                    value={editForm.meetingLink}
+                    onChange={handleEditChange}
+                    placeholder="Meeting Link"
+                    className={`border rounded-xl px-4 py-3 ${editErrors.meetingLink ? "border-red-400" : ""}`}
+                  />
+                  {editErrors.meetingLink && <p className="text-red-500 text-xs px-1">{editErrors.meetingLink}</p>}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1 md:col-span-2">
+                  <input
+                    type="text"
+                    name="location"
+                    value={editForm.location}
+                    onChange={handleEditChange}
+                    placeholder="Location"
+                    className={`border rounded-xl px-4 py-3 ${editErrors.location ? "border-red-400" : ""}`}
+                  />
+                  {editErrors.location && <p className="text-red-500 text-xs px-1">{editErrors.location}</p>}
+                </div>
+              )}
+
+              {/* Quiz Link */}
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <input
+                  type="text"
+                  name="quizLink"
+                  value={editForm.quizLink}
+                  onChange={handleEditChange}
+                  placeholder="Quiz Link (optional)"
+                  className={`border rounded-xl px-4 py-3 ${editErrors.quizLink ? "border-red-400" : ""}`}
+                />
+                {editErrors.quizLink && <p className="text-red-500 text-xs px-1">{editErrors.quizLink}</p>}
+              </div>
+
+              {/* Description */}
+              <div className="flex flex-col gap-1 md:col-span-2">
+                <textarea
+                  name="description"
+                  value={editForm.description}
+                  onChange={handleEditChange}
+                  placeholder="Description (optional)"
+                  rows={4}
+                  className={`border rounded-xl px-4 py-3 ${editErrors.description ? "border-red-400" : ""}`}
+                />
+                <div className="flex justify-between items-center px-1">
+                  {editErrors.description
+                    ? <p className="text-red-500 text-xs">{editErrors.description}</p>
+                    : <span />}
+                  <p className="text-xs text-slate-400">{editForm.description.length}/1000</p>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="md:col-span-2 flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setEditingSession(null); setEditErrors({}); }}
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 transition"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={!!actionLoading}
+                  className="flex-1 px-4 py-3 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {actionLoading ? (
+                    <span className="inline-flex items-center gap-2 justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Saving...
+                    </span>
+                  ) : "Save Changes"}
+                </button>
+              </div>
+
+            </form>
+          </div>
         </div>
       )}
 
@@ -233,11 +556,10 @@ export default function MySessions() {
                 onClick={() =>
                   handleAction(confirmDialog.sessionId, confirmDialog.action)
                 }
-                className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition ${
-                  confirmDialog.action === "complete"
-                    ? "bg-emerald-500 hover:bg-emerald-600"
-                    : "bg-red-500 hover:bg-red-600"
-                }`}
+                className={`flex-1 px-4 py-2 rounded-xl font-medium text-white transition ${confirmDialog.action === "complete"
+                  ? "bg-emerald-500 hover:bg-emerald-600"
+                  : "bg-red-500 hover:bg-red-600"
+                  }`}
               >
                 {confirmDialog.action === "complete"
                   ? "Confirm"
@@ -253,11 +575,10 @@ export default function MySessions() {
           <button
             key={status}
             onClick={() => setStatusFilter(status)}
-            className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition border-b-2 -mb-px ${
-              statusFilter === status
-                ? "border-[#2F66E0] text-[#2F66E0]"
-                : "border-transparent text-slate-500 hover:text-slate-700"
-            }`}
+            className={`px-4 py-2 text-sm font-semibold capitalize rounded-t-lg transition border-b-2 -mb-px ${statusFilter === status
+              ? "border-[#2F66E0] text-[#2F66E0]"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+              }`}
           >
             {status}
           </button>
@@ -296,21 +617,19 @@ export default function MySessions() {
               <div className="flex rounded-xl border border-slate-200 overflow-hidden bg-white">
                 <button
                   onClick={() => setSortOrder("soonest")}
-                  className={`px-4 py-2 text-sm font-medium transition ${
-                    sortOrder === "soonest"
-                      ? "bg-[#2F66E0] text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium transition ${sortOrder === "soonest"
+                    ? "bg-[#2F66E0] text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   Soonest
                 </button>
                 <button
                   onClick={() => setSortOrder("latest")}
-                  className={`px-4 py-2 text-sm font-medium transition border-l border-slate-200 ${
-                    sortOrder === "latest"
-                      ? "bg-[#2F66E0] text-white"
-                      : "text-slate-600 hover:bg-slate-50"
-                  }`}
+                  className={`px-4 py-2 text-sm font-medium transition border-l border-slate-200 ${sortOrder === "latest"
+                    ? "bg-[#2F66E0] text-white"
+                    : "text-slate-600 hover:bg-slate-50"
+                    }`}
                 >
                   Latest
                 </button>
@@ -352,20 +671,18 @@ export default function MySessions() {
 
                         <div className="flex flex-col items-end gap-2 shrink-0">
                           <span
-                            className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                              session.mode === "online"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-emerald-100 text-emerald-700"
-                            }`}
+                            className={`px-3 py-1 rounded-full text-sm font-semibold ${session.mode === "online"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-emerald-100 text-emerald-700"
+                              }`}
                           >
                             {session.mode}
                           </span>
 
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${
-                              STATUS_STYLES[session.status] ||
+                            className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${STATUS_STYLES[session.status] ||
                               "bg-slate-100 text-slate-600"
-                            }`}
+                              }`}
                           >
                             {session.status}
                           </span>
@@ -489,7 +806,14 @@ export default function MySessions() {
                       )}
 
                       {session.status === "upcoming" && (
-                        <div className="mt-5 pt-4 border-t border-slate-100 flex gap-3">
+                        <div className="mt-5 pt-4 border-t border-slate-100 flex gap-3 flex-wrap">
+                          <button
+                            disabled={isActing}
+                            onClick={() => handleEditClick(session)}
+                            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Edit
+                          </button>
                           <button
                             disabled={isActing}
                             onClick={() =>

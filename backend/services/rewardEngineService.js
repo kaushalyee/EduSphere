@@ -9,7 +9,12 @@ const MAX_COST = 80;
 const BASE_DAILY_LIMIT = 3;
 
 function getTodayDateKey(date = new Date()) {
-  return date.toISOString().slice(0, 10);
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Colombo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(date);
 }
 
 function getPerformanceMultiplier(lastQuizScore) {

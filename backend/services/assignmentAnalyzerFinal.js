@@ -1,7 +1,20 @@
 const fs = require('fs');
 const path = require('path');
-const pdfParse = require('pdf-parse');
-const mammoth = require('mammoth');
+
+// Optional dependencies handled gracefully to prevent server crash
+let pdfParse;
+try {
+  pdfParse = require('pdf-parse');
+} catch (error) {
+  console.warn('WARNING: pdf-parse not found. PDF extraction will be disabled.');
+}
+
+let mammoth;
+try {
+  mammoth = require('mammoth');
+} catch (error) {
+  console.warn('WARNING: mammoth not found. Word document extraction will be disabled.');
+}
 
 /**
  * FINAL Assignment Analyzer - Guaranteed to work correctly
@@ -22,6 +35,10 @@ class FinalAssignmentAnalyzer {
    */
   async extractTextFromPDF(filePath) {
     try {
+      if (!pdfParse) {
+        console.error('Dependency Missing: pdf-parse is required for PDF processing.');
+        return 'Error: PDF processing library missing.';
+      }
       console.log('Extracting text from PDF:', filePath);
       const buffer = fs.readFileSync(filePath);
       const data = await pdfParse(buffer);
@@ -37,6 +54,10 @@ class FinalAssignmentAnalyzer {
    */
   async extractTextFromWord(filePath) {
     try {
+      if (!mammoth) {
+        console.error('Dependency Missing: mammoth is required for Word processing.');
+        return 'Error: Word processing library missing.';
+      }
       console.log('Extracting text from Word:', filePath);
       const buffer = fs.readFileSync(filePath);
       const result = await mammoth.extractRawText({ buffer });

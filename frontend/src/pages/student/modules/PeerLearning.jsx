@@ -18,7 +18,8 @@ export default function PeerLearning() {
   const [fetchingSessions, setFetchingSessions] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-  const [toast, setToast] = useState(null);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const [sessionSearch, setSessionSearch] = useState("");
   const [sessionModeFilter, setSessionModeFilter] = useState("all");
@@ -51,8 +52,11 @@ export default function PeerLearning() {
   const fetchMyRequests = async () => {
     try {
       setFetchingRequests(true);
-      const res = await api.get("/session-requests/my-requests");
-      setMyRequests(res.data.requests || []);
+      const res = await axios.get(
+        "http://localhost:5000/api/session-requests/my-requests",
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setMyRequests(res.data || []);
     } catch (err) {
       console.error("Failed to fetch requests", err);
     } finally {
@@ -145,7 +149,7 @@ export default function PeerLearning() {
     setError("");
 
     if (!formData.category || !formData.topic || !formData.preferredTime) {
-      setError("Please fill all required fields");
+      setErrorMessage("Please fill all required fields");
       return;
     }
 
@@ -153,10 +157,7 @@ export default function PeerLearning() {
       setLoading(true);
       const res = await api.post("/session-requests", formData);
 
-      setToast({
-        type: "success",
-        text: res.data.message || "Request submitted successfully",
-      });
+      setSuccessMessage(res.data.message || "Request submitted successfully");
 
       setFormData({
         category: "",
@@ -169,24 +170,31 @@ export default function PeerLearning() {
       fetchMyRequests();
       fetchSessions();
     } catch (err) {
-      setToast({
-        type: "error",
-        text: err.response?.data?.message || "Failed to submit request",
-      });
+      setErrorMessage(err.response?.data?.message || "Failed to submit request");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (!toast) return;
-
+useEffect(() => {
+  if (successMessage) {
     const timer = setTimeout(() => {
-      setToast(null);
-    }, 3000);
+      setSuccessMessage("");
+    }, 5000);
 
     return () => clearTimeout(timer);
-  }, [toast]);
+  }
+}, [successMessage]);
+
+useEffect(() => {
+  if (errorMessage) {
+    const timer = setTimeout(() => {
+      setErrorMessage("");
+    }, 5000);
+
+    return () => clearTimeout(timer);
+  }
+}, [errorMessage]);
 
   const formatDate = (value) => {
     if (!value) return "No preferred date";
@@ -213,12 +221,18 @@ export default function PeerLearning() {
 
   return (
     <div className="space-y-6">
-      {toast && (
-        <Toast
-          type={toast.type}
-          message={toast.text}
-          onClose={() => setToast(null)}
-        />
+      {/* SUCCESS TOAST */}
+      {successMessage && (
+        <div className="fixed top-6 right-6 z-50 rounded-2xl bg-emerald-500 px-8 py-5 text-lg font-semibold text-white shadow-2xl animate-slide-in">
+          {successMessage}
+        </div>
+      )}
+
+      {/* ERROR TOAST */}
+      {errorMessage && (
+        <div className="fixed top-6 right-6 z-50 rounded-2xl bg-red-500 px-8 py-5 text-lg font-semibold text-white shadow-2xl animate-slide-in">
+          {errorMessage}
+        </div>
       )}
 
       <div className="bg-white rounded-2xl shadow-sm p-2">
@@ -625,13 +639,12 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
 
   return (
     <div
-      className={`rounded-2xl p-5 transition-all flex gap-4 ${
-        isHighlighted
+      className={`rounded-2xl p-5 transition-all flex gap-4 ${isHighlighted
           ? "bg-blue-100 border-2 border-[#2F66E0] shadow-md"
           : "bg-white border border-slate-200"
-      }`}
+        }`}
     >
-      {/* 📅 DATE BOX */}
+      {/* DATE BOX */}
       <div className="flex flex-col items-center justify-center bg-[#2F66E0] text-white rounded-xl px-4 py-3 min-w-[80px]">
         <p className="text-xs uppercase">Date</p>
         <p className="text-lg font-bold">
@@ -644,7 +657,7 @@ function SessionCard({ session, formatSessionDate, isHighlighted }) {
         </p>
       </div>
 
-      {/* 📄 CONTENT */}
+      {/*  CONTENT */}
       <div className="flex-1">
         {/* Highlight badge */}
         {isHighlighted && (
