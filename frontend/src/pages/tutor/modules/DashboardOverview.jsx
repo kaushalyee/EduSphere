@@ -173,12 +173,12 @@ export default function DashboardOverview({ setActiveTab }) {
   const nav = (tab) => setActiveTab && setActiveTab(tab);
 
   const statCards = [
-    { title: "Total Sessions", value: stats.total,     color: "#6366f1", icon: "📋", tab: "my-sessions" },
-    { title: "Upcoming",       value: stats.upcoming,  color: "#f59e0b", icon: "🗓️", tab: "my-sessions" },
-    { title: "Completed",      value: stats.completed, color: "#10b981", icon: "✅", tab: "my-sessions" },
-    { title: "Cancelled",      value: stats.cancelled, color: "#ef4444", icon: "❌", tab: "my-sessions" },
-    { title: "Online",         value: stats.online,    color: "#0ea5e9", icon: "🌐", tab: null },
-    { title: "Offline",        value: stats.offline,   color: "#8b5cf6", icon: "📍", tab: null },
+    { title: "Total Sessions", value: stats.total,     color: "#6366f1", tab: "my-sessions" },
+    { title: "Upcoming",       value: stats.upcoming,  color: "#f59e0b", tab: "my-sessions" },
+    { title: "Completed",      value: stats.completed, color: "#10b981", tab: "my-sessions" },
+    { title: "Cancelled",      value: stats.cancelled, color: "#ef4444", tab: "my-sessions" },
+    { title: "Online",         value: stats.online,    color: "#0ea5e9", tab: null },
+    { title: "Offline",        value: stats.offline,   color: "#8b5cf6", tab: null },
   ];
 
   const monthlyData = buildMonthlyData(allSessions);
