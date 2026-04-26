@@ -56,29 +56,34 @@ export default function StudentHeader({
         )}
 
         {/* ── Avatar dropdown ── */}
-        <div className="relative" ref={dropdownRef}>
-          <button
-            onClick={() => setDropdownOpen((prev) => !prev)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition"
-          >
-            <div className="w-8 h-8 rounded-xl bg-[#2F66E0] flex items-center justify-center text-white text-sm font-bold">
-              {initial}
-            </div>
-            <ChevronDown className="w-4 h-4 text-gray-500" />
-          </button>
+        {!["Dashboard", "PeerLearning", "Market", "Progress"].includes(activeTab) && (
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setDropdownOpen((prev) => !prev)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-gray-100 transition"
+            >
+              <div className="w-8 h-8 rounded-xl bg-[#2F66E0] flex items-center justify-center text-white text-sm font-bold">
+                {initial}
+              </div>
+              <ChevronDown className="w-4 h-4 text-gray-500" />
+            </button>
 
-          {dropdownOpen && (
-            <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
-              <button
-                onClick={() => { setDropdownOpen(false); onProfileClick(); }}
-                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition"
-              >
-                <User className="w-4 h-4 text-slate-400" />
-                My Profile
-              </button>
-            </div>
-          )}
-        </div>
+            {dropdownOpen && (
+              <div className="absolute right-0 top-12 w-44 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
+                <button
+                  onClick={() => {
+                    setDropdownOpen(false);
+                    onProfileClick();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <User className="w-4 h-4 text-slate-400" />
+                  My Profile
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </header>
   );
