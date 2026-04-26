@@ -1,0 +1,25 @@
+{
+  "name": "edusphere",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000E\u0000d\u0000u\u0000S\u0000p\u0000h\u0000e\u0000r\u0000e\u0000\r\u0000 \u0000",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kaushalyee/EduSphere.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kaushalyee/EduSphere/issues"
+  },
+  "homepage": "https://github.com/kaushalyee/EduSphere#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0"
+  }
+}
