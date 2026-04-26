@@ -94,7 +94,7 @@ export default function StudentLayout() {
       {!isRewards && (
         <>
           <ChatbotButton isOpen={isChatOpen} toggleChat={() => setIsChatOpen(!isChatOpen)} />
-          {isChatOpen && <ChatbotOverlay onClose={() => setIsChatOpen(false)} />}
+          {isChatOpen && <ChatbotOverlay onClose={() => setIsChatOpen(false)} setActiveTab={setActiveTab} />}
         </>
       )}
     </div>
