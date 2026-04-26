@@ -1,0 +1,13 @@
+
+    Self-Reflection:
+    During my second-year software development project, I encountered significant challenges in time management that led to missed deadlines. This experience revealed my tendency to underestimate task complexity and overcommit to multiple responsibilities simultaneously. Through this failure, I developed greater self-awareness about my work patterns and limitations.
+    
+    Evidence & Examples:
+    A specific incident occurred when I was juggling a part-time RCM job with our group project. Two days before submission, I realized our backend module was incomplete. Despite working 12-hour days, I couldn't deliver on time. This concrete example demonstrates how poor planning and unrealistic time allocation directly impacted my academic performance.
+    
+    Critical Analysis:
+    The root cause was not merely time scarcity but my failure to prioritize tasks and communicate proactively with team members. I now understand that effective time management requires strategic planning, regular progress checks, and the courage to seek help early rather than struggling in isolation.
+    
+    Action Planning:
+    I have implemented a three-step improvement plan: (1) Use digital time-tracking tools to monitor task completion, (2) Schedule weekly team progress meetings, and (3) Set personal deadlines two days before actual deadlines. These specific actions will prevent recurrence of this issue.
+    

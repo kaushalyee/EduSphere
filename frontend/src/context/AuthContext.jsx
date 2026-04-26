@@ -1,0 +1,87 @@
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import api from '../api/api';
+
+const AuthContext = createContext(null);
+
+const roleRedirectPath = (role) => {
+  if (role === 'student') return '/student/dashboard';
+  if (role === 'tutor') return '/tutor/dashboard';
+  if (role === 'admin') return '/admin/dashboard';
+  return '/';
+};
+
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
+    }
+  });
+  const [token, setToken] = useState(() => localStorage.getItem('token') || '');
+
+  useEffect(() => {
+    if (token) localStorage.setItem('token', token);
+    else localStorage.removeItem('token');
+  }, [token]);
+
+  useEffect(() => {
+    if (user) localStorage.setItem('user', JSON.stringify(user));
+    else localStorage.removeItem('user');
+  }, [user]);
+
+  const login = async (email, password) => {
+    try {
+      const { data } = await api.post('/auth/login', { email, password });
+      setToken(data.token);
+      setUser(data.user);
+      return { success: true, redirectTo: roleRedirectPath(data.user?.role) };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Login failed';
+      return { success: false, message: msg };
+    }
+  };
+
+  const register = async (payload) => {
+    try {
+      const { data } = await api.post('/auth/register', payload);
+      setToken(data.token);
+      setUser(data.user);
+      return { success: true, redirectTo: roleRedirectPath(data.user?.role) };
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        'Registration failed';
+      return { success: false, message: msg };
+    }
+  };
+
+  const logout = () => {
+    setToken('');
+    setUser(null);
+    sessionStorage.clear();
+  };
+
+  const refreshUser = async () => {
+    try {
+      const { data } = await api.get('/auth/me');
+      setUser(data.user);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (err) {
+      console.error('Failed to refresh user:', err);
+    }
+  };
+
+  const value = useMemo(
+    () => ({ user, setUser, token, isAuth: !!token, login, register, logout, refreshUser }),
+    [user, token]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+export const useAuth = () => useContext(AuthContext);
